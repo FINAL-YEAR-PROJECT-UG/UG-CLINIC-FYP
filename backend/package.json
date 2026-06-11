@@ -18,6 +18,7 @@
     "lint:fix": "eslint . --ext .ts --fix"
   },
   "dependencies": {
+    "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
     "compression": "^1.8.1",
