@@ -9,14 +9,42 @@
     "start": "node dist/app.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.0",
-    "express": "^4.19.0"
+    "bcrypt": "^6.0.0",
+    "bull": "^4.16.5",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "^8.5.2",
+    "express-slow-down": "^3.1.0",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.11",
+    "sharp": "^0.35.0",
+    "twilio": "^6.0.2",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.0",
-    "@types/node": "^22.10.0",
-    "nodemon": "^3.20.0",
-    "ts-node": "^10.9.0",
-    "typescript": "^5.6.3"
-  }
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^22.19.21",
+    "nodemon": "^3.1.14",
+    "prisma": "^7.8.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
+  },
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
