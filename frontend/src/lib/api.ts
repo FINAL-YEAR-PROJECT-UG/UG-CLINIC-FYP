@@ -3,17 +3,11 @@ import axios, {
   type AxiosInstance,
   type AxiosRequestConfig,
 } from "axios";
+import { useAuthStore } from "../stores/authStore";
 
 type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
-
-type AuthTokens = {
-  accessToken: string;
-  refreshToken?: string;
-};
-
-const STORAGE_KEY = "ug-clinic-auth";
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api",
@@ -22,32 +16,6 @@ const api: AxiosInstance = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-function getStoredAuth(): AuthTokens | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AuthTokens) : null;
-  } catch {
-    return null;
-  }
-}
-
-function setStoredAuth(tokens: AuthTokens | null) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (!tokens) {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
-}
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -68,11 +36,11 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 api.interceptors.request.use((config) => {
-  const auth = getStoredAuth();
+  const tokens = useAuthStore.getState().tokens;
 
-  if (auth?.accessToken) {
+  if (tokens?.accessToken) {
     config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${auth.accessToken}`;
+    config.headers.Authorization = `Bearer ${tokens.accessToken}`;
   }
 
   return config;
@@ -101,8 +69,8 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const auth = getStoredAuth();
-        const refreshToken = auth?.refreshToken;
+        const tokens = useAuthStore.getState().tokens;
+        const refreshToken = tokens?.refreshToken;
 
         if (!refreshToken) {
           throw new Error("No refresh token available");
@@ -118,10 +86,10 @@ api.interceptors.response.use(
           }
         );
 
-        const nextTokens = response.data?.data ?? response.data;
+        const nextTokens = response.data?.data?.tokens ?? response.data?.data;
 
         if (nextTokens?.accessToken) {
-          setStoredAuth({
+          useAuthStore.getState().updateTokens({
             accessToken: nextTokens.accessToken,
             refreshToken: nextTokens.refreshToken ?? refreshToken,
           });
@@ -135,7 +103,10 @@ api.interceptors.response.use(
         throw new Error("Refresh response did not include an access token");
       } catch (refreshError) {
         processQueue(refreshError);
-        setStoredAuth(null);
+        useAuthStore.getState().clearAuth();
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

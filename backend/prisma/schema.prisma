@@ -53,12 +53,16 @@ model User {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   lastLoginAt         DateTime?
+  failedLoginAttempts Int              @default(0)
+  lockedUntil         DateTime?
+  refreshTokens       RefreshToken[]
 
   appointments        Appointment[]     @relation("UserAppointments")
   doctorAppointments  Appointment[]     @relation("DoctorAppointments")
   resources           Resource[]
   notifications       Notification[]
   auditLogs           AuditLog[]
+  loginAttempts       FailedLoginAttempt[]
 }
 
 model Appointment {
@@ -169,5 +173,33 @@ model AuditLog {
 
   @@index([userId])
   @@index([action])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model FailedLoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([createdAt])
 }
