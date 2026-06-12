@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokenPair, verifyAccessToken, TokenPayload } from '../utils/jwt';
 import { sendOTPSMS } from '../services/sms.service';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 const SESSION_TIMEOUT_MINUTES = Number(process.env.SESSION_TIMEOUT_MINUTES) || 30;
 const MAX_CONCURRENT_SESSIONS = Number(process.env.MAX_CONCURRENT_SESSIONS) || 3;
@@ -138,7 +136,7 @@ export const staffLogin = async (req: Request, res: Response) => {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-      await prisma.otpCode.create({
+      await prisma.oTPCode.create({
         data: {
           code: otp,
           userId: user.id,
@@ -200,7 +198,7 @@ export const verify2FA = async (req: Request, res: Response) => {
       });
     }
 
-    const otpRecord = await prisma.otpCode.findFirst({
+    const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
         code: otp,
@@ -223,7 +221,7 @@ export const verify2FA = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.otpCode.update({
+    await prisma.oTPCode.update({
       where: { id: otpRecord.id },
       data: { usedAt: new Date() },
     });
@@ -377,7 +375,7 @@ export const updateSessionActivity = async (req: Request, res: Response) => {
 
 export const revokeSession = async (req: Request, res: Response) => {
   try {
-    const { sessionId } = req.params;
+    const sessionId = String(req.params.sessionId);
     const { userId } = (req as any).user;
 
     const session = await prisma.session.findUnique({
@@ -481,7 +479,12 @@ export const toggle2FA = async (req: Request, res: Response) => {
     const { userId } = (req as any).user;
     const { enabled } = req.body;
 
-    if (enabled && !req.user.phone) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true },
+    });
+
+    if (enabled && !user?.phone) {
       return res.status(400).json({
         success: false,
         message: 'Phone number required to enable 2FA',

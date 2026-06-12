@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password';
 import { generateTokenPair, verifyRefreshToken, TokenPayload } from '../utils/jwt';
-
-const prisma = new PrismaClient();
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 30;

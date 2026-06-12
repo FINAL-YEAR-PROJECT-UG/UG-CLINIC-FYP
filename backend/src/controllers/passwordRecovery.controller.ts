@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password';
 import { sendPasswordResetEmail, sendOTPEmail } from '../services/email.service';
 import { sendOTPSMS, sendPasswordResetSMS } from '../services/sms.service';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
@@ -166,7 +164,7 @@ export const sendOTP = async (req: Request, res: Response) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await prisma.otpCode.create({
+    await prisma.oTPCode.create({
       data: {
         code: otp,
         userId: user.id,
@@ -216,7 +214,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    const otpRecord = await prisma.otpCode.findFirst({
+    const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
         code: otp,
@@ -246,7 +244,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.otpCode.update({
+    await prisma.oTPCode.update({
       where: { id: otpRecord.id },
       data: {
         attempts: { increment: 1 },
@@ -260,7 +258,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.otpCode.update({
+    await prisma.oTPCode.update({
       where: { id: otpRecord.id },
       data: { usedAt: new Date() },
     });
@@ -293,7 +291,7 @@ export const resetPasswordWithOTP = async (req: Request, res: Response) => {
       });
     }
 
-    const otpRecord = await prisma.otpCode.findFirst({
+    const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
         code: otp,
@@ -336,7 +334,7 @@ export const resetPasswordWithOTP = async (req: Request, res: Response) => {
       },
     });
 
-    await prisma.otpCode.update({
+    await prisma.oTPCode.update({
       where: { id: otpRecord.id },
       data: { usedAt: new Date() },
     });
