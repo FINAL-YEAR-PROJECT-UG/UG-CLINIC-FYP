@@ -50,12 +50,16 @@ model User {
   isActive            Boolean           @default(true)
   emailVerified      Boolean           @default(false)
   phoneVerified      Boolean           @default(false)
+  twoFactorEnabled   Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   lastLoginAt         DateTime?
+  lastActivityAt      DateTime?
   failedLoginAttempts Int              @default(0)
   lockedUntil         DateTime?
+  maxSessions         Int              @default(3)
   refreshTokens       RefreshToken[]
+  sessions            Session[]
 
   appointments        Appointment[]     @relation("UserAppointments")
   doctorAppointments  Appointment[]     @relation("DoctorAppointments")
@@ -266,4 +270,23 @@ model BackupRecoveryCode {
 
   @@index([code])
   @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([lastActivity])
 }

@@ -14,6 +14,7 @@ import serviceRoutes from './routes/service.routes';
 import resourceRoutes from './routes/resource.routes';
 import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
+import staffRoutes from './routes/staff.routes';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/staff', staffRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
