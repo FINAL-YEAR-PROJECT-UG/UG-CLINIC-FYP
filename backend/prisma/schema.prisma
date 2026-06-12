@@ -63,6 +63,10 @@ model User {
   notifications       Notification[]
   auditLogs           AuditLog[]
   loginAttempts       FailedLoginAttempt[]
+  passwordResetTokens PasswordResetToken[]
+  otpCodes            OTPCode[]
+  securityQuestions   SecurityQuestion[]
+  backupRecoveryCodes BackupRecoveryCode[]
 }
 
 model Appointment {
@@ -202,4 +206,64 @@ model FailedLoginAttempt {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OTPCode {
+  id        String   @id @default(uuid())
+  code      String
+  userId    String
+  phone     String
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+model SecurityQuestion {
+  id        String   @id @default(uuid())
+  userId    String
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model BackupRecoveryCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  userId    String
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
 }
