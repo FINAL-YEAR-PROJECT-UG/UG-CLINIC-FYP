@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import HomePageClient from './HomePageClient';
+import HomePageClient from './home/HomePageClient';
 
 export const metadata: Metadata = {
   title: 'UG Clinic Portal - University of Ghana Healthcare Services',
