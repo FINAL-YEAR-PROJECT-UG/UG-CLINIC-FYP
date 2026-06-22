@@ -623,6 +623,10 @@ export default function BookingPage() {
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState("");
 
+  const handleReturn = () => {
+    router.push(isAuthenticated ? "/dashboard" : "/home");
+  };
+
   const handleConfirm = async () => {
     if (!isAuthenticated) {
       alert("Please sign in to book an appointment.");
@@ -688,12 +692,13 @@ export default function BookingPage() {
             <div style={{ fontSize: 11, color: "#9CA3AF" }}>Quality Healthcare for Students</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          <Link href="/" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Home</Link>
-          <Link href="/about" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>About</Link>
-          <Link href="/services" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Services</Link>
-          <Link href="/resources" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Health Resources</Link>
-          <Link href="/contact" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Contact</Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={handleReturn}
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#3B4FD8", background: "#fff", border: "1px solid #3B4FD8", borderRadius: 8, padding: "9px 18px", cursor: "pointer" }}
+          >
+            <ChevronLeft size={16} /> Return
+          </button>
           <Link href="/demo-booking">
             <button style={btnPrimary}>Book Appointment</button>
           </Link>

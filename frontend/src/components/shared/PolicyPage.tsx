@@ -25,7 +25,7 @@ export default function PolicyPage({ title, breadcrumb, lastUpdated, intro, sect
           <h1 className="text-4xl font-bold mb-3">{title}</h1>
           <p className="text-blue-200 text-sm">Last updated: {lastUpdated}</p>
           <div className="mt-4 text-sm text-blue-200">
-            <Link href="/" className="hover:text-white">
+            <Link href="/home" className="hover:text-white">
               Home
             </Link>
             <span className="mx-2">/</span>

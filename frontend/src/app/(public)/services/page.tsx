@@ -179,7 +179,7 @@ export default function ServicesPage() {
         <h1 className={styles.heroTitle}>Our Services</h1>
         <p className={styles.heroSubtitle}>Professional, confidential care for every student need</p>
         <div className={styles.heroBreadcrumb}>
-          <Link href="/">Home</Link> / <span>Our Services</span>
+          <Link href="/home">Home</Link> / <span>Our Services</span>
         </div>
         <div className={styles.heroTags}>
           {['Professional Care', 'Confidential', 'Student Focused'].map((tag) => (

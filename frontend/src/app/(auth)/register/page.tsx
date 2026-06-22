@@ -38,7 +38,7 @@ function generatePassword(): string {
 }
 
 const NAV_LINKS = [
-  { name: 'Home', href: '/' },
+  { name: 'Home', href: '/home' },
   { name: 'About', href: '/about' },
   { name: 'Services', href: '/services' },
   { name: 'Health Resources', href: '/resources' },
@@ -127,7 +127,7 @@ export default function RegisterPage() {
           Create your account to start booking appointments and managing your health
         </p>
         <div className="register-hero-breadcrumb">
-          <Link href="/" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}>Home</Link>
+          <Link href="/home" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}>Home</Link>
           {' / '}
           <span>Create Account</span>
         </div>

@@ -25,7 +25,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type OTPFormData = z.infer<typeof otpSchema>;
 
 const NAV_LINKS = [
-  { name: 'Home', href: '/' },
+  { name: 'Home', href: '/home' },
   { name: 'About', href: '/about' },
   { name: 'Services', href: '/services' },
   { name: 'Health Resources', href: '/resources' },
@@ -151,7 +151,7 @@ export default function LoginPage() {
           connect with healthcare professionals.
         </p>
         <div className="login-hero-breadcrumb">
-          <Link href="/" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}>
+          <Link href="/home" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}>
             Home
           </Link>
           {' / '}
