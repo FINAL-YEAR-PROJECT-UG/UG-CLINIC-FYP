@@ -472,7 +472,7 @@ export default function BookingPage() {
           <Link href="/services" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Services</Link>
           <Link href="/resources" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Health Resources</Link>
           <Link href="/contact" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Contact</Link>
-          <Link href="/login">
+          <Link href="/demo-booking">
             <button style={btnPrimary}>Book Appointment</button>
           </Link>
         </div>

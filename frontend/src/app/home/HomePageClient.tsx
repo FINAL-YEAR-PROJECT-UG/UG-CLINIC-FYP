@@ -111,6 +111,7 @@ export default function HomePageClient() {
       title: 'HIV/AIDS Awareness Month',
       description: 'Free testing available. Learn about prevention and support resources.',
       action: 'Learn More',
+      href: '/services',
       image: '/home/health-hiv.png',
       bgColor: 'bg-teal-600',
       fallbackIcon: HeartPulse,
@@ -122,6 +123,7 @@ export default function HomePageClient() {
       title: 'Flu Vaccination Drive',
       description: 'Protect yourself this season. Book your flu shot appointment today.',
       action: 'Book Now',
+      href: '/demo-booking',
       image: '/home/health-flu.png',
       bgColor: 'bg-orange-100',
       fallbackIcon: Syringe,
@@ -133,6 +135,7 @@ export default function HomePageClient() {
       title: 'Healthy Lifestyle Tips',
       description: 'Simple strategies to maintain physical and mental wellbeing during exams.',
       action: 'Read More',
+      href: '/resources',
       image: '/home/health-wellness.svg',
       bgColor: 'bg-yellow-50',
       fallbackIcon: Apple,
@@ -157,7 +160,7 @@ export default function HomePageClient() {
             Accessible, quality healthcare for every student. Your health and wellbeing are our priority.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
+            <Link href="/demo-booking">
               <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md">
                 Book Appointment
               </Button>
@@ -322,9 +325,9 @@ export default function HomePageClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-gray-600 mb-4">{update.description}</p>
-                    <button className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
+                    <Link href={update.href} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
                       {update.action} <ChevronRight className="h-4 w-4" />
-                    </button>
+                    </Link>
                   </CardContent>
                 </Card>
               );

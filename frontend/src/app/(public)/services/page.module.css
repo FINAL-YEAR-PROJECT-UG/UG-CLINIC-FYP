@@ -556,6 +556,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  text-decoration: none;
 }
 
 /* ── Contact Cards ────────────────────────────────────────────────────────── */
@@ -671,6 +672,8 @@
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+  display: inline-block;
+  text-decoration: none;
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */

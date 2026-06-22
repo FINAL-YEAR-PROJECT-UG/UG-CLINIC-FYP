@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,10 +114,12 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="h-auto py-4 flex flex-col items-center space-y-2">
-                <Calendar className="h-6 w-6" />
-                <span>Book Appointment</span>
-              </Button>
+              <Link href="/demo-booking" className="contents">
+                <Button variant="outline" className="h-auto py-4 flex flex-col items-center space-y-2 w-full">
+                  <Calendar className="h-6 w-6" />
+                  <span>Book Appointment</span>
+                </Button>
+              </Link>
               <Button variant="outline" className="h-auto py-4 flex flex-col items-center space-y-2">
                 <FileText className="h-6 w-6" />
                 <span>View Resources</span>
