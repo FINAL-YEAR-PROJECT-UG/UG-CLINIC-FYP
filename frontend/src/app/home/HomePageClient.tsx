@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Header from '@/components/shared/Header';
+import Footer from '@/components/shared/Footer';
 import {
   Stethoscope,
   Brain,
@@ -12,9 +14,6 @@ import {
   Syringe,
   Pill,
   Apple,
-  Phone,
-  Mail,
-  MapPin,
   ChevronRight,
   CheckCircle2,
 } from 'lucide-react';
@@ -146,36 +145,7 @@ export default function HomePageClient() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/home/logo.svg"
-                alt="UG Clinic Logo"
-                width={40}
-                height={40}
-                className="rounded-lg"
-              />
-              <div>
-                <p className="font-bold text-blue-900 text-sm">UG Student Clinic</p>
-                <p className="text-xs text-gray-500">Quality Healthcare for Students</p>
-              </div>
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-sm font-medium text-blue-900 border-b-2 border-blue-900 pb-1">Home</Link>
-              <Link href="/about" className="text-sm font-medium text-gray-600 hover:text-blue-900">About</Link>
-              <Link href="/services" className="text-sm font-medium text-gray-600 hover:text-blue-900">Services</Link>
-              <Link href="/resources" className="text-sm font-medium text-gray-600 hover:text-blue-900">Health Resources</Link>
-              <Link href="/contact" className="text-sm font-medium text-gray-600 hover:text-blue-900">Contact</Link>
-            </div>
-            <Link href="/login">
-              <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5">Book Appointment</Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section - Centered, No Image */}
       <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
@@ -363,81 +333,7 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-blue-950 text-white py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Image
-                  src="/home/logo.svg"
-                  alt="UG Clinic Logo"
-                  width={40}
-                  height={40}
-                  className="rounded-lg bg-white p-1"
-                />
-                <span className="font-bold">Student Clinic</span>
-              </div>
-              <p className="text-blue-200 text-sm leading-relaxed">
-                Providing quality healthcare services to support student wellbeing and academic success.
-              </p>
-              <div className="flex gap-3 mt-4">
-                <a href="#" className="text-blue-300 hover:text-white transition-colors"><FacebookIcon /></a>
-                <a href="#" className="text-blue-300 hover:text-white transition-colors"><TwitterIcon /></a>
-                <a href="#" className="text-blue-300 hover:text-white transition-colors"><InstagramIcon /></a>
-                <a href="#" className="text-blue-300 hover:text-white transition-colors"><LinkedInIcon /></a>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4 text-white">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
-                <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="/services" className="hover:text-white transition-colors">Services</Link></li>
-                <li><Link href="/resources" className="hover:text-white transition-colors">Health Resources</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4 text-white">Services</h3>
-              <ul className="space-y-2 text-sm text-blue-200">
-                <li>General Consultation</li>
-                <li>Mental Health</li>
-                <li>Sexual Health</li>
-                <li>Vaccinations</li>
-                <li>Nutrition</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4 text-white">Contact Info</h3>
-              <ul className="space-y-3 text-sm text-blue-200">
-                <li className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-blue-300 flex-shrink-0" />
-                  Building A, University Campus
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-blue-300 flex-shrink-0" />
-                  (555) 123-4567
-                </li>
-                <li className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-blue-300 flex-shrink-0" />
-                  info@studentclinic.edu
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-blue-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-blue-300">
-              2024 University Student Clinic. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-sm text-blue-300">
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="/accessibility" className="hover:text-white transition-colors">Accessibility</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
