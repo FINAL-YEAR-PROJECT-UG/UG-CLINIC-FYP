@@ -615,7 +615,7 @@ export default function BookingPage() {
         email: step1.studentEmail,
         date: date ? formatLongDate(date) : "",
         time,
-        service,
+        reason: service,
       };
 
       const res = await fetch("/api/appointments", {
