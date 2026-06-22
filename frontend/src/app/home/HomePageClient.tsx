@@ -209,6 +209,7 @@ export default function HomePageClient() {
                 src="/home/welcome.png"
                 alt="Welcome to Student Clinic"
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
               />
             </div>
@@ -242,7 +243,7 @@ export default function HomePageClient() {
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Our Core Values</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do at the Student Clinic
+              The principles that guide everything we do at the Student Clinic.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -266,6 +267,7 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
+
 
       {/* Mission Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-900 to-blue-700">
@@ -331,6 +333,7 @@ export default function HomePageClient() {
                         src={update.image}
                         alt={update.title}
                         fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                         className="object-cover"
                         onError={() => handleImageError(errorKey)}
                       />
