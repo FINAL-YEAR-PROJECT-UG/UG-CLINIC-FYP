@@ -372,7 +372,7 @@ export default function LoginPage() {
           </div>
 
           {/* ── Create account button ──────────────────────────────────────── */}
-          <Link href="/auth/register" style={{ textDecoration: 'none' }}>
+          <Link href="/register" style={{ textDecoration: 'none' }}>
             <button className="login-secondary-button">
               Create an account
             </button>
