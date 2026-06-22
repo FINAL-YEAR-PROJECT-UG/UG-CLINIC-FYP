@@ -1,9 +1,8 @@
 import { Router } from 'express';
+import { listServices } from '../controllers/service.controller';
 
 const router = Router();
 
-router.get('/', (_req, res) => {
-  res.status(501).json({ message: 'Service endpoints not implemented yet' });
-});
+router.get('/', listServices);
 
 export default router;

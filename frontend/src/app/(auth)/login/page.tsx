@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,11 +33,19 @@ const NAV_LINKS = [
 ];
 
 export default function LoginPage() {
+  const router = useRouter();
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
   const [loginData, setLoginData] = useState<LoginFormData | null>(null);
+
+  useEffect(() => {
+    if (useAuthStore.getState().isAuthenticated) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
   const {
     register: registerLogin,
@@ -61,6 +70,7 @@ export default function LoginPage() {
       const response = await authApi.sendOTP({ email: data.email, studentId: data.studentId });
       if (response.success) {
         setLoginData(data);
+        setDevCode(response.devCode ?? null);
         setOtpSent(true);
       } else {
         setOtpError(response.message);
@@ -291,6 +301,11 @@ export default function LoginPage() {
               {/* Success message */}
               <div className="login-success-banner">
                 OTP sent! Check your UG student email inbox.
+                {devCode && (
+                  <div style={{ marginTop: 6, fontWeight: 600 }}>
+                    Dev mode (no email configured) — your code is: {devCode}
+                  </div>
+                )}
               </div>
 
               {/* Error banner */}
