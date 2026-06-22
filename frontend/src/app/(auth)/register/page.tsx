@@ -4,41 +4,25 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import './page.css';
 
-const registerSchema = z
-  .object({
-    email: z.string().email('Please enter a valid email address'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-      .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-      .regex(/[0-9]/, 'Password must contain at least one number')
-      .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
-    confirmPassword: z.string(),
-    firstName: z.string().min(2, 'First name must be at least 2 characters').max(50, 'First name must be at most 50 characters'),
-    lastName: z.string().min(2, 'Last name must be at least 2 characters').max(50, 'Last name must be at most 50 characters'),
-    studentId: z.string().min(3, 'Student ID must be at least 3 characters').max(20, 'Student ID must be at most 20 characters').optional(),
-    phone: z.string().regex(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/, 'Please enter a valid phone number').optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
+const registerSchema = z.object({
+  fullName: z.string().min(2, 'Full name is required'),
+  studentId: z.string().min(1, 'Student ID is required'),
+  email: z.string().email('Please enter a valid UG email address'),
+  phone: z.string().min(10, 'Please enter a valid phone number'),
+  program: z.string().min(1, 'Please select a program'),
+});
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const { register: registerUser, isLoading, error } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const {
     register,
@@ -49,150 +33,204 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data;
-    await registerUser(registerData);
+    setIsLoading(true);
+    setError('');
+    console.log('Registering:', data);
+    setTimeout(() => {
+      setIsLoading(false);
+      sessionStorage.setItem('otpEmail', data.email);
+      router.push('/verify-otp');
+    }, 1500);
   };
 
+  // Shared Header
+  const header = (
+    <nav className="register-nav">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="register-nav-logo">UG</div>
+        <div>
+          <div className="register-nav-title">UG Student Clinic</div>
+          <div className="register-nav-subtitle">Quality Healthcare for Students</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+        {['Home', 'About', 'Services', 'Health Resources', 'Contact'].map((n) => (
+          <a key={n} href="#" className="register-nav-link">{n}</a>
+        ))}
+        <button className="register-nav-button">Book Appointment</button>
+      </div>
+    </nav>
+  );
+
+  // Shared Footer
+  const footer = (
+    <footer className="register-footer">
+      <span className="register-footer-text">&copy; 2026 University Student Clinic. All rights reserved.</span>
+    </footer>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
-          <CardDescription className="text-center">Register as a student to access the clinic portal</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+    <div className="register-page">
+      {header}
+
+      {/* Hero */}
+      <div className="register-hero">
+        <h1 className="register-hero-title">Join Us</h1>
+        <p className="register-hero-description">
+          Create your account to start booking appointments and managing your health
+        </p>
+        <div className="register-hero-breadcrumb">
+          <Link href="/" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none' }}>Home</Link>
+          {' / '}
+          <span>Create Account</span>
+        </div>
+        <div className="register-hero-wave">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="#F3F4F6" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Register Card */}
+      <div className="register-card-container">
+        <div className="register-card">
+          {/* Icon */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div className="register-card-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B4FD8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+            </div>
+            <h2 className="register-card-title">Create your account</h2>
+            <p className="register-card-description">Register with your student details to access clinic services</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)}>
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {error}
-              </div>
+              <div className="register-error-banner">{error}</div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  placeholder="John"
-                  {...register('firstName')}
-                  disabled={isLoading}
-                />
-                {errors.firstName && <p className="text-sm text-red-500">{errors.firstName.message}</p>}
+            {/* Full Name */}
+            <div className="register-input-group">
+              <label className="register-label">Full Name</label>
+              <div className="register-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <input type="text" placeholder="e.g. Kwame Mensah" disabled={isLoading} className={`register-input ${errors.fullName ? 'error' : ''}`} {...register('fullName')} />
               </div>
+              {errors.fullName && <p className="register-error-text">{errors.fullName.message}</p>}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  {...register('lastName')}
-                  disabled={isLoading}
-                />
-                {errors.lastName && <p className="text-sm text-red-500">{errors.lastName.message}</p>}
+            {/* Student ID */}
+            <div className="register-input-group">
+              <label className="register-label">Student ID</label>
+              <div className="register-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <input type="text" placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
               </div>
+              {errors.studentId && <p className="register-error-text">{errors.studentId.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john.doe@ug.edu.gh"
-                {...register('email')}
-                disabled={isLoading}
-              />
-              {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID (Optional)</Label>
-              <Input
-                id="studentId"
-                placeholder="UG/1234/5678"
-                {...register('studentId')}
-                disabled={isLoading}
-              />
-              {errors.studentId && <p className="text-sm text-red-500">{errors.studentId.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+233 20 123 4567"
-                {...register('phone')}
-                disabled={isLoading}
-              />
-              {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  {...register('password')}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            {/* Email */}
+            <div className="register-input-group">
+              <label className="register-label">UG Email Address</label>
+              <div className="register-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                <input type="email" placeholder="yourname@st.ug.edu.gh" disabled={isLoading} className={`register-input ${errors.email ? 'error' : ''}`} {...register('email')} />
               </div>
-              {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+              {errors.email && <p className="register-error-text">{errors.email.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  {...register('confirmPassword')}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  disabled={isLoading}
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            {/* Phone */}
+            <div className="register-input-group">
+              <label className="register-label">Phone Number</label>
+              <div className="register-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                <input type="tel" placeholder="e.g. +233 20 123 4567" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
               </div>
-              {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+              {errors.phone && <p className="register-error-text">{errors.phone.message}</p>}
             </div>
-          </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            {/* Program */}
+            <div className="register-input-group">
+              <label className="register-label">Program of Study</label>
+              <div className="register-input-wrapper">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+                <select disabled={isLoading} className={`register-input ${errors.program ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('program')}>
+                  <option value="" disabled>Select your program</option>
+                  <option value="cs">Computer Science</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="medicine">Medicine</option>
+                  <option value="business">Business Administration</option>
+                  <option value="law">Law</option>
+                  <option value="other">Other</option>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-select-icon">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </div>
+              {errors.program && <p className="register-error-text">{errors.program.message}</p>}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="register-submit-button"
+            >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 size={16} className="register-spinner" />
                   Creating account...
                 </>
               ) : (
                 'Create Account'
               )}
-            </Button>
+            </button>
+          </form>
 
-            <p className="text-sm text-center text-gray-600">
+          <div className="register-login-text">
+            <p>
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Sign in
-              </Link>
+              <Link href="/login">Sign in</Link>
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+
+          <p className="register-terms-text">
+            By creating an account, you agree to our{' '}
+            <a href="#">privacy policy</a>
+            {' '}and{' '}
+            <a href="#">terms of service</a>.
+          </p>
+        </div>
+
+        {/* Info box */}
+        <div className="register-info-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B4FD8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-info-box-icon">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <p className="register-info-box-text">
+            Your information is secure and will only be used for clinic appointments and medical records.
+          </p>
+        </div>
+      </div>
+
+      {footer}
     </div>
   );
 }

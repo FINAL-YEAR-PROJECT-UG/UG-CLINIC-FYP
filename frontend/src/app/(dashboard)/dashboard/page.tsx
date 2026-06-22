@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, LogOut, User, Calendar, FileText, Bell } from 'lucide-react';
+import './page.css';
 
 export default function DashboardPage() {
   const { user, logout, isLoading } = useAuth();

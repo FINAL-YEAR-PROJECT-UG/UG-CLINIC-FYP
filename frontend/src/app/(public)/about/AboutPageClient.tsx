@@ -15,6 +15,7 @@ import {
   Mail,
   MapPin,
 } from 'lucide-react';
+import './AboutPageClient.css';
 
 // Inline social icons
 const FacebookIcon = () => (

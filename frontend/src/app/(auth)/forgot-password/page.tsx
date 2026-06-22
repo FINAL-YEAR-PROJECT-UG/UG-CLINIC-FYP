@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import './page.css';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),

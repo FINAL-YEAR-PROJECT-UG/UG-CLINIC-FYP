@@ -18,6 +18,7 @@ import {
   ChevronRight,
   CheckCircle2,
 } from 'lucide-react';
+import './HomePageClient.css';
 
 // Inline social icons
 const FacebookIcon = () => (

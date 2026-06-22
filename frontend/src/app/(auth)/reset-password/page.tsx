@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import './page.css';
 
 const resetPasswordSchema = z
   .object({
