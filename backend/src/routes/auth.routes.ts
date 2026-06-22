@@ -5,6 +5,7 @@ import {
   logout,
   refreshToken,
   getProfile,
+  loginWithOTP,
 } from '../controllers/auth.controller';
 import {
   validateRegistration,
@@ -44,6 +45,7 @@ router.post('/login', validateLogin, login);
 router.post('/logout', validateLogout, logout);
 router.post('/refresh', validateRefreshToken, refreshToken);
 router.get('/profile', authenticate, getProfile);
+router.post('/login-otp', loginWithOTP);
 
 router.post('/forgot-password', validateForgotPassword, forgotPassword);
 router.post('/reset-password', validateResetPassword, resetPassword);

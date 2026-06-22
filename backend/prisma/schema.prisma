@@ -46,6 +46,7 @@ model User {
   firstName           String
   lastName            String
   phone               String?
+  program             String?
   role                UserRole          @default(STUDENT)
   isActive            Boolean           @default(true)
   emailVerified      Boolean           @default(false)

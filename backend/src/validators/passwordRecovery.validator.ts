@@ -55,6 +55,9 @@ export const validateSendOTP = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
+  body('studentId')
+    .notEmpty()
+    .withMessage('Student ID is required'),
   body('method')
     .optional()
     .isIn(['email', 'sms'])

@@ -148,16 +148,19 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 export const sendOTP = async (req: Request, res: Response) => {
   try {
-    const { email, method = 'email' } = req.body;
+    const { email, studentId, method = 'email' } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        studentId,
+      },
     });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'If an account exists with this email, a verification code has been sent.',
+        message: 'If an account exists with these credentials, a verification code has been sent.',
       });
     }
 
@@ -188,7 +191,7 @@ export const sendOTP = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: 'If an account exists with this email, a verification code has been sent.',
+      message: 'If an account exists with these credentials, a verification code has been sent.',
     });
   } catch (error) {
     console.error('Send OTP error:', error);

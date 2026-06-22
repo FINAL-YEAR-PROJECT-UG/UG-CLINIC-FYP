@@ -8,6 +8,7 @@ export interface RegisterData {
   lastName: string;
   studentId?: string;
   phone?: string;
+  program?: string;
 }
 
 export interface LoginData {
@@ -73,6 +74,21 @@ export const authApi = {
 
   getProfile: async () => {
     const response = await api.get('/auth/profile');
+    return response.data;
+  },
+
+  sendOTP: async (data: { email: string; studentId: string; method?: string }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>('/auth/send-otp', data);
+    return response.data;
+  },
+
+  verifyOTP: async (data: { email: string; otp: string }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>('/auth/verify-otp', data);
+    return response.data;
+  },
+
+  loginWithOTP: async (data: { email: string; studentId: string; otp: string; rememberMe?: boolean }): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/login-otp', data);
     return response.data;
   },
 };

@@ -8,7 +8,7 @@ const LOCKOUT_DURATION_MINUTES = 30;
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, studentId, phone } = req.body;
+    const { email, password, firstName, lastName, studentId, phone, program } = req.body;
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
@@ -54,6 +54,7 @@ export const register = async (req: Request, res: Response) => {
         lastName,
         studentId: studentId || null,
         phone: phone || null,
+        program: program || null,
         role: 'STUDENT',
       },
       select: {
@@ -63,6 +64,7 @@ export const register = async (req: Request, res: Response) => {
         lastName: true,
         studentId: true,
         phone: true,
+        program: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -341,6 +343,120 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'An error occurred during token refresh',
+    });
+  }
+};
+
+export const loginWithOTP = async (req: Request, res: Response) => {
+  try {
+    const { email, studentId, otp, rememberMe } = req.body;
+
+    // Find user by email and studentId
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        studentId,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Check if account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is inactive',
+      });
+    }
+
+    // Verify OTP
+    const otpRecord = await prisma.oTPCode.findFirst({
+      where: {
+        userId: user.id,
+        code: otp,
+        type: 'password_reset',
+        usedAt: null,
+      },
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP',
+      });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'OTP has expired',
+      });
+    }
+
+    // Mark OTP as used
+    await prisma.oTPCode.update({
+      where: { id: otpRecord.id },
+      data: { usedAt: new Date() },
+    });
+
+    // Reset failed login attempts on successful login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    // Generate tokens
+    const payload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    };
+    const tokens = generateTokenPair(payload);
+
+    // Store refresh token in database
+    const refreshTokenExpiry = rememberMe
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for remember me
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days default
+
+    await prisma.refreshToken.create({
+      data: {
+        token: tokens.refreshToken,
+        userId: user.id,
+        expiresAt: refreshTokenExpiry,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          studentId: user.studentId,
+          phone: user.phone,
+          role: user.role,
+          isActive: user.isActive,
+        },
+        tokens,
+      },
+    });
+  } catch (error) {
+    console.error('Login with OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred during login',
     });
   }
 };
