@@ -105,7 +105,7 @@ api.interceptors.response.use(
         processQueue(refreshError);
         useAuthStore.getState().clearAuth();
         if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
+          window.location.href = "/login";
         }
         return Promise.reject(refreshError);
       } finally {

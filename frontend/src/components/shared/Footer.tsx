@@ -49,10 +49,10 @@ export default function Footer() {
               Providing quality healthcare services to support student wellbeing and academic success.
             </p>
             <div className="flex gap-3 mt-4">
-              <a href="#" className="text-blue-300 hover:text-white transition-colors"><FacebookIcon /></a>
-              <a href="#" className="text-blue-300 hover:text-white transition-colors"><TwitterIcon /></a>
-              <a href="#" className="text-blue-300 hover:text-white transition-colors"><InstagramIcon /></a>
-              <a href="#" className="text-blue-300 hover:text-white transition-colors"><LinkedInIcon /></a>
+              <a href="https://www.facebook.com/universityofghana" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-blue-300 hover:text-white transition-colors"><FacebookIcon /></a>
+              <a href="https://twitter.com/UnivofGh" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-blue-300 hover:text-white transition-colors"><TwitterIcon /></a>
+              <a href="https://www.instagram.com/universityofghana" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-blue-300 hover:text-white transition-colors"><InstagramIcon /></a>
+              <a href="https://www.linkedin.com/school/university-of-ghana" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-blue-300 hover:text-white transition-colors"><LinkedInIcon /></a>
             </div>
           </div>
           <div>

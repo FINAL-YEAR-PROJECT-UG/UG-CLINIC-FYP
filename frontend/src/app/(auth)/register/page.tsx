@@ -19,6 +19,14 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+const NAV_LINKS = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
+  { name: 'Services', href: '/services' },
+  { name: 'Health Resources', href: '/resources' },
+  { name: 'Contact', href: '/contact' },
+];
+
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -54,10 +62,12 @@ export default function RegisterPage() {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        {['Home', 'About', 'Services', 'Health Resources', 'Contact'].map((n) => (
-          <a key={n} href="#" className="register-nav-link">{n}</a>
+        {NAV_LINKS.map(({ name, href }) => (
+          <Link key={name} href={href} className="register-nav-link">{name}</Link>
         ))}
-        <button className="register-nav-button">Book Appointment</button>
+        <Link href="/demo-booking">
+          <button className="register-nav-button">Book Appointment</button>
+        </Link>
       </div>
     </nav>
   );
@@ -213,9 +223,9 @@ export default function RegisterPage() {
 
           <p className="register-terms-text">
             By creating an account, you agree to our{' '}
-            <a href="#">privacy policy</a>
+            <Link href="/privacy">privacy policy</Link>
             {' '}and{' '}
-            <a href="#">terms of service</a>.
+            <Link href="/terms">terms of service</Link>.
           </p>
         </div>
 

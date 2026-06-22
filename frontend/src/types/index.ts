@@ -54,4 +54,3 @@ export interface PaginatedResponse<T = unknown> {
   totalPages: number;
 }
 
-export interface PaginatedRespons<T = unknown> extends PaginatedResponse<T> {}

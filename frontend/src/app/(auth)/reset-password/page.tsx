@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
-import { useRouter } from 'next/navigation';
+import { getErrorMessage } from '@/lib/utils';
 import './page.css';
 
 const resetPasswordSchema = z
@@ -33,9 +33,8 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const token = searchParams.get('token');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,8 +78,8 @@ export default function ResetPasswordPage() {
         newPassword: data.newPassword,
       });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to reset password. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +114,7 @@ export default function ResetPasswordPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Link href="/auth/login" className="w-full">
+            <Link href="/login" className="w-full">
               <Button className="w-full">Go to Login</Button>
             </Link>
           </CardFooter>
@@ -138,12 +137,12 @@ export default function ResetPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex flex-col space-y-4">
-            <Link href="/auth/forgot-password" className="w-full">
+            <Link href="/forgot-password" className="w-full">
               <Button variant="outline" className="w-full">
                 Request New Reset Link
               </Button>
             </Link>
-            <Link href="/auth/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
+            <Link href="/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
               Back to Login
             </Link>
           </CardFooter>
@@ -242,12 +241,20 @@ export default function ResetPasswordPage() {
               )}
             </Button>
 
-            <Link href="/auth/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
+            <Link href="/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
               Back to Login
             </Link>
           </CardFooter>
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Plus, Trash2, Shield } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import './page.css';
 
 const securityQuestionOptions = [
@@ -39,7 +39,6 @@ const securityQuestionSchema = z.object({
 type SecurityQuestionFormData = z.infer<typeof securityQuestionSchema>;
 
 export default function SecurityQuestionsPage() {
-  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -48,7 +47,6 @@ export default function SecurityQuestionsPage() {
     register,
     handleSubmit,
     formState: { errors },
-    control,
     watch,
     setValue,
   } = useForm<SecurityQuestionFormData>({
@@ -80,8 +78,8 @@ export default function SecurityQuestionsPage() {
     try {
       await api.post('/auth/security-questions', data);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save security questions. Please try again.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to save security questions. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +155,7 @@ export default function SecurityQuestionsPage() {
                     <div className="space-y-2">
                       <Label htmlFor={`question-${index}`}>Security Question {index + 1}</Label>
                       <Select
-                        onValueChange={(value) => setValue(`questions.${index}.question`, value)}
+                        onValueChange={(value) => setValue(`questions.${index}.question`, value ?? '')}
                         defaultValue={questions[index]?.question || undefined}
                       >
                         <SelectTrigger id={`question-${index}`}>
