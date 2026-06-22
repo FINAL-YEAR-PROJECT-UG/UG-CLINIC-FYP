@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import './page.css';
 
 const forgotPasswordSchema = z.object({
@@ -28,6 +29,8 @@ export default function ForgotPasswordPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -35,6 +38,8 @@ export default function ForgotPasswordPage() {
       method: 'email',
     },
   });
+
+  const method = watch('method');
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
@@ -44,8 +49,8 @@ export default function ForgotPasswordPage() {
     try {
       await api.post('/auth/forgot-password', data);
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to send reset link. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +74,7 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Link href="/auth/login" className="w-full">
+            <Link href="/login" className="w-full">
               <Button variant="outline" className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Login
@@ -115,8 +120,8 @@ export default function ForgotPasswordPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   type="button"
-                  variant={register('method').value === 'email' ? 'default' : 'outline'}
-                  onClick={() => register('method').onChange({ target: { value: 'email', name: 'method' } })}
+                  variant={method === 'email' ? 'default' : 'outline'}
+                  onClick={() => setValue('method', 'email')}
                   disabled={isLoading}
                   className="flex items-center justify-center space-x-2"
                 >
@@ -125,8 +130,8 @@ export default function ForgotPasswordPage() {
                 </Button>
                 <Button
                   type="button"
-                  variant={register('method').value === 'sms' ? 'default' : 'outline'}
-                  onClick={() => register('method').onChange({ target: { value: 'sms', name: 'method' } })}
+                  variant={method === 'sms' ? 'default' : 'outline'}
+                  onClick={() => setValue('method', 'sms')}
                   disabled={isLoading}
                   className="flex items-center justify-center space-x-2"
                 >
@@ -149,7 +154,7 @@ export default function ForgotPasswordPage() {
               )}
             </Button>
 
-            <Link href="/auth/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
+            <Link href="/login" className="text-sm text-center text-gray-600 hover:text-gray-900">
               <ArrowLeft className="inline mr-1 h-4 w-4" />
               Back to Login
             </Link>

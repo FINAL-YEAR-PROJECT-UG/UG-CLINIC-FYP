@@ -2,9 +2,10 @@ import { useAuthStore } from '../stores/authStore';
 import { loginWithStore, registerWithStore, logoutWithStore } from '../lib/authApi';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { getErrorMessage } from '../lib/utils';
 
 export const useAuth = () => {
-  const { user, tokens, isAuthenticated, isLoading, setAuth, clearAuth, setLoading } = useAuthStore();
+  const { user, tokens, isAuthenticated, isLoading, clearAuth, setLoading } = useAuthStore();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -18,8 +19,8 @@ export const useAuth = () => {
       } else {
         setError(response.message);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -42,8 +43,8 @@ export const useAuth = () => {
       } else {
         setError(response.message);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -53,8 +54,8 @@ export const useAuth = () => {
     setLoading(true);
     try {
       await logoutWithStore();
-      router.push('/auth/login');
-    } catch (err: any) {
+      router.push('/login');
+    } catch (err) {
       console.error('Logout error:', err);
     } finally {
       setLoading(false);

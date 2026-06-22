@@ -250,7 +250,7 @@ export default function ServicesPage() {
                 <p className={styles.cardDesc}>{service.description}</p>
                 <div className={styles.cardFooter}>
                   <span className={styles.cardAvailability}>{Icon.check} {service.availability}</span>
-                  <Link href="#" className={styles.cardLink}>Learn More →</Link>
+                  <Link href="#service-details" className={styles.cardLink}>Learn More →</Link>
                 </div>
               </div>
             </article>
@@ -284,7 +284,7 @@ export default function ServicesPage() {
       </section>
 
       {/* FAQ */}
-      <section className={styles.container}>
+      <section id="service-details" className={styles.container}>
         <div className={styles.sectionHeader}>
           <span className={styles.labelBlue}>SERVICE DETAILS</span>
           <h2 className={styles.sectionTitle}>Frequently Asked Questions by Students</h2>
@@ -316,15 +316,21 @@ export default function ServicesPage() {
       <section className={styles.contactSection}>
         <div className={styles.contactGrid}>
           {[
-            { icon: Icon.location, title: 'Find Us', lines: ['University of Ghana, Legon', 'Student Clinic Block'], action: 'Get Directions' },
-            { icon: Icon.phone, title: 'Call Us', lines: ['General: +233 XXX XXX', 'Emergency: +233 XXX XXX'], action: 'Call Now' },
-            { icon: Icon.mail, title: 'Email Us', lines: ['clinic@ug.edu.gh', 'Response within 24 hours'], action: 'Send Email' },
+            { icon: Icon.location, title: 'Find Us', lines: ['University of Ghana, Legon', 'Student Clinic Block'], action: 'Get Directions', href: 'https://www.google.com/maps/search/?api=1&query=University+of+Ghana+Legon', external: true },
+            { icon: Icon.phone, title: 'Call Us', lines: ['General: +233 XXX XXX', 'Emergency: +233 XXX XXX'], action: 'Call Now', href: 'tel:+233000000000', external: false },
+            { icon: Icon.mail, title: 'Email Us', lines: ['clinic@ug.edu.gh', 'Response within 24 hours'], action: 'Send Email', href: 'mailto:clinic@ug.edu.gh', external: false },
           ].map((card) => (
             <div key={card.title} className={styles.contactCard}>
               <div className={styles.contactIcon}>{card.icon}</div>
               <h4 className={styles.contactTitle}>{card.title}</h4>
               {card.lines.map((line) => <p key={line} className={styles.contactLine}>{line}</p>)}
-              <button className={styles.contactButton}>{card.action}</button>
+              <a
+                href={card.href}
+                className={styles.contactButton}
+                {...(card.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {card.action}
+              </a>
             </div>
           ))}
         </div>

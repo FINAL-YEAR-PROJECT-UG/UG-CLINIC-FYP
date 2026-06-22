@@ -2,6 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import {
+  Stethoscope,
+  Brain,
+  Ribbon,
+  Leaf,
+  Zap,
+  Syringe,
+  Pill,
+  Eye,
+  HeartPulse,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+} from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Step1Data {
@@ -17,75 +33,94 @@ interface Step1Data {
   bookingFor: string;
 }
 
-interface Step2Data {
-  service: string;
-  preferredDoctor: string;
-  preferredDate: string;
-  preferredTime: string;
-  reasonForVisit: string;
-}
-
-interface Step3Data {
-  additionalNotes: string;
-  consent: boolean;
+interface ServiceOption {
+  id: string;
+  title: string;
+  desc?: string;
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+  bg: string;
+  fg: string;
+  note?: string;
+  badge?: string;
+  unavailable?: boolean;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const TIME_SLOTS = ["08:30", "09:30", "10:30", "11:30", "13:00", "14:00", "15:00", "16:00"];
+const SERVICES: ServiceOption[] = [
+  { id: "general", title: "General Consultation", desc: "Common illnesses and routine health checkups.", icon: Stethoscope, bg: "#EEF2FF", fg: "#3B4FD8" },
+  { id: "mental", title: "Mental Health & Counselling", desc: "Confidential support for emotional wellbeing.", icon: Brain, bg: "#F3E8FF", fg: "#9333EA" },
+  { id: "hiv", title: "HIV/AIDS Testing & Support", desc: "Free testing, counseling, and ongoing care.", icon: Ribbon, bg: "#FEE2E2", fg: "#DC2626" },
+  { id: "nutrition", title: "Nutrition & Dietetics", desc: "Meal planning and dietary health advice.", icon: Leaf, bg: "#DCFCE7", fg: "#16A34A" },
+  { id: "screening", title: "Health Screening", desc: "Comprehensive physical exams and diagnostics.", icon: Zap, bg: "#FFEDD5", fg: "#EA580C" },
+  { id: "vaccination", title: "Vaccinations", desc: "Travel vaccines and seasonal immunizations.", icon: Syringe, bg: "#DCFCE7", fg: "#16A34A" },
+  { id: "prescription", title: "Prescription & Medication", desc: "Refill requests and pharmacy consultations.", icon: Pill, bg: "#FEF9C3", fg: "#CA8A04" },
+  { id: "eye", title: "Eye Care & Dental Services", icon: Eye, bg: "#DBEAFE", fg: "#2563EB", badge: "OFF-SITE ONLY", note: "Visit UG Hospital behind Legon Police Station", unavailable: true },
+  { id: "emergency", title: "Emergency & First Aid", icon: HeartPulse, bg: "#FEE2E2", fg: "#DC2626", note: "Walk-ins accepted, no booking needed.", unavailable: true },
+];
 
-const SERVICES = [
-  "General Consultation",
-  "Dental Care",
-  "Eye Care",
-  "Mental Health",
-  "Physiotherapy",
-  "Laboratory Tests",
+const TIME_SLOTS: { label: string; booked: boolean }[] = [
+  { label: "08:00 AM", booked: false },
+  { label: "08:30 AM", booked: false },
+  { label: "09:00 AM", booked: true },
+  { label: "09:30 AM", booked: false },
+  { label: "10:00 AM", booked: false },
+  { label: "10:30 AM", booked: true },
+  { label: "11:00 AM", booked: false },
+  { label: "11:30 AM", booked: false },
+  { label: "12:00 PM", booked: true },
+  { label: "12:30 PM", booked: false },
+  { label: "01:00 PM", booked: false },
+  { label: "01:30 PM", booked: false },
+  { label: "02:00 PM", booked: true },
+  { label: "02:30 PM", booked: false },
+  { label: "03:00 PM", booked: false },
+  { label: "03:30 PM", booked: false },
 ];
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
+const MONTHS_SHORT = MONTHS.map((m) => m);
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const YEARS = Array.from({ length: 50 }, (_, i) => String(2006 - i));
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+function formatLongDate(d: Date): string {
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ── Stepper ────────────────────────────────────────────────────────────────────
 function Stepper({ current }: { current: number }) {
   const steps = [
     { num: 1, label: "Your Details" },
-    { num: 2, label: "Appointment" },
-    { num: 3, label: "Confirm" },
+    { num: 2, label: "Select Service" },
+    { num: 3, label: "Date & Time" },
+    { num: 4, label: "Confirm" },
   ];
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 32, position: "relative" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 36 }}>
       {steps.map((s, idx) => {
         const isActive = current === s.num;
         const isDone = current > s.num;
-        const color = isActive || isDone ? "#3B4FD8" : "#9CA3AF";
+        const accent = isActive || isDone ? "#3B4FD8" : "#9CA3AF";
         return (
-          <div key={s.num} style={{ display: "flex", alignItems: "flex-start", flex: idx < 2 ? 1 : "none" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 60 }}>
+          <div key={s.num} style={{ display: "flex", alignItems: "flex-start", flex: idx < 3 ? 1 : "none" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 64 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: "50%", border: `2px solid ${color}`,
-                background: isActive ? "#fff" : isDone ? "#fff" : "transparent",
+                width: 36, height: 36, borderRadius: "50%",
+                border: `2px solid ${accent}`,
+                background: isDone || isActive ? "#3B4FD8" : "transparent",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color, fontWeight: 700, fontSize: 14, zIndex: 1,
+                color: isDone || isActive ? "#fff" : "#9CA3AF", fontWeight: 700, fontSize: 14,
               }}>
-                {s.num}
+                {isDone ? <Check size={18} color="#fff" /> : s.num}
               </div>
-              <div style={{ marginTop: 6, textAlign: "center" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  STEP {s.num}
-                </div>
-                <div style={{ fontSize: 12, color, marginTop: 2 }}>{s.label}</div>
-              </div>
+              <div style={{ fontSize: 12, color: accent, marginTop: 8, fontWeight: isActive ? 600 : 500, textAlign: "center" }}>{s.label}</div>
             </div>
-            {idx < 2 && (
-              <div style={{
-                flex: 1, height: 2,
-                background: isDone ? "#3B4FD8" : "#E5E7EB",
-                marginTop: 17, marginLeft: -4, marginRight: -4,
-              }} />
+            {idx < 3 && (
+              <div style={{ flex: 1, height: 2, background: isDone ? "#3B4FD8" : "#E5E7EB", marginTop: 17, marginLeft: -4, marginRight: -4 }} />
             )}
           </div>
         );
@@ -110,7 +145,7 @@ const inputStyle: React.CSSProperties = {
 
 const selectStyle: React.CSSProperties = { ...inputStyle, appearance: "none" as const };
 
-// ── Step 1 ─────────────────────────────────────────────────────────────────────
+// ── Step 1: Your Details ─────────────────────────────────────────────────────────
 function Step1({ data, onChange, onContinue }: {
   data: Step1Data;
   onChange: (d: Step1Data) => void;
@@ -130,17 +165,14 @@ function Step1({ data, onChange, onContinue }: {
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
-        {/* Student ID */}
         <div>
           <FieldLabel required>Student ID</FieldLabel>
           <input style={inputStyle} placeholder="e.g. 10812345" value={data.studentId} onChange={set("studentId")} />
         </div>
-        {/* Student Name */}
         <div>
           <FieldLabel required>Student Name</FieldLabel>
           <input style={inputStyle} placeholder="Full name" value={data.studentName} onChange={set("studentName")} />
         </div>
-        {/* Date of Birth */}
         <div>
           <FieldLabel required>Date of Birth</FieldLabel>
           <div style={{ display: "flex", gap: 8 }}>
@@ -158,61 +190,185 @@ function Step1({ data, onChange, onContinue }: {
             </select>
           </div>
         </div>
-        {/* Student Email */}
         <div>
           <FieldLabel required>Student Email</FieldLabel>
           <input style={inputStyle} type="email" placeholder="you@st.ug.edu.gh" value={data.studentEmail} onChange={set("studentEmail")} />
         </div>
-        {/* Alternate Email */}
         <div>
           <FieldLabel>Alternate Email</FieldLabel>
           <input style={inputStyle} type="email" placeholder="Optional" value={data.alternateEmail} onChange={set("alternateEmail")} />
         </div>
-        {/* Mobile Phone */}
         <div>
           <FieldLabel required>Mobile Phone Number</FieldLabel>
           <input style={inputStyle} placeholder="+233 ..." value={data.mobilePhone} onChange={set("mobilePhone")} />
         </div>
-        {/* WhatsApp */}
         <div>
           <FieldLabel>WhatsApp Phone Number</FieldLabel>
           <input style={inputStyle} placeholder="Optional" value={data.whatsappPhone} onChange={set("whatsappPhone")} />
         </div>
-        {/* Booking for */}
         <div>
           <FieldLabel required>Who is this booking for?</FieldLabel>
           <select style={selectStyle} value={data.bookingFor} onChange={set("bookingFor")}>
-            <option value="MYSELF">MYSELF</option>
-            <option value="DEPENDENT">DEPENDENT</option>
+            <option value="Myself">Myself</option>
+            <option value="Dependent">Dependent</option>
           </select>
         </div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}>
-        <button style={{ ...btnSecondary }} disabled>
-          ‹ Back
-        </button>
-        <button style={btnPrimary} onClick={handleContinue}>
-          Continue ›
-        </button>
+        <button style={{ ...btnSecondary, opacity: 0.5 }} disabled>‹ Back</button>
+        <button style={btnPrimary} onClick={handleContinue}>Continue ›</button>
       </div>
     </div>
   );
 }
 
-// ── Step 2 ─────────────────────────────────────────────────────────────────────
-function Step2({ data, onChange, onContinue, onBack }: {
-  data: Step2Data;
-  onChange: (d: Step2Data) => void;
+// ── Step 2: Select Service ───────────────────────────────────────────────────────
+function Step2Service({ selected, onSelect, onContinue, onBack }: {
+  selected: string;
+  onSelect: (title: string) => void;
   onContinue: () => void;
   onBack: () => void;
 }) {
-  const set = (key: keyof Step2Data) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    onChange({ ...data, [key]: e.target.value });
+  return (
+    <div>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: "#3B4FD8", margin: "0 0 6px" }}>Select a Service</h2>
+        <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>Choose the type of care you need. Click a service to select it.</p>
+      </div>
 
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        {SERVICES.map((s) => {
+          const isSelected = selected === s.title;
+          const Icon = s.icon;
+          return (
+            <button
+              key={s.id}
+              onClick={() => !s.unavailable && onSelect(s.title)}
+              disabled={s.unavailable}
+              style={{
+                textAlign: "left",
+                border: isSelected ? "2px solid #3B4FD8" : s.id === "eye" ? "1px solid #FCD34D" : "1px solid #E5E7EB",
+                background: isSelected ? "#EEF2FF" : s.id === "eye" ? "#FFFBEB" : "#fff",
+                borderRadius: 12, padding: 18, position: "relative",
+                cursor: s.unavailable ? "default" : "pointer",
+                minHeight: 150, display: "flex", flexDirection: "column",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={20} color={s.fg} />
+                </div>
+                {isSelected && (
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#3B4FD8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Check size={14} color="#fff" />
+                  </div>
+                )}
+              </div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: isSelected ? "#3B4FD8" : "#1F2937", margin: "14px 0 4px" }}>{s.title}</h3>
+              {s.badge && (
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", letterSpacing: "0.05em", margin: "4px 0" }}>{s.badge}</div>
+              )}
+              {s.desc && <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>{s.desc}</p>}
+              {s.note && s.id === "eye" && (
+                <div style={{ marginTop: 8, border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#B45309" }}>{s.note}</div>
+              )}
+              {s.note && s.id === "emergency" && (
+                <p style={{ fontSize: 13, color: "#DC2626", fontStyle: "italic", margin: 0 }}>{s.note}</p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
+        <button style={btnSecondary} onClick={onBack}>‹ Back</button>
+        <button style={btnPrimary} onClick={onContinue}>Continue ›</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 3: Date & Time ──────────────────────────────────────────────────────────
+function BookingCalendar({ selected, onSelect }: { selected: Date | null; onSelect: (d: Date) => void }) {
+  const [view, setView] = useState<Date>(() => selected ?? new Date());
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: { date: Date; current: boolean }[] = [];
+  for (let i = 0; i < firstWeekday; i++) {
+    cells.push({ date: new Date(year, month, 1 - firstWeekday + i), current: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ date: new Date(year, month, d), current: true });
+  }
+  while (cells.length % 7 !== 0 || cells.length < 42) {
+    const last = cells[cells.length - 1].date;
+    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), current: false });
+    if (cells.length >= 42) break;
+  }
+
+  const sameDay = (a: Date, b: Date | null) =>
+    !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: "#3B4FD8", margin: 0 }}>{MONTHS[month]} {year}</h3>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setView(new Date(year, month - 1, 1))} aria-label="Previous month" style={iconBtn}><ChevronLeft size={18} color="#6B7280" /></button>
+          <button onClick={() => setView(new Date(year, month + 1, 1))} aria-label="Next month" style={iconBtn}><ChevronRight size={18} color="#6B7280" /></button>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 6 }}>
+        {WEEKDAY_HEADERS.map((w) => (
+          <div key={w} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "#9CA3AF", padding: "4px 0" }}>{w}</div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+        {cells.map(({ date, current }, i) => {
+          const isPast = date < today;
+          const disabled = !current || isPast;
+          const isSelected = sameDay(date, selected);
+          const isToday = sameDay(date, today);
+          return (
+            <button
+              key={i}
+              disabled={disabled}
+              onClick={() => onSelect(date)}
+              style={{
+                height: 40, borderRadius: 999, border: isToday && !isSelected ? "1px solid #3B4FD8" : "none",
+                background: isSelected ? "#3B4FD8" : "transparent",
+                color: isSelected ? "#fff" : disabled ? "#D1D5DB" : "#1F2937",
+                fontSize: 14, fontWeight: isSelected || isToday ? 700 : 500,
+                cursor: disabled ? "default" : "pointer",
+              }}
+            >
+              {date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Step3DateTime({ date, time, onSelectDate, onSelectTime, onContinue, onBack }: {
+  date: Date | null;
+  time: string;
+  onSelectDate: (d: Date) => void;
+  onSelectTime: (t: string) => void;
+  onContinue: () => void;
+  onBack: () => void;
+}) {
   const handleContinue = () => {
-    if (!data.service || !data.preferredDate || !data.preferredTime || !data.reasonForVisit) {
-      alert("Please fill in all required fields.");
+    if (!date || !time) {
+      alert("Please select a date and time.");
       return;
     }
     onContinue();
@@ -220,56 +376,44 @@ function Step2({ data, onChange, onContinue, onBack }: {
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
-        {/* Service */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+        <BookingCalendar selected={date} onSelect={onSelectDate} />
+
         <div>
-          <FieldLabel required>Service</FieldLabel>
-          <select style={selectStyle} value={data.service} onChange={set("service")}>
-            {SERVICES.map(s => <option key={s}>{s}</option>)}
-          </select>
-        </div>
-        {/* Preferred Doctor */}
-        <div>
-          <FieldLabel>Preferred Doctor</FieldLabel>
-          <input style={inputStyle} placeholder="Dr. Owusu" value={data.preferredDoctor} onChange={set("preferredDoctor")} />
-        </div>
-        {/* Preferred Date */}
-        <div>
-          <FieldLabel required>Preferred Date</FieldLabel>
-          <input style={inputStyle} type="date" value={data.preferredDate}
-            onChange={(e) => onChange({ ...data, preferredDate: e.target.value })} />
-        </div>
-        {/* Preferred Time */}
-        <div>
-          <FieldLabel required>Preferred Time</FieldLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-            {TIME_SLOTS.map(t => (
-              <button key={t} onClick={() => onChange({ ...data, preferredTime: t })}
-                style={{
-                  padding: "10px 4px", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                  border: data.preferredTime === t ? "2px solid #3B4FD8" : "1px solid #D1D5DB",
-                  background: data.preferredTime === t ? "#3B4FD8" : "#fff",
-                  color: data.preferredTime === t ? "#fff" : "#374151",
-                }}>
-                {t}
-              </button>
-            ))}
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>
+            {date ? `Available time slots for ${formatLongDate(date)}` : "Select a date to see available times"}
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {TIME_SLOTS.map((slot) => {
+              const isSelected = time === slot.label;
+              const disabled = slot.booked || !date;
+              return (
+                <button
+                  key={slot.label}
+                  disabled={disabled}
+                  onClick={() => onSelectTime(slot.label)}
+                  style={{
+                    padding: "12px 4px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    border: isSelected ? "none" : "1px solid #E5E7EB",
+                    background: isSelected ? "#3B4FD8" : slot.booked ? "#F3F4F6" : "#fff",
+                    color: isSelected ? "#fff" : slot.booked ? "#9CA3AF" : "#374151",
+                    cursor: disabled ? "default" : "pointer",
+                  }}
+                >
+                  {slot.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 20, marginTop: 18, fontSize: 13, color: "#6B7280" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#fff", "#D1D5DB")} />Available</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#3B4FD8")} />Selected</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#D1D5DB")} />Booked</span>
           </div>
         </div>
       </div>
 
-      {/* Reason */}
-      <div style={{ marginTop: 20 }}>
-        <FieldLabel required>Reason for visit</FieldLabel>
-        <textarea
-          style={{ ...inputStyle, minHeight: 100, resize: "vertical" }}
-          placeholder="Describe your symptoms or reason for visit..."
-          value={data.reasonForVisit}
-          onChange={set("reasonForVisit")}
-        />
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
         <button style={btnSecondary} onClick={onBack}>‹ Back</button>
         <button style={btnPrimary} onClick={handleContinue}>Continue ›</button>
       </div>
@@ -277,107 +421,154 @@ function Step2({ data, onChange, onContinue, onBack }: {
   );
 }
 
-// ── Step 3 ─────────────────────────────────────────────────────────────────────
-function Step3({
-  step1, step2, data, onChange, onConfirm, onBack, loading,
-}: {
-  step1: Step1Data; step2: Step2Data; data: Step3Data;
-  onChange: (d: Step3Data) => void;
-  onConfirm: () => void; onBack: () => void; loading: boolean;
+function legendDot(bg: string, border?: string): React.CSSProperties {
+  return { width: 12, height: 12, borderRadius: "50%", background: bg, border: border ? `1px solid ${border}` : "none", display: "inline-block" };
+}
+
+// ── Step 4: Review & Confirm ─────────────────────────────────────────────────────
+function Step4Review({ step1, service, date, time, onConfirm, onBack, loading }: {
+  step1: Step1Data;
+  service: string;
+  date: Date | null;
+  time: string;
+  onConfirm: () => void;
+  onBack: () => void;
+  loading: boolean;
 }) {
   const dob = [step1.dobDay, step1.dobMonth, step1.dobYear].filter(Boolean).join(" ");
+  const info: [string, string][] = [
+    ["Student Name", step1.studentName],
+    ["Student ID", step1.studentId],
+    ["Date of Birth", dob],
+    ["Email", step1.studentEmail],
+    ["Mobile", step1.mobilePhone],
+    ["WhatsApp", step1.whatsappPhone || "—"],
+    ["Booking for", step1.bookingFor],
+  ];
+  const appt: [string, string][] = [
+    ["Service", service],
+    ["Date", date ? formatLongDate(date) : "—"],
+    ["Time", time || "—"],
+    ["Location", "Student Clinic, UG Legon"],
+    ["Doctor", "Auto-assigned on arrival"],
+  ];
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1F2937", marginBottom: 4 }}>Review your details</h2>
-      <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>Please confirm everything is correct before submitting.</p>
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: "#3B4FD8", textAlign: "center", margin: "0 0 28px" }}>
+        Almost there! Please confirm your details before booking.
+      </h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-        {/* Student card */}
-        <div style={{ border: "1px solid #E5E7EB", borderRadius: 10, padding: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3B4FD8", letterSpacing: "0.08em", marginBottom: 14 }}>STUDENT</div>
-          {[
-            ["Name", step1.studentName],
-            ["Student ID", step1.studentId],
-            ["Email", step1.studentEmail],
-            ["Phone", step1.mobilePhone],
-            ["Date of Birth", dob],
-          ].map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #F3F4F6", fontSize: 13 }}>
-              <span style={{ color: "#6B7280" }}>{label}</span>
-              <span style={{ color: "#1F2937", fontWeight: 500 }}>{value || "—"}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+        <div>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Your Information</h3>
+          {info.map(([label, value]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
+              <span style={{ color: "#6B7280" }}>{label}:</span>
+              <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
             </div>
           ))}
         </div>
-        {/* Appointment card */}
-        <div style={{ border: "1px solid #E5E7EB", borderRadius: 10, padding: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#3B4FD8", letterSpacing: "0.08em", marginBottom: 14 }}>APPOINTMENT</div>
-          {[
-            ["Service", step2.service],
-            ["Date", step2.preferredDate],
-            ["Time", step2.preferredTime],
-            ["Doctor", step2.preferredDoctor || "—"],
-            ["For", step1.bookingFor],
-          ].map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #F3F4F6", fontSize: 13 }}>
-              <span style={{ color: "#6B7280" }}>{label}</span>
-              <span style={{ color: "#1F2937", fontWeight: 500 }}>{value || "—"}</span>
+        <div>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Appointment Details</h3>
+          {appt.map(([label, value]) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
+              <span style={{ color: "#6B7280" }}>{label}:</span>
+              <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
             </div>
           ))}
+
+          <div style={{ marginTop: 20, background: "#DBEAFE", borderRadius: 12, padding: "16px 20px" }}>
+            <ul style={{ margin: 0, paddingLeft: 18, color: "#1E40AF", fontSize: 13, lineHeight: 2 }}>
+              <li>Arrive 10 minutes early</li>
+              <li>Bring your Student ID card</li>
+              <li>This service is completely free</li>
+              <li>You can cancel up to 2 hours before</li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      {/* Additional notes */}
-      <div style={{ marginBottom: 20 }}>
-        <FieldLabel>Additional notes for the clinic</FieldLabel>
-        <textarea
-          style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
-          placeholder="Optional"
-          value={data.additionalNotes}
-          onChange={(e) => onChange({ ...data, additionalNotes: e.target.value })}
-        />
-      </div>
-
-      {/* Consent */}
-      <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, padding: 16, marginBottom: 28, display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <input type="checkbox" id="consent" checked={data.consent}
-          onChange={(e) => onChange({ ...data, consent: e.target.checked })}
-          style={{ marginTop: 2, accentColor: "#3B4FD8", width: 16, height: 16, flexShrink: 0, cursor: "pointer" }} />
-        <label htmlFor="consent" style={{ fontSize: 13, color: "#374151", cursor: "pointer", lineHeight: 1.5 }}>
-          I confirm the information provided is accurate and I consent to the University of Ghana Student Clinic processing it to schedule my appointment.
-        </label>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <button style={btnSecondary} onClick={onBack}>‹ Back</button>
-        <button style={{ ...btnPrimary, opacity: (!data.consent || loading) ? 0.6 : 1, display: "flex", alignItems: "center", gap: 8 }}
-          onClick={onConfirm} disabled={!data.consent || loading}>
-          📅 {loading ? "Submitting..." : "Confirm Booking"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
+        <button style={{ ...btnSecondary, border: "none", color: "#3B4FD8" }} onClick={onBack}>Back</button>
+        <button
+          style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, display: "flex", alignItems: "center", gap: 8 }}
+          onClick={onConfirm}
+          disabled={loading}
+        >
+          <CalendarIcon size={16} color="#fff" />
+          {loading ? "Submitting..." : "Confirm & Book Appointment"}
         </button>
       </div>
     </div>
   );
 }
 
-// ── Success ────────────────────────────────────────────────────────────────────
-function SuccessScreen({ name, service, date, time, email, onHome }: {
-  name: string; service: string; date: string; time: string; email: string; onHome: () => void;
+// ── Success ──────────────────────────────────────────────────────────────────────
+function SuccessScreen({ step1, service, date, time, bookingRef, onBookAnother }: {
+  step1: Step1Data;
+  service: string;
+  date: Date | null;
+  time: string;
+  bookingRef: string;
+  onBookAnother: () => void;
 }) {
+  const firstName = step1.studentName.split(" ")[0] || "there";
+  const rows: [string, string][] = [
+    ["Service", service],
+    ["Date", date ? formatLongDate(date) : "—"],
+    ["Time", time || "—"],
+    ["Location", "Student Clinic, UG Legon"],
+    ["Doctor", "To be assigned on arrival"],
+  ];
+
   return (
-    <div style={{ textAlign: "center", padding: "48px 24px" }}>
-      <div style={{
-        width: 72, height: 72, borderRadius: "50%", background: "#EEF2FF",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        margin: "0 auto 24px", fontSize: 28,
-      }}>
-        ✓
+    <div style={{ textAlign: "center", maxWidth: 540, margin: "0 auto", padding: "16px 0" }}>
+      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+        <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Check size={26} color="#fff" />
+        </div>
       </div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#1F2937", marginBottom: 12 }}>Appointment Confirmed</h2>
-      <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7, maxWidth: 440, margin: "0 auto 28px" }}>
-        Thank you, {name}. Your {service.toLowerCase()} appointment is booked for{" "}
-        <strong>{date}</strong> at <strong>{time}</strong>. A confirmation email has been sent to {email}.
+      <h2 style={{ fontSize: 26, fontWeight: 800, color: "#3B4FD8", margin: "0 0 8px" }}>Appointment Confirmed!</h2>
+      <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 24px" }}>
+        Your booking has been successfully submitted. See you soon, {firstName}!
       </p>
-      <button style={btnPrimary} onClick={onHome}>Back to Home</button>
+
+      <div style={{ background: "#EEF2FF", borderRadius: 12, padding: "18px 24px", marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em" }}>BOOKING REFERENCE</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "#3B4FD8", marginTop: 4 }}>{bookingRef}</div>
+      </div>
+
+      <div style={{ border: "1px solid #E5E7EB", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+        {rows.map(([label, value], i) => (
+          <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < rows.length - 1 ? "1px solid #F3F4F6" : "none", fontSize: 14 }}>
+            <span style={{ color: "#6B7280" }}>{label}:</span>
+            <span style={{ color: "#1F2937", fontWeight: 600 }}>{value}</span>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
+        A confirmation has been sent to <strong style={{ color: "#3B4FD8" }}>{step1.studentEmail}</strong>
+      </p>
+
+      <Link href="/dashboard" style={{ textDecoration: "none" }}>
+        <button style={{ ...btnPrimary, width: "100%", background: "linear-gradient(to right, #3730A3, #3B4FD8)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <CalendarIcon size={16} color="#fff" /> View my appointments
+        </button>
+      </Link>
+
+      <button onClick={() => window.print()} style={{ background: "none", border: "none", color: "#3B4FD8", fontWeight: 600, fontSize: 14, cursor: "pointer", margin: "16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%" }}>
+        <Download size={16} color="#3B4FD8" /> Download confirmation
+      </button>
+
+      <button onClick={onBookAnother} style={{ background: "none", border: "none", color: "#3B4FD8", fontWeight: 600, fontSize: 14, cursor: "pointer", marginBottom: 20 }}>
+        Book another appointment
+      </button>
+
+      <p style={{ fontSize: 13, color: "#6B7280" }}>
+        Need to cancel or reschedule? <Link href="/dashboard" style={{ color: "#1F2937", fontWeight: 600 }}>Visit your dashboard</Link> anytime.
+      </p>
     </div>
   );
 }
@@ -395,23 +586,25 @@ const btnSecondary: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const iconBtn: React.CSSProperties = {
+  width: 32, height: 32, borderRadius: 8, border: "1px solid #E5E7EB",
+  background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+};
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [bookingRef, setBookingRef] = useState("");
 
   const [step1, setStep1] = useState<Step1Data>({
     studentId: "", studentName: "", dobDay: "", dobMonth: "", dobYear: "",
-    studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "MYSELF",
+    studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "Myself",
   });
-
-  const [step2, setStep2] = useState<Step2Data>({
-    service: "General Consultation", preferredDoctor: "",
-    preferredDate: "", preferredTime: "", reasonForVisit: "",
-  });
-
-  const [step3, setStep3] = useState<Step3Data>({ additionalNotes: "", consent: false });
+  const [service, setService] = useState("General Consultation");
+  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState("");
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -420,12 +613,9 @@ export default function BookingPage() {
         studentId: step1.studentId,
         name: step1.studentName,
         email: step1.studentEmail,
-        date: step2.preferredDate,
-        time: step2.preferredTime,
-        reason: step2.reasonForVisit,
-        service: step2.service,
-        doctor: step2.preferredDoctor,
-        notes: step3.additionalNotes,
+        date: date ? formatLongDate(date) : "",
+        time,
+        reason: service,
       };
 
       const res = await fetch("/api/appointments", {
@@ -435,6 +625,8 @@ export default function BookingPage() {
       });
 
       if (res.ok) {
+        const ref = `UGC-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000))}`;
+        setBookingRef(ref);
         setSubmitted(true);
       } else {
         const data = await res.json();
@@ -447,25 +639,26 @@ export default function BookingPage() {
     }
   };
 
-  const handleHome = () => {
+  const resetBooking = () => {
     setSubmitted(false);
     setStep(1);
-    setStep1({ studentId: "", studentName: "", dobDay: "", dobMonth: "", dobYear: "", studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "MYSELF" });
-    setStep2({ service: "General Consultation", preferredDoctor: "", preferredDate: "", preferredTime: "", reasonForVisit: "" });
-    setStep3({ additionalNotes: "", consent: false });
+    setStep1({ studentId: "", studentName: "", dobDay: "", dobMonth: "", dobYear: "", studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "Myself" });
+    setService("General Consultation");
+    setDate(null);
+    setTime("");
   };
 
   return (
     <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: "100vh", background: "#F3F4F6" }}>
       {/* Navbar */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #E5E7EB", padding: "0 32px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{ width: 36, height: 36, background: "#3B4FD8", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 13 }}>UG</div>
+      <nav style={{ background: "#fff", borderBottom: "1px solid #E5E7EB", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: "#3B4FD8", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>UG</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#1F2937" }}>UG Student Clinic</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#1F2937" }}>UG Student Clinic</div>
             <div style={{ fontSize: 11, color: "#9CA3AF" }}>Quality Healthcare for Students</div>
           </div>
-        </Link>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
           <Link href="/" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>Home</Link>
           <Link href="/about" style={{ fontSize: 14, color: "#4B5563", textDecoration: "none", fontWeight: 500 }}>About</Link>
@@ -481,37 +674,30 @@ export default function BookingPage() {
       {/* Hero */}
       <div style={{ background: "#3B4FD8", padding: "40px 24px 60px", textAlign: "center" }}>
         <h1 style={{ fontSize: 36, fontWeight: 800, color: "#fff", margin: "0 0 12px" }}>Book an Appointment</h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 500, margin: "0 auto" }}>
+        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 520, margin: "0 auto" }}>
           Schedule a visit with the University of Ghana, Legon Student Clinic in three quick steps. Free for all students.
         </p>
       </div>
 
       {/* Form Card */}
-      <div style={{ maxWidth: 780, margin: "-24px auto 40px", padding: "0 16px" }}>
+      <div style={{ maxWidth: submitted ? 720 : 920, margin: "-24px auto 40px", padding: "0 16px" }}>
         <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 8px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          {/* Card header */}
-          <div style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", padding: "12px 28px" }}>
+          <div style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", padding: "12px 28px", textAlign: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              COMPLETE THE FORM BELOW
+              {submitted ? "Booking Complete" : step === 4 ? "Review Your Details" : "Complete the form below"}
             </span>
           </div>
 
           <div style={{ padding: "32px 28px" }}>
             {submitted ? (
-              <SuccessScreen
-                name={step1.studentName}
-                service={step2.service}
-                date={step2.preferredDate}
-                time={step2.preferredTime}
-                email={step1.studentEmail}
-                onHome={handleHome}
-              />
+              <SuccessScreen step1={step1} service={service} date={date} time={time} bookingRef={bookingRef} onBookAnother={resetBooking} />
             ) : (
               <>
                 <Stepper current={step} />
                 {step === 1 && <Step1 data={step1} onChange={setStep1} onContinue={() => setStep(2)} />}
-                {step === 2 && <Step2 data={step2} onChange={setStep2} onContinue={() => setStep(3)} onBack={() => setStep(1)} />}
-                {step === 3 && <Step3 step1={step1} step2={step2} data={step3} onChange={setStep3} onConfirm={handleConfirm} onBack={() => setStep(2)} loading={loading} />}
+                {step === 2 && <Step2Service selected={service} onSelect={setService} onContinue={() => setStep(3)} onBack={() => setStep(1)} />}
+                {step === 3 && <Step3DateTime date={date} time={time} onSelectDate={setDate} onSelectTime={setTime} onContinue={() => setStep(4)} onBack={() => setStep(2)} />}
+                {step === 4 && <Step4Review step1={step1} service={service} date={date} time={time} onConfirm={handleConfirm} onBack={() => setStep(3)} loading={loading} />}
               </>
             )}
           </div>

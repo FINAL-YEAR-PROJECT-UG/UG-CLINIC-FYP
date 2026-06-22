@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { authApi } from '@/lib/authApi';
+import { getErrorMessage } from '@/lib/utils';
 import './page.css';
 
 const loginSchema = z.object({
@@ -23,8 +23,15 @@ const otpSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type OTPFormData = z.infer<typeof otpSchema>;
 
+const NAV_LINKS = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
+  { name: 'Services', href: '/services' },
+  { name: 'Health Resources', href: '/resources' },
+  { name: 'Contact', href: '/contact' },
+];
+
 export default function LoginPage() {
-  const { login, isLoading, error } = useAuth();
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOTP, setIsSendingOTP] = useState(false);
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
@@ -58,8 +65,8 @@ export default function LoginPage() {
       } else {
         setOtpError(response.message);
       }
-    } catch (err: any) {
-      setOtpError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
+    } catch (err) {
+      setOtpError(getErrorMessage(err, 'Failed to send OTP. Please try again.'));
     } finally {
       setIsSendingOTP(false);
     }
@@ -78,12 +85,12 @@ export default function LoginPage() {
       });
       if (response.success && response.data) {
         useAuthStore.getState().setAuth(response.data.user, response.data.tokens);
-        window.location.href = '/dashboard';
+        window.location.assign('/dashboard');
       } else {
         setOtpError(response.message);
       }
-    } catch (err: any) {
-      setOtpError(err.response?.data?.message || 'Invalid OTP. Please try again.');
+    } catch (err) {
+      setOtpError(getErrorMessage(err, 'Invalid OTP. Please try again.'));
     } finally {
       setIsVerifyingOTP(false);
     }
@@ -109,20 +116,16 @@ export default function LoginPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-          {['Home', 'About', 'Services', 'Health Resources', 'Contact'].map(
-            (n) => (
-              <a
-                key={n}
-                href="#"
-                className="login-nav-link"
-              >
-                {n}
-              </a>
-            )
-          )}
-          <button className="login-nav-button">
-            Book Appointment
-          </button>
+          {NAV_LINKS.map(({ name, href }) => (
+            <Link key={name} href={href} className="login-nav-link">
+              {name}
+            </Link>
+          ))}
+          <Link href="/demo-booking">
+            <button className="login-nav-button">
+              Book Appointment
+            </button>
+          </Link>
         </div>
       </nav>
 
@@ -381,13 +384,13 @@ export default function LoginPage() {
           {/* ── Terms text ─────────────────────────────────────────────────── */}
           <p className="login-terms-text">
             By continuing you agree to our{' '}
-            <a href="#" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>
+            <Link href="/privacy" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>
               privacy policy
-            </a>{' '}
+            </Link>{' '}
             and{' '}
-            <a href="#" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>
+            <Link href="/terms" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>
               terms of service
-            </a>
+            </Link>
             .
           </p>
         </div>
