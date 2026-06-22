@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { registerWithStore } from '@/lib/authApi';
+import { getErrorMessage } from '@/lib/utils';
 import './page.css';
 
 const registerSchema = z.object({
@@ -18,6 +20,22 @@ const registerSchema = z.object({
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
+
+const PROGRAM_LABELS: Record<string, string> = {
+  cs: 'Computer Science',
+  engineering: 'Engineering',
+  medicine: 'Medicine',
+  business: 'Business Administration',
+  law: 'Law',
+  other: 'Other',
+};
+
+// OTP login is passwordless, so we generate a strong placeholder password that
+// satisfies the backend password policy. Students authenticate via email OTP.
+function generatePassword(): string {
+  const random = Math.random().toString(36).slice(2, 10);
+  return `Ug${random}9!A`;
+}
 
 const NAV_LINKS = [
   { name: 'Home', href: '/' },
@@ -43,12 +61,31 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     setError('');
-    console.log('Registering:', data);
-    setTimeout(() => {
+    try {
+      const nameParts = data.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0];
+
+      const response = await registerWithStore({
+        email: data.email,
+        password: generatePassword(),
+        firstName,
+        lastName,
+        studentId: data.studentId,
+        phone: data.phone,
+        program: PROGRAM_LABELS[data.program] ?? data.program,
+      });
+
+      if (response.success) {
+        router.push('/dashboard');
+      } else {
+        setError(response.message || 'Registration failed. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
       setIsLoading(false);
-      sessionStorage.setItem('otpEmail', data.email);
-      router.push('/verify-otp');
-    }, 1500);
+    }
   };
 
   // Shared Header

@@ -148,6 +148,62 @@ export async function seed(): Promise<void> {
 
   await prisma.timeSlot.createMany({ data: timeSlotData });
 
+  console.log("Creating sample appointments for the demo student...");
+  const student = await prisma.user.findUnique({
+    where: { email: "student@st.ug.edu.gh" },
+  });
+  const [generalService, dentalService, eyeService] = services;
+
+  if (student) {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(0, 0, 0, 0);
+
+    const daysAgo = (n: number): Date => {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    await prisma.appointment.createMany({
+      data: [
+        {
+          userId: student.id,
+          serviceId: generalService.id,
+          date: nextWeek,
+          timeSlot: "09:30 AM",
+          status: "CONFIRMED",
+          reason: "General Consultation",
+        },
+        {
+          userId: student.id,
+          serviceId: generalService.id,
+          date: daysAgo(30),
+          timeSlot: "10:00 AM",
+          status: "COMPLETED",
+          reason: "General Consultation",
+        },
+        {
+          userId: student.id,
+          serviceId: dentalService.id,
+          date: daysAgo(75),
+          timeSlot: "11:00 AM",
+          status: "COMPLETED",
+          reason: "Dental Checkup",
+        },
+        {
+          userId: student.id,
+          serviceId: eyeService.id,
+          date: daysAgo(120),
+          timeSlot: "02:00 PM",
+          status: "CANCELLED",
+          reason: "Eye Examination",
+        },
+      ],
+    });
+  }
+
   console.log("Database seeded successfully.");
   console.log(`Default password for all users: ${DEFAULT_PASSWORD}`);
   console.log(`Time slots created for: ${tomorrow.toDateString()}`);

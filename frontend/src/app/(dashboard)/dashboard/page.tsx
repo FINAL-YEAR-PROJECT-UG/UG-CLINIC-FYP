@@ -1,54 +1,138 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { appointmentApi, type ApiAppointment } from '@/lib/appointmentApi';
+import { getErrorMessage } from '@/lib/utils';
 import {
   Calendar,
   Clock,
   MapPin,
   CheckCircle2,
-  SquarePen,
   MessageCircle,
+  Loader2,
+  LogOut,
 } from 'lucide-react';
 
-interface PastAppointment {
-  date: string;
-  service: string;
-  status: 'Completed' | 'Cancelled';
-}
+const CLINIC_LOCATION = 'Student Clinic, UG Legon';
 
-const PAST_APPOINTMENTS: PastAppointment[] = [
-  { date: '03 Mar 2026', service: 'Vaccination', status: 'Completed' },
-  { date: '10 Jan 2026', service: 'Mental Health', status: 'Completed' },
-  { date: '15 Nov 2025', service: 'General Consultation', status: 'Completed' },
-  { date: '02 Sep 2025', service: 'Health Screening', status: 'Cancelled' },
-];
-
-const UPCOMING = {
-  service: 'General Consultation',
-  reference: 'UGC-2026-00342',
-  date: 'Wednesday 21 May 2026',
-  time: '9:30 AM – 10:00 AM',
-  location: 'Student Clinic, UG Legon',
-};
+const UPCOMING_STATUSES = ['PENDING', 'CONFIRMED', 'RESCHEDULED'];
 
 function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'UG';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export default function DashboardPage() {
-  const { user } = useAuth();
+function formatLongDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+}
 
-  const fullName =
-    user?.firstName || user?.lastName
-      ? `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim()
-      : 'Kofi Asante Mensah';
+function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function bookingReference(appt: ApiAppointment): string {
+  const year = new Date(appt.date).getFullYear();
+  return `UGC-${year}-${appt.id.slice(0, 5).toUpperCase()}`;
+}
+
+const STATUS_PILL: Record<string, { label: string; className: string }> = {
+  COMPLETED: { label: 'Completed', className: 'bg-green-100 text-green-700' },
+  CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-600' },
+  NO_SHOW: { label: 'No show', className: 'bg-red-100 text-red-600' },
+  CONFIRMED: { label: 'Confirmed', className: 'bg-green-100 text-green-700' },
+  PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700' },
+  RESCHEDULED: { label: 'Rescheduled', className: 'bg-blue-100 text-blue-700' },
+};
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  const loadAppointments = useCallback(async () => {
+    try {
+      const data = await appointmentApi.getMyAppointments();
+      setAppointments(data);
+      setError(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not load your appointments.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let active = true;
+    appointmentApi
+      .getMyAppointments()
+      .then((data) => {
+        if (active) {
+          setAppointments(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (active) setError(getErrorMessage(err, 'Could not load your appointments.'));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated]);
+
+  const handleCancel = async (id: string) => {
+    setCancellingId(id);
+    try {
+      await appointmentApi.cancel(id);
+      await loadAppointments();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not cancel the appointment.'));
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Student';
   const firstName = fullName.split(/\s+/)[0];
-  const studentId = user?.studentId || 'UG/2021/0342';
-  const email = user?.email || 'k.mensah@st.ug.edu.gh';
-  const mobile = user?.phone || '+233 24 123 4567';
+  const studentId = user?.studentId || '—';
+  const email = user?.email || '—';
+  const mobile = user?.phone || '—';
+  const programme = user?.program || '—';
+
+  const now = new Date();
+  const upcoming = appointments
+    .filter((a) => UPCOMING_STATUSES.includes(a.status) && new Date(a.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const nextAppointment = upcoming[0];
+  const upcomingIds = new Set(upcoming.map((a) => a.id));
+  const past = appointments.filter((a) => !upcomingIds.has(a.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -59,68 +143,114 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold">Welcome back, {firstName} 👋</h1>
             <p className="text-blue-100 mt-1">Here are your clinic appointments.</p>
           </div>
-          <Link
-            href="/demo-booking"
-            className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-colors"
-          >
-            Book new appointment
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/demo-booking"
+              className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-colors"
+            >
+              Book new appointment
+            </Link>
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-8">
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+              {error}
+            </div>
+          )}
+
           {/* Upcoming appointment */}
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">Upcoming Appointment</h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <div className="flex items-start justify-between">
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Confirmed
-                </span>
-                <div className="text-right">
-                  <p className="text-[11px] uppercase tracking-wide text-gray-400">Booking Reference</p>
-                  <p className="text-sm font-semibold text-blue-700">{UPCOMING.reference}</p>
-                </div>
+            {loading ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center gap-2 text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading…
               </div>
-
-              <h3 className="text-xl font-bold text-gray-900 mt-4">{UPCOMING.service}</h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div className="flex items-start gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-gray-500">Date</p>
-                    <p className="text-sm font-medium text-gray-800">{UPCOMING.date}</p>
+            ) : nextAppointment ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
+                      STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
+                  </span>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-400">Booking Reference</p>
+                    <p className="text-sm font-semibold text-blue-700">{bookingReference(nextAppointment)}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-gray-500">Time</p>
-                    <p className="text-sm font-medium text-gray-800">{UPCOMING.time}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-gray-500">Location</p>
-                    <p className="text-sm font-medium text-gray-800">{UPCOMING.location}</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-4">
-                <button className="rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-colors">
-                  Cancel appointment
-                </button>
-                <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                  Reschedule
-                </button>
+                <h3 className="text-xl font-bold text-gray-900 mt-4">
+                  {nextAppointment.reason || nextAppointment.service?.name}
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Date</p>
+                      <p className="text-sm font-medium text-gray-800">{formatLongDate(nextAppointment.date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Time</p>
+                      <p className="text-sm font-medium text-gray-800">{nextAppointment.timeSlot}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-gray-500">Location</p>
+                      <p className="text-sm font-medium text-gray-800">{CLINIC_LOCATION}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-4">
+                  <button
+                    onClick={() => handleCancel(nextAppointment.id)}
+                    disabled={cancellingId === nextAppointment.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-colors disabled:opacity-60"
+                  >
+                    {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Cancel appointment
+                  </button>
+                  <Link
+                    href="/demo-booking"
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Reschedule
+                  </Link>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm text-center">
+                <p className="text-gray-600">You have no upcoming appointments.</p>
+                <Link
+                  href="/demo-booking"
+                  className="mt-3 inline-flex items-center justify-center rounded-full bg-blue-700 text-white font-semibold px-5 py-2.5 text-sm hover:bg-blue-800 transition-colors"
+                >
+                  Book an appointment
+                </Link>
+              </div>
+            )}
           </section>
 
           {/* Past appointments */}
@@ -133,30 +263,40 @@ export default function DashboardPage() {
                     <th className="font-medium px-5 py-3">Date</th>
                     <th className="font-medium px-5 py-3">Service</th>
                     <th className="font-medium px-5 py-3">Status</th>
-                    <th className="font-medium px-5 py-3">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {PAST_APPOINTMENTS.map((appt) => (
-                    <tr key={`${appt.date}-${appt.service}`} className="border-b border-gray-50 last:border-0">
-                      <td className="px-5 py-4 text-gray-700">{appt.date}</td>
-                      <td className="px-5 py-4 text-gray-700">{appt.service}</td>
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${
-                            appt.status === 'Completed'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-600'
-                          }`}
-                        >
-                          {appt.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <button className="text-blue-600 font-medium hover:underline">View details</button>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
+                        Loading…
                       </td>
                     </tr>
-                  ))}
+                  ) : past.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
+                        No past appointments yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    past.map((appt) => {
+                      const pill = STATUS_PILL[appt.status] ?? {
+                        label: appt.status,
+                        className: 'bg-gray-100 text-gray-600',
+                      };
+                      return (
+                        <tr key={appt.id} className="border-b border-gray-50 last:border-0">
+                          <td className="px-5 py-4 text-gray-700">{formatShortDate(appt.date)}</td>
+                          <td className="px-5 py-4 text-gray-700">{appt.reason || appt.service?.name}</td>
+                          <td className="px-5 py-4">
+                            <span className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${pill.className}`}>
+                              {pill.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -178,11 +318,7 @@ export default function DashboardPage() {
             <dl className="mt-5 space-y-4 text-sm">
               <div>
                 <dt className="text-[11px] uppercase tracking-wide text-gray-400">Programme</dt>
-                <dd className="text-gray-800 mt-0.5">Computer Science</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase tracking-wide text-gray-400">Level</dt>
-                <dd className="text-gray-800 mt-0.5">300</dd>
+                <dd className="text-gray-800 mt-0.5">{programme}</dd>
               </div>
               <div>
                 <dt className="text-[11px] uppercase tracking-wide text-gray-400">Email</dt>
@@ -193,11 +329,6 @@ export default function DashboardPage() {
                 <dd className="text-gray-800 mt-0.5">{mobile}</dd>
               </div>
             </dl>
-
-            <button className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline">
-              <SquarePen className="h-4 w-4" />
-              Edit profile
-            </button>
           </div>
 
           {/* Clinic information card */}

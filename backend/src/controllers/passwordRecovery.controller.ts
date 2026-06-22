@@ -177,8 +177,11 @@ export const sendOTP = async (req: Request, res: Response) => {
       },
     });
 
+    const emailConfigured = !!process.env.SMTP_USER;
+    const smsConfigured = !!process.env.TWILIO_ACCOUNT_SID;
+
     if (method === 'email') {
-      await sendOTPEmail(email, otp);
+      if (emailConfigured) await sendOTPEmail(email, otp);
     } else if (method === 'sms') {
       if (!user.phone) {
         return res.status(400).json({
@@ -186,12 +189,19 @@ export const sendOTP = async (req: Request, res: Response) => {
           message: 'No phone number associated with this account',
         });
       }
-      await sendOTPSMS(user.phone, otp);
+      if (smsConfigured) await sendOTPSMS(user.phone, otp);
     }
+
+    // In non-production without a configured email/SMS provider, return the code
+    // so the verification flow is usable locally. Never exposed in production.
+    const deliveryConfigured = method === 'sms' ? smsConfigured : emailConfigured;
+    const devCode =
+      process.env.NODE_ENV !== 'production' && !deliveryConfigured ? otp : undefined;
 
     res.status(200).json({
       success: true,
       message: 'If an account exists with these credentials, a verification code has been sent.',
+      ...(devCode ? { devCode } : {}),
     });
   } catch (error) {
     console.error('Send OTP error:', error);

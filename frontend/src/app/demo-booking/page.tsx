@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
+import { appointmentApi } from "@/lib/appointmentApi";
+import { getErrorMessage } from "@/lib/utils";
 import {
   Stethoscope,
   Brain,
@@ -593,47 +597,72 @@ const iconBtn: React.CSSProperties = {
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function BookingPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
 
-  const [step1, setStep1] = useState<Step1Data>({
-    studentId: "", studentName: "", dobDay: "", dobMonth: "", dobYear: "",
-    studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "Myself",
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Prefill the patient details from the signed-in student (read once on mount).
+  const [step1, setStep1] = useState<Step1Data>(() => {
+    const user = useAuthStore.getState().user;
+    return {
+      studentId: user?.studentId ?? "",
+      studentName: user ? `${user.firstName} ${user.lastName}`.trim() : "",
+      dobDay: "", dobMonth: "", dobYear: "",
+      studentEmail: user?.email ?? "",
+      alternateEmail: "",
+      mobilePhone: user?.phone ?? "",
+      whatsappPhone: "",
+      bookingFor: "Myself",
+    };
   });
   const [service, setService] = useState("General Consultation");
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState("");
 
   const handleConfirm = async () => {
+    if (!isAuthenticated) {
+      alert("Please sign in to book an appointment.");
+      router.push("/login");
+      return;
+    }
+    if (!date || !time) {
+      alert("Please select a date and time.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const payload = {
-        studentId: step1.studentId,
-        name: step1.studentName,
-        email: step1.studentEmail,
-        date: date ? formatLongDate(date) : "",
-        time,
-        reason: service,
-      };
+      const services = await appointmentApi.listServices();
+      const match = services.find(
+        (s) => s.name.toLowerCase() === service.toLowerCase()
+      );
+      const serviceId = match?.id ?? services[0]?.id;
+      if (!serviceId) {
+        alert("No clinic services are available right now. Please try again later.");
+        return;
+      }
 
-      const res = await fetch("/api/appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const response = await appointmentApi.create({
+        serviceId,
+        date: date.toISOString(),
+        timeSlot: time,
+        reason: service,
       });
 
-      if (res.ok) {
-        const ref = `UGC-${new Date().getFullYear()}-${String(Math.floor(10000 + Math.random() * 90000))}`;
-        setBookingRef(ref);
+      if (response.success && response.data) {
+        const appt = response.data.appointment;
+        const year = new Date(appt.date).getFullYear();
+        setBookingRef(`UGC-${year}-${appt.id.slice(0, 5).toUpperCase()}`);
         setSubmitted(true);
       } else {
-        const data = await res.json();
-        alert(data.message || "Failed to book appointment. Please try again.");
+        alert(response.message || "Failed to book appointment. Please try again.");
       }
-    } catch {
-      alert("An error occurred. Please try again.");
+    } catch (err) {
+      alert(getErrorMessage(err, "An error occurred. Please try again."));
     } finally {
       setLoading(false);
     }

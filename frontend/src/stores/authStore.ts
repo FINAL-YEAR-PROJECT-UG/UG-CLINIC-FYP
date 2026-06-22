@@ -8,6 +8,7 @@ interface User {
   lastName: string;
   studentId?: string;
   phone?: string;
+  program?: string;
   role: string;
   isActive: boolean;
 }

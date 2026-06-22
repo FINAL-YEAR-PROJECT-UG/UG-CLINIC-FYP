@@ -28,6 +28,7 @@ export interface AuthResponse {
       lastName: string;
       studentId?: string;
       phone?: string;
+      program?: string;
       role: string;
       isActive: boolean;
     };
@@ -77,8 +78,8 @@ export const authApi = {
     return response.data;
   },
 
-  sendOTP: async (data: { email: string; studentId: string; method?: string }): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string }>('/auth/send-otp', data);
+  sendOTP: async (data: { email: string; studentId: string; method?: string }): Promise<{ success: boolean; message: string; devCode?: string }> => {
+    const response = await api.post<{ success: boolean; message: string; devCode?: string }>('/auth/send-otp', data);
     return response.data;
   },
 
