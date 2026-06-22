@@ -306,7 +306,7 @@ export default function ServicesPage() {
               </div>
             </div>
             <div className={styles.faqAction}>
-              <button className={styles.faqButton}>Book This Service →</button>
+              <Link href="/demo-booking" className={styles.faqButton}>Book This Service →</Link>
             </div>
           </div>
         ))}
@@ -353,7 +353,7 @@ export default function ServicesPage() {
         </div>
 
         <div className={styles.scheduleCta}>
-          <button className={styles.scheduleButton}>Book Appointment</button>
+          <Link href="/demo-booking" className={styles.scheduleButton}>Book Appointment</Link>
         </div>
       </section>
 

@@ -51,7 +51,7 @@ export default function Header() {
               );
             })}
           </div>
-          <Link href="/login">
+          <Link href="/demo-booking">
             <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5 transition-colors">
               Book Appointment
             </Button>
