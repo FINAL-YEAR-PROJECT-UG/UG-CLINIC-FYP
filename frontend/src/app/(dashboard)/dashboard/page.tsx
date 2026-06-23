@@ -119,8 +119,11 @@ export default function DashboardPage() {
     }
   };
 
-  const fullName = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Student';
-  const firstName = fullName.split(/\s+/)[0];
+  const firstName = user?.firstName || 'Student';
+  const lastName = user?.lastName || '';
+  const fullName = (firstName && lastName && firstName.toLowerCase() !== lastName.toLowerCase())
+    ? `${firstName} ${lastName}`
+    : firstName;
   const studentId = user?.studentId || '—';
   const email = user?.email || '—';
   const mobile = user?.phone || '—';
@@ -233,7 +236,7 @@ export default function DashboardPage() {
                     Cancel appointment
                   </button>
                   <Link
-                    href="/demo-booking"
+                    href={`/demo-booking?reschedule=${nextAppointment.id}`}
                     className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     Reschedule

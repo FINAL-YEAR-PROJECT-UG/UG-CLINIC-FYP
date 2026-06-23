@@ -131,11 +131,6 @@ export default function LoginPage() {
               {name}
             </Link>
           ))}
-          <Link href="/demo-booking">
-            <button className="login-nav-button">
-              Book Appointment
-            </button>
-          </Link>
         </div>
       </nav>
 

@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
+import { useAuthStore } from '@/stores/authStore';
 import {
   Stethoscope,
   Brain,
@@ -20,6 +22,8 @@ import {
 import './HomePageClient.css';
 
 export default function HomePageClient() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const services = [
@@ -98,7 +102,7 @@ export default function HomePageClient() {
       title: 'Flu Vaccination Drive',
       description: 'Protect yourself this season. Book your flu shot appointment today.',
       action: 'Book Now',
-      href: '/demo-booking',
+      href: '',
       image: '/home/health-flu.png',
       bgColor: 'bg-orange-100',
       fallbackIcon: Syringe,
@@ -121,6 +125,14 @@ export default function HomePageClient() {
     setImageErrors((prev) => ({ ...prev, [key]: true }));
   };
 
+  const handleBookingClick = () => {
+    if (isAuthenticated) {
+      router.push('/demo-booking');
+    } else {
+      router.push('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -135,11 +147,9 @@ export default function HomePageClient() {
             Accessible, quality healthcare for every student. Your health and wellbeing are our priority.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/demo-booking">
-              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md">
-                Book Appointment
-              </Button>
-            </Link>
+            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md" onClick={handleBookingClick}>
+              Book Appointment
+            </Button>
             <Link href="/about">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md">
                 Learn More
@@ -300,9 +310,15 @@ export default function HomePageClient() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-gray-600 mb-4">{update.description}</p>
-                    <Link href={update.href} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
-                      {update.action} <ChevronRight className="h-4 w-4" />
-                    </Link>
+                    {update.href ? (
+                      <Link href={update.href} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
+                        {update.action} <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    ) : (
+                      <button onClick={handleBookingClick} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
+                        {update.action} <ChevronRight className="h-4 w-4" />
+                      </button>
+                    )}
                   </CardContent>
                 </Card>
               );

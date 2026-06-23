@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const navLinks = [
     { name: 'Home', href: '/home' },
@@ -15,6 +18,14 @@ export default function Header() {
     { name: 'Health Resources', href: '/resources' },
     { name: 'Contact', href: '/contact' },
   ];
+
+  const handleBookingClick = () => {
+    if (isAuthenticated) {
+      router.push('/demo-booking');
+    } else {
+      router.push('/login');
+    }
+  };
 
   return (
     <nav className="bg-white border-b sticky top-0 z-50">
@@ -51,11 +62,9 @@ export default function Header() {
               );
             })}
           </div>
-          <Link href="/demo-booking">
-            <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5 transition-colors">
-              Book Appointment
-            </Button>
-          </Link>
+          <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5 transition-colors" onClick={handleBookingClick}>
+            Book Appointment
+          </Button>
         </div>
       </div>
     </nav>

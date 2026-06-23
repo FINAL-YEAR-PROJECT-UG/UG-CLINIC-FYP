@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
+import { useAuthStore } from '@/stores/authStore';
 import {
   Search,
   FileText,
@@ -139,6 +141,8 @@ const faqs = [
 const INITIAL_VISIBLE = 6;
 
 export default function ResourcesPageClient() {
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [tab, setTab] = useState<'all' | ResKind>('all');
   const [category, setCategory] = useState('All');
   const [query, setQuery] = useState('');
@@ -167,6 +171,14 @@ export default function ResourcesPageClient() {
       setSubmitting(false);
       setSubmitted(true);
     }, 1200);
+  };
+
+  const handleBookingClick = () => {
+    if (isAuthenticated) {
+      router.push('/demo-booking');
+    } else {
+      router.push('/login');
+    }
   };
 
   return (
@@ -462,9 +474,9 @@ export default function ResourcesPageClient() {
               Don&apos;t wait — book an appointment with the UG Student Clinic or reach out to our team.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/demo-booking" className="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={handleBookingClick} className="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
                 Book Appointment
-              </Link>
+              </button>
               <Link href="/contact" className="border border-white/70 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/10 transition-colors">
                 Contact the Clinic
               </Link>

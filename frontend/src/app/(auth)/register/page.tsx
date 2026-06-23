@@ -102,9 +102,6 @@ export default function RegisterPage() {
         {NAV_LINKS.map(({ name, href }) => (
           <Link key={name} href={href} className="register-nav-link">{name}</Link>
         ))}
-        <Link href="/demo-booking">
-          <button className="register-nav-button">Book Appointment</button>
-        </Link>
       </div>
     </nav>
   );
