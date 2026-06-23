@@ -8,6 +8,9 @@ import slowDown from 'express-slow-down';
 import dotenv from 'dotenv';
 import notFound from './middleware/notFound';
 import errorHandler from './middleware/errorHandler';
+import { sanitizeInputs } from './middleware/inputSanitizer';
+import { securityHeaders } from './middleware/cspHeaders';
+import { logSuspiciousRequests } from './middleware/requestLogging';
 import authRoutes from './routes/auth.routes';
 import appointmentRoutes from './routes/appointment.routes';
 import serviceRoutes from './routes/service.routes';
@@ -22,25 +25,37 @@ const app = express();
 const port = Number(process.env.PORT) || 5000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Security middleware - apply first
 app.use(helmet());
+app.use(securityHeaders);
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || true,
+    origin: process.env.CORS_ORIGIN?.split(',') || (isProduction ? false : true),
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Token'],
+    maxAge: 86400,
   })
 );
+
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
-const limiter = rateLimit({
+// Input sanitization and logging
+app.use(sanitizeInputs);
+app.use(logSuspiciousRequests);
+
+// Rate limiting
+const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later',
 });
-app.use(limiter);
+app.use(globalLimiter);
 
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000,

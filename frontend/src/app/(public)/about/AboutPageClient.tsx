@@ -112,12 +112,12 @@ export default function AboutPageClient() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/services">
-              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md">
+              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
                 Our Services
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
                 Contact Us
               </Button>
             </Link>
@@ -173,7 +173,7 @@ export default function AboutPageClient() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {ourStory.map((milestone, index) => (
-              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-2">
                   <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4">
                     <span className="text-white font-bold text-lg">{milestone.year}</span>
@@ -276,7 +276,7 @@ export default function AboutPageClient() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {coreValues.map((value, index) => (
-              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-2">
                   <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                     <img

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { appointmentApi, type ApiAppointment } from "@/lib/appointmentApi";
+import { appointmentApi } from "@/lib/appointmentApi";
 import { getErrorMessage } from "@/lib/utils";
 import {
   Stethoscope,
@@ -68,12 +68,6 @@ const TIME_SLOT_LABELS = [
   "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM",
   "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
 ];
-
-const ACTIVE_APPOINTMENT_STATUSES = ["PENDING", "CONFIRMED"] as const;
-
-function dateKey(d: Date): string {
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
 const MONTHS = [
@@ -288,11 +282,7 @@ function Step2Service({ selected, onSelect, onContinue, onBack }: {
 }
 
 // ── Step 3: Date & Time ──────────────────────────────────────────────────────────
-function BookingCalendar({ selected, onSelect, blockedDateKeys }: {
-  selected: Date | null;
-  onSelect: (d: Date) => void;
-  blockedDateKeys: Set<string>;
-}) {
+function BookingCalendar({ selected, onSelect }: { selected: Date | null; onSelect: (d: Date) => void }) {
   const [view, setView] = useState<Date>(() => selected ?? new Date());
   const year = view.getFullYear();
   const month = view.getMonth();
@@ -335,8 +325,7 @@ function BookingCalendar({ selected, onSelect, blockedDateKeys }: {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
         {cells.map(({ date, current }, i) => {
           const isPast = date < today;
-          const isBlocked = blockedDateKeys.has(dateKey(date));
-          const disabled = !current || isPast || isBlocked;
+          const disabled = !current || isPast;
           const isSelected = sameDay(date, selected);
           const isToday = sameDay(date, today);
           return (
@@ -344,7 +333,6 @@ function BookingCalendar({ selected, onSelect, blockedDateKeys }: {
               key={i}
               disabled={disabled}
               onClick={() => onSelect(date)}
-              title={isBlocked ? "You already have an appointment on this day" : undefined}
               style={{
                 height: 40, borderRadius: 999, border: isToday && !isSelected ? "1px solid #3B4FD8" : "none",
                 background: isSelected ? "#3B4FD8" : "transparent",
@@ -362,11 +350,10 @@ function BookingCalendar({ selected, onSelect, blockedDateKeys }: {
   );
 }
 
-function Step3DateTime({ date, time, bookedSlots, blockedDateKeys, onSelectDate, onSelectTime, onContinue, onBack }: {
+function Step3DateTime({ date, time, bookedSlots, onSelectDate, onSelectTime, onContinue, onBack }: {
   date: Date | null;
   time: string;
   bookedSlots: string[];
-  blockedDateKeys: Set<string>;
   onSelectDate: (d: Date) => void;
   onSelectTime: (t: string) => void;
   onContinue: () => void;
@@ -383,17 +370,12 @@ function Step3DateTime({ date, time, bookedSlots, blockedDateKeys, onSelectDate,
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-        <BookingCalendar selected={date} onSelect={onSelectDate} blockedDateKeys={blockedDateKeys} />
+        <BookingCalendar selected={date} onSelect={onSelectDate} />
 
         <div>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>
             {date ? `Available time slots for ${formatLongDate(date)}` : "Select a date to see available times"}
           </h3>
-          {blockedDateKeys.size > 0 && (
-            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 12px" }}>
-              Days with an existing appointment are unavailable. Cancel or reschedule from your dashboard to change it.
-            </p>
-          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
             {TIME_SLOT_LABELS.map((label) => {
               const isSelected = time === label;
@@ -438,7 +420,7 @@ function legendDot(bg: string, border?: string): React.CSSProperties {
 }
 
 // ── Step 4: Review & Confirm ─────────────────────────────────────────────────────
-function Step4Review({ step1, service, date, time, onConfirm, onBack, loading, isReschedule }: {
+function Step4Review({ step1, service, date, time, onConfirm, onBack, loading }: {
   step1: Step1Data;
   service: string;
   date: Date | null;
@@ -446,7 +428,6 @@ function Step4Review({ step1, service, date, time, onConfirm, onBack, loading, i
   onConfirm: () => void;
   onBack: () => void;
   loading: boolean;
-  isReschedule?: boolean;
 }) {
   const dob = [step1.dobDay, step1.dobMonth, step1.dobYear].filter(Boolean).join(" ");
   const info: [string, string][] = [
@@ -469,9 +450,7 @@ function Step4Review({ step1, service, date, time, onConfirm, onBack, loading, i
   return (
     <div>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: "#3B4FD8", textAlign: "center", margin: "0 0 28px" }}>
-        {isReschedule
-          ? "Almost there! Please confirm your new appointment details."
-          : "Almost there! Please confirm your details before booking."}
+        Almost there! Please confirm your details before booking.
       </h2>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
@@ -512,7 +491,7 @@ function Step4Review({ step1, service, date, time, onConfirm, onBack, loading, i
           disabled={loading}
         >
           <CalendarIcon size={16} color="#fff" />
-          {loading ? "Submitting..." : isReschedule ? "Confirm Reschedule" : "Confirm & Book Appointment"}
+          {loading ? "Submitting..." : "Confirm & Book Appointment"}
         </button>
       </div>
     </div>
@@ -641,54 +620,6 @@ export default function BookingPage() {
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState("");
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  const [userAppointments, setUserAppointments] = useState<ApiAppointment[]>([]);
-  const [rescheduleId, setRescheduleId] = useState<string | null>(null);
-  const [rescheduleAppointment, setRescheduleAppointment] = useState<ApiAppointment | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setRescheduleId(params.get("reschedule"));
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    appointmentApi.getMyAppointments()
-      .then(setUserAppointments)
-      .catch(() => setUserAppointments([]));
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (step !== 3 || !isAuthenticated) return;
-    appointmentApi.getMyAppointments()
-      .then(setUserAppointments)
-      .catch(() => setUserAppointments([]));
-  }, [step, isAuthenticated]);
-
-  useEffect(() => {
-    if (!rescheduleId || !isAuthenticated || userAppointments.length === 0) return;
-
-    const appt = userAppointments.find((a) => a.id === rescheduleId);
-    if (!appt) return;
-    if (!ACTIVE_APPOINTMENT_STATUSES.includes(appt.status as typeof ACTIVE_APPOINTMENT_STATUSES[number])) return;
-
-    setRescheduleAppointment(appt);
-    setService(appt.reason || appt.service?.name || "General Consultation");
-    setDate(new Date(appt.date));
-    setTime(appt.timeSlot);
-    setStep(3);
-  }, [rescheduleId, isAuthenticated, userAppointments]);
-
-  const blockedDateKeys = useMemo(() => {
-    const keys = new Set<string>();
-    for (const appt of userAppointments) {
-      if (!ACTIVE_APPOINTMENT_STATUSES.includes(appt.status as typeof ACTIVE_APPOINTMENT_STATUSES[number])) {
-        continue;
-      }
-      if (rescheduleId && appt.id === rescheduleId) continue;
-      keys.add(dateKey(new Date(appt.date)));
-    }
-    return keys;
-  }, [userAppointments, rescheduleId]);
 
   useEffect(() => {
     if (!date || step !== 3) {
@@ -704,16 +635,10 @@ export default function BookingPage() {
         const match = services.find(
           (s) => s.name.toLowerCase() === service.toLowerCase()
         );
-        let slots = await appointmentApi.getAvailability(
+        const slots = await appointmentApi.getAvailability(
           date.toISOString(),
           match?.id
         );
-        if (
-          rescheduleAppointment &&
-          dateKey(date) === dateKey(new Date(rescheduleAppointment.date))
-        ) {
-          slots = slots.filter((s) => s !== rescheduleAppointment.timeSlot);
-        }
         if (!cancelled) setBookedSlots(slots);
       } catch {
         if (!cancelled) setBookedSlots([]);
@@ -721,7 +646,7 @@ export default function BookingPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [date, service, step, rescheduleAppointment]);
+  }, [date, service, step]);
 
   const handleSelectDate = (d: Date) => {
     setDate(d);
@@ -755,16 +680,12 @@ export default function BookingPage() {
         return;
       }
 
-      const payload = {
+      const response = await appointmentApi.create({
         serviceId,
         date: date.toISOString(),
         timeSlot: time,
         reason: service,
-      };
-
-      const response = rescheduleId
-        ? await appointmentApi.reschedule(rescheduleId, payload)
-        : await appointmentApi.create(payload);
+      });
 
       if (response.success && response.data) {
         const appt = response.data.appointment;
@@ -789,8 +710,6 @@ export default function BookingPage() {
     setDate(null);
     setTime("");
     setBookedSlots([]);
-    setRescheduleId(null);
-    setRescheduleAppointment(null);
   };
 
   return (
@@ -842,30 +761,8 @@ export default function BookingPage() {
                 <Stepper current={step} />
                 {step === 1 && <Step1 data={step1} onChange={setStep1} onContinue={() => setStep(2)} />}
                 {step === 2 && <Step2Service selected={service} onSelect={setService} onContinue={() => setStep(3)} onBack={() => setStep(1)} />}
-                {step === 3 && (
-                  <Step3DateTime
-                    date={date}
-                    time={time}
-                    bookedSlots={bookedSlots}
-                    blockedDateKeys={blockedDateKeys}
-                    onSelectDate={handleSelectDate}
-                    onSelectTime={setTime}
-                    onContinue={() => setStep(4)}
-                    onBack={() => setStep(2)}
-                  />
-                )}
-                {step === 4 && (
-                  <Step4Review
-                    step1={step1}
-                    service={service}
-                    date={date}
-                    time={time}
-                    onConfirm={handleConfirm}
-                    onBack={() => setStep(3)}
-                    loading={loading}
-                    isReschedule={!!rescheduleId}
-                  />
-                )}
+                {step === 3 && <Step3DateTime date={date} time={time} bookedSlots={bookedSlots} onSelectDate={handleSelectDate} onSelectTime={setTime} onContinue={() => setStep(4)} onBack={() => setStep(2)} />}
+                {step === 4 && <Step4Review step1={step1} service={service} date={date} time={time} onConfirm={handleConfirm} onBack={() => setStep(3)} loading={loading} />}
               </>
             )}
           </div>

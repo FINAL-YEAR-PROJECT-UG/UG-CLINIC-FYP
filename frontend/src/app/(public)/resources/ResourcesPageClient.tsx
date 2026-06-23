@@ -211,8 +211,8 @@ export default function ResourcesPageClient() {
             <button
               key={t.id}
               onClick={() => { setTab(t.id); setVisible(INITIAL_VISIBLE); }}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                tab === t.id ? 'bg-white text-blue-900 shadow' : 'bg-white/20 text-white hover:bg-white/30'
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                tab === t.id ? 'bg-white text-blue-900 shadow-lg scale-105' : 'bg-white/20 text-white hover:bg-white/40 hover:scale-105'
               }`}
             >
               {t.label}
@@ -226,7 +226,7 @@ export default function ResourcesPageClient() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); setVisible(INITIAL_VISIBLE); }}
               placeholder="Search resources, guides, topics..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -234,10 +234,10 @@ export default function ResourcesPageClient() {
               <button
                 key={c}
                 onClick={() => { setCategory(c); setVisible(INITIAL_VISIBLE); }}
-                className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 ${
                   category === c
-                    ? 'bg-blue-900 text-white border-blue-900'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400'
+                    ? 'bg-blue-900 text-white border-blue-900 shadow-md scale-105'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:shadow-sm hover:scale-105'
                 }`}
               >
                 {c}
@@ -262,8 +262,8 @@ export default function ResourcesPageClient() {
               <span>English</span>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">Read Now</button>
-              <button className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+              <button className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Read Now</button>
+              <button className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-50 hover:border-blue-300 hover:shadow-md transition-all duration-200">
                 <Download className="h-4 w-4" /> Download PDF
               </button>
             </div>
@@ -306,10 +306,10 @@ export default function ResourcesPageClient() {
                     <span className="flex items-center gap-1">{meta.Icon === Download ? <Download className="h-3.5 w-3.5" /> : meta.Icon === PlayCircle ? <PlayCircle className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{r.meta}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="flex-1 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
+                    <button className="flex-1 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
                       {meta.cta}
                     </button>
-                    <button aria-label="Bookmark" className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                    <button aria-label="Bookmark" className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all duration-200">
                       <Bookmark className="h-4 w-4" />
                     </button>
                   </div>
@@ -322,7 +322,7 @@ export default function ResourcesPageClient() {
           <div className="text-center mt-8">
             <button
               onClick={() => setVisible((v) => v + 3)}
-              className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 hover:border-blue-400 hover:shadow-md transition-all duration-200"
             >
               Load more resources <ChevronDown className="h-4 w-4" />
             </button>
@@ -346,7 +346,7 @@ export default function ResourcesPageClient() {
                     setVisible(INITIAL_VISIBLE);
                     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-white rounded-xl p-5 flex flex-col items-center gap-2 text-blue-900 hover:-translate-y-1 transition-transform"
+                  className="bg-white rounded-xl p-5 flex flex-col items-center gap-2 text-blue-900 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center">
                     <Icon className="h-6 w-6 text-blue-700" />
@@ -389,16 +389,16 @@ export default function ResourcesPageClient() {
               <form onSubmit={handleSubmitArticle} className="space-y-4">
                 <h3 className="font-bold text-blue-950 mb-2">Submit Your Article</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input required placeholder="Full name" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
-                  <input required type="email" placeholder="Email address" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+                  <input required placeholder="Full name" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                  <input required type="email" placeholder="Email address" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                 </div>
-                <input required placeholder="Article title" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
-                <select className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+                <input required placeholder="Article title" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                <select className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer">
                   {CATEGORIES.filter((c) => c !== 'All').map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-8 text-sm text-gray-400 cursor-pointer hover:border-blue-300">
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg py-8 text-sm text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
                   <UploadCloud className="h-7 w-7" />
                   Drag and drop your article file, or click to browse
                   <input type="file" className="hidden" />
@@ -406,7 +406,7 @@ export default function ResourcesPageClient() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:hover:shadow-none disabled:hover:scale-100"
                 >
                   {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</> : <>Submit for Review <Plus className="h-4 w-4" /></>}
                 </button>
@@ -431,8 +431,8 @@ export default function ResourcesPageClient() {
               onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }}
               className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
             >
-              <input required type="email" placeholder="your.email@ug.edu.gh" className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
-              <button type="submit" className="bg-blue-900 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-colors">Subscribe</button>
+              <input required type="email" placeholder="your.email@ug.edu.gh" className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+              <button type="submit" className="bg-blue-900 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Subscribe</button>
             </form>
           )}
         </div>
@@ -452,7 +452,7 @@ export default function ResourcesPageClient() {
                 <div key={faq.q} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                   <button
                     onClick={() => setOpenFaq(open ? null : i)}
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-medium text-gray-900 hover:bg-blue-50 transition-colors"
                   >
                     {faq.q}
                     <ChevronDown className={`h-5 w-5 text-blue-700 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -474,10 +474,10 @@ export default function ResourcesPageClient() {
               Don&apos;t wait — book an appointment with the UG Student Clinic or reach out to our team.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={handleBookingClick} className="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+              <button onClick={handleBookingClick} className="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105">
                 Book Appointment
               </button>
-              <Link href="/contact" className="border border-white/70 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/10 transition-colors">
+              <Link href="/contact" className="border border-white/70 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 hover:shadow-lg transition-all duration-200 hover:scale-105">
                 Contact the Clinic
               </Link>
             </div>

@@ -70,11 +70,12 @@
   color: #4B5563;
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .headerLink:hover {
   color: #3B4FD8;
+  transform: translateY(-1px);
 }
 
 .headerLinkActive {
@@ -108,8 +109,8 @@
 
 .headerCta:hover {
   background: #2E3EB8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 79, 216, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 79, 216, 0.4);
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -210,6 +211,13 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emergencyCta:hover {
+  background: #B91C1C;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 /* ── Section Headers ──────────────────────────────────────────────────────── */
@@ -303,6 +311,12 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid #E5E7EB;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
 .cardImageWrapper {
@@ -383,6 +397,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.cardLink:hover {
+  color: #2E3EB8;
+  transform: translateX(4px);
 }
 
 /* ── How It Works ─────────────────────────────────────────────────────────── */
@@ -480,6 +500,11 @@
   overflow: hidden;
   max-width: 800px;
   margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.faqCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .faqHeader {
@@ -557,6 +582,13 @@
   align-items: center;
   gap: 6px;
   text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.faqButton:hover {
+  background: #2E3EB8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 79, 216, 0.3);
 }
 
 /* ── Contact Cards ────────────────────────────────────────────────────────── */
@@ -604,6 +636,13 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.contactButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 /* ── Schedule Table ───────────────────────────────────────────────────────── */
@@ -674,6 +713,13 @@
   box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
   display: inline-block;
   text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.scheduleButton:hover {
+  background: #1E40AF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(30, 58, 138, 0.4);
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────────── */
@@ -731,6 +777,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.footerSocial:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .footerHeading {
@@ -753,6 +805,12 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.footerLink:hover {
+  color: #fff;
+  transform: translateX(4px);
 }
 
 .footerContact {

@@ -149,13 +149,13 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/demo-booking"
-              className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-colors"
+              className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-all duration-200 hover:shadow-md hover:scale-105"
             >
               Book new appointment
             </Link>
             <button
               onClick={logout}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-all duration-200 hover:shadow-md"
             >
               <LogOut className="h-4 w-4" />
               Log out
@@ -230,14 +230,14 @@ export default function DashboardPage() {
                   <button
                     onClick={() => handleCancel(nextAppointment.id)}
                     disabled={cancellingId === nextAppointment.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-colors disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none"
                   >
                     {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
                     Cancel appointment
                   </button>
                   <Link
-                    href={`/demo-booking?reschedule=${nextAppointment.id}`}
-                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                    href="/demo-booking"
+                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-all duration-200 hover:underline"
                   >
                     Reschedule
                   </Link>

@@ -147,11 +147,11 @@ export default function HomePageClient() {
             Accessible, quality healthcare for every student. Your health and wellbeing are our priority.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md" onClick={handleBookingClick}>
+            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105" onClick={handleBookingClick}>
               Book Appointment
             </Button>
             <Link href="/about">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
                 Learn More
               </Button>
             </Link>
@@ -207,7 +207,7 @@ export default function HomePageClient() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {coreValues.map((value, index) => (
-              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-2">
                   <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                     <img
@@ -254,7 +254,7 @@ export default function HomePageClient() {
             {services.map((service, index) => {
               const Icon = service.icon;
               return (
-                <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
+                <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-center">
                   <CardHeader className="pb-2 items-center">
                     <div className="w-14 h-14 bg-blue-900 rounded-2xl flex items-center justify-center mb-4">
                       <Icon className="h-7 w-7 text-white" />
@@ -285,7 +285,7 @@ export default function HomePageClient() {
               const FallbackIcon = update.fallbackIcon;
               const errorKey = `health-${index}`;
               return (
-                <Card key={index} className="bg-white border border-gray-100 shadow-sm overflow-hidden">
+                <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                   <div className={`h-48 ${update.bgColor} relative overflow-hidden`}>
                     {!imageErrors[errorKey] ? (
                       <Image
@@ -311,11 +311,11 @@ export default function HomePageClient() {
                   <CardContent>
                     <p className="text-sm text-gray-600 mb-4">{update.description}</p>
                     {update.href ? (
-                      <Link href={update.href} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
+                      <Link href={update.href} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline hover:text-blue-700 transition-colors">
                         {update.action} <ChevronRight className="h-4 w-4" />
                       </Link>
                     ) : (
-                      <button onClick={handleBookingClick} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline">
+                      <button onClick={handleBookingClick} className="text-blue-900 text-sm font-medium flex items-center gap-1 hover:underline hover:text-blue-700 transition-colors">
                         {update.action} <ChevronRight className="h-4 w-4" />
                       </button>
                     )}

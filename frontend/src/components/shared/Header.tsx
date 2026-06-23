@@ -51,10 +51,10 @@ export default function Header() {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? 'text-blue-900 border-b-2 border-blue-900 pb-1'
-                      : 'text-gray-600 hover:text-blue-900'
+                      ? 'text-blue-900 border-b-2 border-blue-900 pb-1 font-semibold'
+                      : 'text-gray-600 hover:text-blue-900 hover:scale-105'
                   }`}
                 >
                   {link.name}
@@ -62,7 +62,7 @@ export default function Header() {
               );
             })}
           </div>
-          <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5 transition-colors" onClick={handleBookingClick}>
+          <Button className="bg-blue-900 hover:bg-blue-800 text-white rounded-md px-5 transition-all duration-200 hover:shadow-lg hover:scale-105" onClick={handleBookingClick}>
             Book Appointment
           </Button>
         </div>

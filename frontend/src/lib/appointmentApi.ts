@@ -61,14 +61,6 @@ export const appointmentApi = {
     return response.data;
   },
 
-  reschedule: async (
-    id: string,
-    data: Omit<CreateAppointmentData, 'serviceId'> & { serviceId?: string }
-  ): Promise<{ success: boolean; message: string; data?: { appointment: ApiAppointment } }> => {
-    const response = await api.patch(`/appointments/${id}/reschedule`, data);
-    return response.data;
-  },
-
   cancel: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.patch(`/appointments/${id}/cancel`);
     return response.data;
