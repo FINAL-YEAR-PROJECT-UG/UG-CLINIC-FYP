@@ -83,6 +83,27 @@ function formatLongDate(d: Date): string {
   return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+// Parse time slot label (e.g., "08:00 AM") to minutes since midnight
+function parseTimeSlotToMinutes(timeSlot: string): number {
+  const [time, period] = timeSlot.split(' ');
+  const [hours, minutes] = time.split(':').map(Number);
+  const hours24 = period === 'PM' && hours !== 12 ? hours + 12 : period === 'AM' && hours === 12 ? 0 : hours;
+  return hours24 * 60 + minutes;
+}
+
+// Check if a time slot is in the past for a given date
+function isTimeSlotPast(timeSlot: string, date: Date): boolean {
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  if (!isToday) return false;
+  
+  const slotMinutes = parseTimeSlotToMinutes(timeSlot);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  
+  return slotMinutes < currentMinutes;
+}
+
 // ── Stepper ────────────────────────────────────────────────────────────────────
 function Stepper({ current }: { current: number }) {
   const steps = [
@@ -131,7 +152,7 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: "10px 12px", border: "1px solid #D1D5DB",
-  borderRadius: 8, fontSize: 14, color: "#374151", background: "#fff",
+  borderRadius: 8, fontSize: 14, color: "#111827", background: "#fff",
   outline: "none", boxSizing: "border-box",
 };
 
@@ -380,7 +401,8 @@ function Step3DateTime({ date, time, bookedSlots, onSelectDate, onSelectTime, on
             {TIME_SLOT_LABELS.map((label) => {
               const isSelected = time === label;
               const isBooked = bookedSlots.includes(label);
-              const disabled = isBooked || !date;
+              const isPast = date ? isTimeSlotPast(label, date) : false;
+              const disabled = isBooked || !date || isPast;
               return (
                 <button
                   key={label}
@@ -389,8 +411,8 @@ function Step3DateTime({ date, time, bookedSlots, onSelectDate, onSelectTime, on
                   style={{
                     padding: "12px 4px", borderRadius: 8, fontSize: 13, fontWeight: 600,
                     border: isSelected ? "none" : "1px solid #E5E7EB",
-                    background: isSelected ? "#3B4FD8" : isBooked ? "#F3F4F6" : "#fff",
-                    color: isSelected ? "#fff" : isBooked ? "#9CA3AF" : "#374151",
+                    background: isSelected ? "#3B4FD8" : isBooked || isPast ? "#F3F4F6" : "#fff",
+                    color: isSelected ? "#fff" : isBooked || isPast ? "#9CA3AF" : "#374151",
                     cursor: disabled ? "default" : "pointer",
                   }}
                 >
@@ -403,6 +425,7 @@ function Step3DateTime({ date, time, bookedSlots, onSelectDate, onSelectTime, on
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#fff", "#D1D5DB")} />Available</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#3B4FD8")} />Selected</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#D1D5DB")} />Booked</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#F3F4F6")} />Past</span>
           </div>
         </div>
       </div>
@@ -605,9 +628,15 @@ export default function BookingPage() {
   // Prefill the patient details from the signed-in student (read once on mount).
   const [step1, setStep1] = useState<Step1Data>(() => {
     const user = useAuthStore.getState().user;
+    // Handle case where user might have only one name stored in both fields
+    const fullName = user 
+      ? (user.firstName === user.lastName || !user.lastName)
+        ? user.firstName 
+        : `${user.firstName} ${user.lastName}`.trim()
+      : "";
     return {
       studentId: user?.studentId ?? "",
-      studentName: user ? `${user.firstName} ${user.lastName}`.trim() : "",
+      studentName: fullName,
       dobDay: "", dobMonth: "", dobYear: "",
       studentEmail: user?.email ?? "",
       alternateEmail: "",
@@ -713,9 +742,9 @@ export default function BookingPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: "100vh", background: "#F3F4F6" }}>
+    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: "100vh", background: "#F3F4F6", width: "100%", overflowX: "hidden" }}>
       {/* Navbar */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #E5E7EB", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <nav style={{ background: "#fff", borderBottom: "1px solid #E5E7EB", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: "#3B4FD8", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>UG</div>
           <div>
@@ -727,7 +756,7 @@ export default function BookingPage() {
           <button
             onClick={handleReturn}
             style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#3B4FD8", background: "#fff", border: "1px solid #3B4FD8", borderRadius: 8, padding: "9px 18px", cursor: "pointer" }}
-          >
+>
             <ChevronLeft size={16} /> Return
           </button>
           <Link href="/demo-booking">
@@ -776,3 +805,6 @@ export default function BookingPage() {
     </div>
   );
 }
+
+
+

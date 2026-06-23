@@ -51,9 +51,11 @@ export const logSecurityEvent = (
  * Middleware to log suspicious requests
  */
 export const logSuspiciousRequests = (req: Request, res: Response, next: NextFunction) => {
-  // Log failed authentication attempts
-  const originalJson = res.json;
-  res.json = function (data) {
+  // Store original send method
+  const originalSend = res.send;
+
+  // Override send to log errors
+  res.send = function (data: any) {
     if (res.statusCode >= 400 && res.statusCode < 500) {
       logSecurityEvent('HTTP_ERROR', null, req.ip, {
         method: req.method,
@@ -62,7 +64,7 @@ export const logSuspiciousRequests = (req: Request, res: Response, next: NextFun
         userAgent: req.get('user-agent'),
       });
     }
-    return originalJson.call(this, data);
+    return originalSend.call(this, data);
   };
 
   next();

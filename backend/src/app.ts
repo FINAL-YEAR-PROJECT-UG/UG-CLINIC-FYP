@@ -30,7 +30,7 @@ app.use(helmet());
 app.use(securityHeaders);
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || (isProduction ? false : true),
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://10.107.9.172:3001', 'http://localhost:3001', 'http://10.107.9.172:3005', 'http://localhost:3005'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Token'],
@@ -80,7 +80,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
+  app.listen(port, '0.0.0.0', () => {
     console.log(`Server listening on port ${port}`);
   });
 }

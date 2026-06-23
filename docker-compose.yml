@@ -47,7 +47,7 @@ services:
     container_name: ugclinic-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      - "${BACKEND_PORT:-3005}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000

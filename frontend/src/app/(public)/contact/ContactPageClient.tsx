@@ -225,7 +225,7 @@ export default function ContactPageClient() {
   };
 
   const inputClass =
-    'w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none';
+    'w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none';
 
   return (
     <div className="min-h-screen bg-white">

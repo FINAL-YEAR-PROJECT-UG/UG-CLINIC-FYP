@@ -41,12 +41,12 @@ enum NotificationSentVia {
 model User {
   id                  String            @id @default(uuid())
   studentId           String?           @unique
-  email               String            @unique
+  email               String            @unique @db.VarChar(255)
   passwordHash        String
-  firstName           String
-  lastName            String
-  phone               String?
-  program             String?
+  firstName           String            @db.VarChar(100)
+  lastName            String            @db.VarChar(100)
+  phone               String?           @db.VarChar(20)
+  program             String?           @db.VarChar(100)
   role                UserRole          @default(STUDENT)
   isActive            Boolean           @default(true)
   emailVerified      Boolean           @default(false)
@@ -54,6 +54,7 @@ model User {
   twoFactorEnabled   Boolean           @default(false)
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?         // Soft delete for audit trail
   lastLoginAt         DateTime?
   lastActivityAt      DateTime?
   failedLoginAttempts Int              @default(0)
@@ -72,6 +73,11 @@ model User {
   otpCodes            OTPCode[]
   securityQuestions   SecurityQuestion[]
   backupRecoveryCodes BackupRecoveryCode[]
+  securityEvents      SecurityEvent[]
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([deletedAt])
 }
 
 model Appointment {
@@ -80,14 +86,15 @@ model Appointment {
   doctorId        String?
   serviceId       String
   date            DateTime
-  timeSlot        String
+  timeSlot        String            @db.VarChar(10)
   status          AppointmentStatus @default(PENDING)
-  notes           String?
-  reason          String
+  notes           String?           @db.VarChar(1000)
+  reason          String            @db.VarChar(500)
   cancelledBy     String?
   cancelledAt     DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?         // Soft delete
 
   user            User              @relation("UserAppointments", fields: [userId], references: [id])
   doctor          User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
@@ -97,14 +104,16 @@ model Appointment {
   @@index([userId, date])
   @@index([status])
   @@index([date, timeSlot])
+  @@index([serviceId])
+  @@index([deletedAt])
 }
 
 model Service {
   id           String        @id @default(uuid())
-  name         String
-  description  String?
+  name         String        @db.VarChar(255)
+  description  String?       @db.Text
   duration     Int
-  category     String
+  category     String        @db.VarChar(100)
   isActive     Boolean       @default(true)
   createdAt    DateTime      @default(now())
 
@@ -116,8 +125,8 @@ model TimeSlot {
   id              String   @id @default(uuid())
   serviceId       String
   date            DateTime
-  startTime       String
-  endTime         String
+  startTime       String   @db.VarChar(10)
+  endTime         String   @db.VarChar(10)
   isAvailable     Boolean  @default(true)
   maxBookings     Int      @default(1)
   currentBookings Int      @default(0)
@@ -132,12 +141,12 @@ model TimeSlot {
 
 model Resource {
   id            String   @id @default(uuid())
-  title         String
-  description   String?
-  fileUrl       String
-  fileType      String
+  title         String   @db.VarChar(255)
+  description   String?  @db.Text
+  fileUrl       String   @db.VarChar(1000)
+  fileType      String   @db.VarChar(50)
   fileSize      Int
-  category      String
+  category      String   @db.VarChar(100)
   tags          String[]
   isPublic      Boolean  @default(false)
   uploadedBy    String
@@ -155,8 +164,8 @@ model Notification {
   id        String                @id @default(uuid())
   userId    String
   type      NotificationType
-  title     String
-  message   String
+  title     String                @db.VarChar(255)
+  message   String                @db.Text
   isRead    Boolean               @default(false)
   sentVia   NotificationSentVia   @default(IN_APP)
   createdAt DateTime              @default(now())
@@ -169,13 +178,13 @@ model Notification {
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
-  action    String
-  entity    String
+  action    String   @db.VarChar(100)
+  entity    String   @db.VarChar(100)
   entityId  String?
   oldValue  Json?
   newValue  Json?
-  ipAddress String?
-  userAgent String?
+  ipAddress String?  @db.VarChar(50)
+  userAgent String?  @db.Text
   createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id])
@@ -183,6 +192,7 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+  @@index([entity])
 }
 
 model RefreshToken {
@@ -203,14 +213,33 @@ model RefreshToken {
 model FailedLoginAttempt {
   id        String   @id @default(uuid())
   userId    String
-  ipAddress String?
-  userAgent String?
+  ipAddress String?  @db.VarChar(50)
+  userAgent String?  @db.Text
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+  @@index([ipAddress])
+}
+
+model SecurityEvent {
+  id              String   @id @default(uuid())
+  type            String   @db.VarChar(50)     // LOGIN_FAILED, INJECTION_ATTEMPT, UNAUTHORIZED_ACCESS
+  severity        String   @default("INFO")    // INFO, WARNING, CRITICAL
+  userId          String?
+  ipAddress       String?  @db.VarChar(50)
+  userAgent       String?  @db.Text
+  details         Json
+  resolved        Boolean  @default(false)
+  timestamp       DateTime @default(now())
+
+  @@index([userId])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([resolved])
+  @@index([type])
 }
 
 model PasswordResetToken {
@@ -230,10 +259,10 @@ model PasswordResetToken {
 
 model OTPCode {
   id        String   @id @default(uuid())
-  code      String
+  code      String   @db.VarChar(10)
   userId    String
-  phone     String
-  type      String
+  phone     String   @db.VarChar(20)
+  type      String   @db.VarChar(50)
   expiresAt DateTime
   createdAt DateTime @default(now())
   usedAt    DateTime?
@@ -250,8 +279,8 @@ model OTPCode {
 model SecurityQuestion {
   id        String   @id @default(uuid())
   userId    String
-  question  String
-  answer    String
+  question  String   @db.VarChar(500)
+  answer    String   @db.VarChar(500)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -262,7 +291,7 @@ model SecurityQuestion {
 
 model BackupRecoveryCode {
   id        String   @id @default(uuid())
-  code      String   @unique
+  code      String   @unique @db.VarChar(20)
   userId    String
   usedAt    DateTime?
   createdAt DateTime @default(now())
@@ -277,8 +306,8 @@ model Session {
   id           String   @id @default(uuid())
   userId       String
   token        String   @unique
-  ipAddress    String?
-  userAgent    String?
+  ipAddress    String?  @db.VarChar(50)
+  userAgent    String?  @db.Text
   lastActivity DateTime @default(now())
   expiresAt    DateTime
   revokedAt    DateTime?
