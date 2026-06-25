@@ -43,6 +43,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
+// Set request timeout to 30 seconds
+app.use((req, res, next) => {
+  req.setTimeout(30000);
+  res.setTimeout(30000);
+  next();
+});
+
 // Input sanitization and logging
 app.use(sanitizeInputs);
 app.use(logSuspiciousRequests);
@@ -54,6 +61,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again later',
+  skip: (req) => req.path === '/health', // Skip rate limit for health checks
 });
 app.use(globalLimiter);
 

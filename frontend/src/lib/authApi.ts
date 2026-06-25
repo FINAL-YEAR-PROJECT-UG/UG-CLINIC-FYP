@@ -83,6 +83,11 @@ export const authApi = {
     return response.data;
   },
 
+  checkAccount: async (data: { email: string; studentId: string }): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>('/auth/check-account', data);
+    return response.data;
+  },
+
   verifyOTP: async (data: { email: string; otp: string }): Promise<{ success: boolean; message: string }> => {
     const response = await api.post<{ success: boolean; message: string }>('/auth/verify-otp', data);
     return response.data;

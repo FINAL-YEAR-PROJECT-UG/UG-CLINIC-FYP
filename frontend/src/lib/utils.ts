@@ -16,6 +16,11 @@ export function getErrorMessage(err: unknown, fallback: string): string {
     const message = response?.data?.message;
     if (typeof message === 'string') return message;
   }
-  if (err instanceof Error && err.message) return err.message;
+  if (err instanceof Error) {
+    if (err.message === 'Network Error') {
+      return 'Unable to reach the server. Please ensure the backend is running and try again.';
+    }
+    if (err.message) return err.message;
+  }
   return fallback;
 }

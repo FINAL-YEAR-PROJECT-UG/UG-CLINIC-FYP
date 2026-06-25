@@ -1,4 +1,8 @@
 import { body, validationResult } from 'express-validator';
+import {
+  isUgStudentEmail,
+  isValidStudentId,
+} from '../utils/studentValidation';
 
 export const validateForgotPassword = [
   body('email')
@@ -52,12 +56,28 @@ export const validateResetPassword = [
 
 export const validateSendOTP = [
   body('email')
+    .trim()
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .normalizeEmail()
+    .custom((value) => {
+      if (!isUgStudentEmail(value)) {
+        throw new Error(
+          'Use your official UG student email ending in @st.ug.edu.gh.'
+        );
+      }
+      return true;
+    }),
   body('studentId')
+    .trim()
     .notEmpty()
-    .withMessage('Student ID is required'),
+    .withMessage('Student ID is required')
+    .custom((value) => {
+      if (!isValidStudentId(value)) {
+        throw new Error('Student ID must be 7–10 digits.');
+      }
+      return true;
+    }),
   body('method')
     .optional()
     .isIn(['email', 'sms'])
