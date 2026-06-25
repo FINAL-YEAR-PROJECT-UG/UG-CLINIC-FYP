@@ -9,15 +9,48 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerWithStore } from '@/lib/authApi';
 import { getErrorMessage } from '@/lib/utils';
+import {
+  isUgStudentEmail,
+  isValidStudentId,
+  ugStudentEmailMessage,
+  studentIdMessage,
+  validatePhoneNumber,
+} from '@/lib/validation';
 import './page.css';
 
-const registerSchema = z.object({
-  fullName: z.string().min(2, 'Full name is required'),
-  studentId: z.string().min(1, 'Student ID is required'),
-  email: z.string().email('Please enter a valid UG email address'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  program: z.string().min(1, 'Please select a program'),
-});
+const registerSchema = z
+  .object({
+    fullName: z.string().trim().min(2, 'Full name is required'),
+    studentId: z
+      .string()
+      .trim()
+      .refine(isValidStudentId, studentIdMessage),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .refine(isUgStudentEmail, ugStudentEmailMessage),
+    phone: z.string().trim().superRefine((value, ctx) => {
+      const result = validatePhoneNumber(value);
+      if (!result.valid) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message });
+      }
+    }),
+    program: z.string().min(1, 'Please select a program'),
+    otherProgram: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.program === 'other') {
+      const customProgram = data.otherProgram?.trim() ?? '';
+      if (customProgram.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['otherProgram'],
+          message: 'Please enter your program of study',
+        });
+      }
+    }
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -53,10 +86,13 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const selectedProgram = watch('program');
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
@@ -66,6 +102,11 @@ export default function RegisterPage() {
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0];
 
+      const programValue =
+        data.program === 'other'
+          ? data.otherProgram!.trim()
+          : PROGRAM_LABELS[data.program] ?? data.program;
+
       const response = await registerWithStore({
         email: data.email,
         password: generatePassword(),
@@ -73,7 +114,7 @@ export default function RegisterPage() {
         lastName,
         studentId: data.studentId,
         phone: data.phone,
-        program: PROGRAM_LABELS[data.program] ?? data.program,
+        program: programValue,
       });
 
       if (response.success) {
@@ -203,7 +244,7 @@ export default function RegisterPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>
-                <input type="tel" placeholder="e.g. +233 20 123 4567" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
+                <input type="tel" placeholder="" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
               </div>
               {errors.phone && <p className="register-error-text">{errors.phone.message}</p>}
             </div>
@@ -231,6 +272,26 @@ export default function RegisterPage() {
               </div>
               {errors.program && <p className="register-error-text">{errors.program.message}</p>}
             </div>
+
+            {selectedProgram === 'other' && (
+              <div className="register-input-group">
+                <label className="register-label">Specify your program</label>
+                <div className="register-input-wrapper">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="e.g. Agricultural Engineering"
+                    disabled={isLoading}
+                    className={`register-input ${errors.otherProgram ? 'error' : ''}`}
+                    {...register('otherProgram')}
+                  />
+                </div>
+                {errors.otherProgram && <p className="register-error-text">{errors.otherProgram.message}</p>}
+              </div>
+            )}
 
             <button
               type="submit"

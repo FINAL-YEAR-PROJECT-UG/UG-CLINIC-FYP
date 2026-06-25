@@ -10,8 +10,8 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
 };
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://10.107.9.172:3005/api",
-  timeout: 10000,
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3005/api",
+  timeout: 30000, // 30 seconds - increased from 10s to allow for database operations
   headers: {
     "Content-Type": "application/json",
   },
@@ -83,6 +83,7 @@ api.interceptors.response.use(
             headers: {
               "Content-Type": "application/json",
             },
+            timeout: 30000, // Also increase timeout for refresh endpoint
           }
         );
 

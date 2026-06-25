@@ -160,7 +160,7 @@ export const sendOTP = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'If an account exists with these credentials, a verification code has been sent.',
+        message: 'No account found with these details. Please create an account first.',
       });
     }
 

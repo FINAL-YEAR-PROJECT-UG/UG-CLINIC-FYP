@@ -6,12 +6,14 @@ import {
   refreshToken,
   getProfile,
   loginWithOTP,
+  checkAccount,
 } from '../controllers/auth.controller';
 import {
   validateRegistration,
   validateLogin,
   validateRefreshToken,
   validateLogout,
+  validateCheckAccount,
 } from '../validators/auth.validator';
 import { authenticate } from '../middleware/auth';
 import {
@@ -41,6 +43,7 @@ import {
 const router = Router();
 
 router.post('/register', validateRegistration, register);
+router.post('/check-account', validateCheckAccount, checkAccount);
 router.post('/login', validateLogin, login);
 router.post('/logout', validateLogout, logout);
 router.post('/refresh', validateRefreshToken, refreshToken);

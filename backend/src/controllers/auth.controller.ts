@@ -2,13 +2,94 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password';
 import { generateTokenPair, verifyRefreshToken, TokenPayload } from '../utils/jwt';
+import {
+  isUgStudentEmail,
+  isValidStudentId,
+  validatePhoneNumber,
+} from '../utils/studentValidation';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 30;
 
+export const checkAccount = async (req: Request, res: Response) => {
+  try {
+    const { email, studentId } = req.body;
+
+    if (!isUgStudentEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Use your official UG student email ending in @st.ug.edu.gh.',
+      });
+    }
+
+    if (!isValidStudentId(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student ID must be 7–10 digits.',
+      });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: email.trim().toLowerCase(),
+        studentId: studentId.trim(),
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with these details. Please create an account first.',
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account is inactive. Please contact the clinic for assistance.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Account found',
+    });
+  } catch (error) {
+    console.error('Check account error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while checking your account',
+    });
+  }
+};
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, firstName, lastName, studentId, phone, program } = req.body;
+
+    if (!isUgStudentEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Use your official UG student email ending in @st.ug.edu.gh. Personal emails are not accepted.',
+      });
+    }
+
+    if (studentId && !isValidStudentId(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student ID must be 7–10 digits.',
+      });
+    }
+
+    if (phone) {
+      const phoneValidation = validatePhoneNumber(phone);
+      if (!phoneValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: phoneValidation.message,
+        });
+      }
+    }
 
     // Validate password strength
     const passwordValidation = validatePasswordStrength(password);
