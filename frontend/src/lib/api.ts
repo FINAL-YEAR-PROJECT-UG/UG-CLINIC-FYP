@@ -9,8 +9,17 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
+/** Resolve API URL: same hostname as the browser, backend on port 3005. */
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:3005/api`;
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005/api';
+}
+
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3005/api",
+  baseURL: getApiBaseUrl(),
   timeout: 30000, // 30 seconds - increased from 10s to allow for database operations
   headers: {
     "Content-Type": "application/json",
@@ -36,6 +45,8 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
+
   const tokens = useAuthStore.getState().tokens;
 
   if (tokens?.accessToken) {
@@ -77,7 +88,7 @@ api.interceptors.response.use(
         }
 
         const response = await axios.post(
-          `${api.defaults.baseURL}/auth/refresh`,
+          `${getApiBaseUrl()}/auth/refresh`,
           { refreshToken },
           {
             headers: {

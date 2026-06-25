@@ -25,7 +25,7 @@ const studentIdValidator = body('studentId')
   .withMessage('Student ID is required')
   .custom((value) => {
     if (!isValidStudentId(value)) {
-      throw new Error('Student ID must be 7–10 digits.');
+      throw new Error('Student ID must be exactly 8 digits.');
     }
     return true;
   });

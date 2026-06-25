@@ -40,7 +40,7 @@ export function isUgStudentEmail(email: string): boolean {
 }
 
 export function isValidStudentId(studentId: string): boolean {
-  return /^\d{7,10}$/.test(studentId.trim());
+  return /^\d{8}$/.test(studentId.trim());
 }
 
 export function validatePhoneNumber(phone: string): { valid: true } | { valid: false; message: string } {
