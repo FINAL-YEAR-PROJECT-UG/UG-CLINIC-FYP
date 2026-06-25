@@ -97,6 +97,8 @@ export default function LoginPage() {
         setOtpSent(true);
         setOtpEmailSent(false);
         setDevCode(null);
+        // Auto-send OTP when account is found
+        await handleSendOTP();
       } else {
         setOtpError(response.message);
       }
@@ -123,11 +125,8 @@ export default function LoginPage() {
       });
       if (response.success) {
         setDevCode(response.devCode ?? null);
-        const isFirstSend = !otpEmailSent;
         setOtpEmailSent(true);
-        if (isFirstSend) {
-          setShowOtpInfoModal(true);
-        }
+        setShowOtpInfoModal(true);
       } else {
         setOtpError(response.message);
       }
@@ -292,6 +291,8 @@ export default function LoginPage() {
                   </svg>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={8}
                     placeholder="e.g. 10987654"
                     disabled={isCheckingAccount}
                     className={`login-input ${loginErrors.studentId ? 'error' : ''}`}
@@ -359,9 +360,7 @@ export default function LoginPage() {
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
                 <h2 className="login-card-title">Verify your account</h2>
                 <p className="login-card-description">
-                  {otpEmailSent
-                    ? `Enter the 6-digit code sent to ${loginData?.email}`
-                    : `We will send a verification code to ${loginData?.email}`}
+                  Enter the 6-digit code sent to {loginData?.email}
                 </p>
               </div>
 
@@ -372,93 +371,73 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {devCode && otpEmailSent && (
+              {devCode && (
                 <div className="login-success-banner">
                   Dev mode (no email configured) — your code is: {devCode}
                 </div>
               )}
 
-              {!otpEmailSent ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleSendOTP}
-                    disabled={isSendingOTP}
-                    className="login-submit-button"
-                  >
-                    {isSendingOTP ? (
-                      <>
-                        <Loader2 size={16} className="login-spinner" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send OTP to my email'
-                    )}
-                  </button>
-                </>
-              ) : (
-                <form onSubmit={handleSubmitOTP(onVerifyOTP)}>
-                  {/* OTP Input */}
-                  <div className="login-input-group">
-                    <label className="login-label">Enter OTP</label>
-                    <div className="login-input-wrapper">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#9CA3AF"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="login-input-icon"
-                      >
-                        <rect width="20" height="16" x="2" y="4" rx="2" />
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Enter 6-digit OTP"
-                        maxLength={6}
-                        disabled={isVerifyingOTP}
-                        className={`login-input otp ${otpErrors.otp ? 'error' : ''}`}
-                        {...registerOTP('otp')}
-                      />
-                    </div>
-                    {otpErrors.otp && (
-                      <p className="login-error-text">
-                        {otpErrors.otp.message}
-                      </p>
-                    )}
+              <form onSubmit={handleSubmitOTP(onVerifyOTP)}>
+                {/* OTP Input */}
+                <div className="login-input-group">
+                  <label className="login-label">Enter OTP</label>
+                  <div className="login-input-wrapper">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#9CA3AF"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="login-input-icon"
+                    >
+                      <rect width="20" height="16" x="2" y="4" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Enter 6-digit OTP"
+                      maxLength={6}
+                      disabled={isVerifyingOTP}
+                      className={`login-input otp ${otpErrors.otp ? 'error' : ''}`}
+                      {...registerOTP('otp')}
+                    />
                   </div>
+                  {otpErrors.otp && (
+                    <p className="login-error-text">
+                      {otpErrors.otp.message}
+                    </p>
+                  )}
+                </div>
 
-                  {/* Verify OTP button */}
-                  <button
-                    type="submit"
-                    disabled={isVerifyingOTP}
-                    className="login-submit-button"
-                  >
-                    {isVerifyingOTP ? (
-                      <>
-                        <Loader2 size={16} className="login-spinner" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify OTP & Login'
-                    )}
-                  </button>
+                {/* Verify OTP button */}
+                <button
+                  type="submit"
+                  disabled={isVerifyingOTP}
+                  className="login-submit-button"
+                >
+                  {isVerifyingOTP ? (
+                    <>
+                      <Loader2 size={16} className="login-spinner" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify OTP & Login'
+                  )}
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={handleSendOTP}
-                    disabled={isSendingOTP || isVerifyingOTP}
-                    className="login-back-button"
-                    style={{ marginTop: 12 }}
-                  >
-                    {isSendingOTP ? 'Resending...' : 'Resend OTP'}
-                  </button>
-                </form>
-              )}
+                <button
+                  type="button"
+                  onClick={handleSendOTP}
+                  disabled={isSendingOTP || isVerifyingOTP}
+                  className="login-back-button"
+                  style={{ marginTop: 12 }}
+                >
+                  {isSendingOTP ? 'Resending...' : 'Resend OTP'}
+                </button>
+              </form>
 
               {/* Back link */}
               <button

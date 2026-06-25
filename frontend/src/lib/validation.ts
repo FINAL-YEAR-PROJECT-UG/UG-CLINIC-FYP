@@ -44,10 +44,10 @@ export const ugStudentEmailMessage =
   'Use your official UG student email ending in @st.ug.edu.gh. Personal emails (e.g. Gmail) are not accepted.';
 
 export function isValidStudentId(studentId: string): boolean {
-  return /^\d{7,10}$/.test(studentId.trim());
+  return /^\d{8}$/.test(studentId.trim());
 }
 
-export const studentIdMessage = 'Student ID must be 7–10 digits (numbers only).';
+export const studentIdMessage = 'Student ID must be exactly 8 digits (numbers only).';
 
 export function validatePhoneNumber(phone: string): { valid: true } | { valid: false; message: string } {
   const cleaned = phone.replace(/[\s\-().]/g, '');

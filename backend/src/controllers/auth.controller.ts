@@ -25,7 +25,7 @@ export const checkAccount = async (req: Request, res: Response) => {
     if (!isValidStudentId(studentId)) {
       return res.status(400).json({
         success: false,
-        message: 'Student ID must be 7–10 digits.',
+        message: 'Student ID must be exactly 8 digits.',
       });
     }
 
@@ -77,7 +77,7 @@ export const register = async (req: Request, res: Response) => {
     if (studentId && !isValidStudentId(studentId)) {
       return res.status(400).json({
         success: false,
-        message: 'Student ID must be 7–10 digits.',
+        message: 'Student ID must be exactly 8 digits.',
       });
     }
 

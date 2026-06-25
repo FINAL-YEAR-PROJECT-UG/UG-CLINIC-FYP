@@ -219,7 +219,7 @@ export default function RegisterPage() {
                   <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <input type="text" placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
+                <input type="text" inputMode="numeric" maxLength={8} placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
               </div>
               {errors.studentId && <p className="register-error-text">{errors.studentId.message}</p>}
             </div>
