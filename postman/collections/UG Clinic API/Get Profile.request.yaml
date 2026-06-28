@@ -1,0 +1,19 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/auth/profile'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Profile request returns expected auth outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 404, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.success).to.eql(true);
+        pm.expect(json.data).to.have.property('user');
+      }

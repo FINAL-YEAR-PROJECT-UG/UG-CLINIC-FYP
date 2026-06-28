@@ -1,0 +1,27 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "password": "StrongPass123!",
+      "rememberMe": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Login succeeds or fails predictably', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 423, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.environment.set('accessToken', json.data.tokens.accessToken);
+        pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+      }

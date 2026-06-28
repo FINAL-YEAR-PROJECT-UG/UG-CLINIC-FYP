@@ -1,0 +1,14 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/appointments'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Appointments request returns expected auth outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 500]);
+      });

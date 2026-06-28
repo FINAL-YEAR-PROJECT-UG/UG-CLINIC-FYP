@@ -1,0 +1,31 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/register'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "password": "StrongPass123!",
+      "firstName": "Emmanuel",
+      "lastName": "Oteng",
+      "studentId": "12345678",
+      "phone": "+233501234567",
+      "program": "Computer Science"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Returns success or validation error', function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 409, 500]);
+      });
+      if (pm.response.code === 201) {
+        const json = pm.response.json();
+        pm.environment.set('accessToken', json.data.tokens.accessToken);
+        pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+      }

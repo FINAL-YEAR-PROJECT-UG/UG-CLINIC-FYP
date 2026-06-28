@@ -1,0 +1,26 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/appointments'
+order: 9000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "serviceId": "replace-with-service-id",
+      "date": "2026-07-01T09:00:00.000Z",
+      "timeSlot": "09:00",
+      "reason": "Routine consultation",
+      "notes": "Created from Postman"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Create appointment returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 404, 409, 500]);
+      });

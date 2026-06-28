@@ -212,7 +212,7 @@ export default function ResourcesPageClient() {
               key={t.id}
               onClick={() => { setTab(t.id); setVisible(INITIAL_VISIBLE); }}
               className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                tab === t.id ? 'bg-white text-blue-900 shadow-lg scale-105' : 'bg-white/30 text-blue-100 hover:bg-white/50 hover:text-white hover:scale-105'
+                tab === t.id ? 'bg-white text-blue-900 shadow-lg scale-105' : 'bg-blue-800/40 text-white border border-blue-400/30 hover:bg-blue-700/60 hover:scale-105'
               }`}
             >
               {t.label}

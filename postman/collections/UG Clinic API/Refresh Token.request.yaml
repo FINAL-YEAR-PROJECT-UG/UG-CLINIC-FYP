@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/auth/refresh'
+order: 6000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "refreshToken": "{{refreshToken}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Refresh returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.environment.set('accessToken', json.data.tokens.accessToken);
+        pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+      }

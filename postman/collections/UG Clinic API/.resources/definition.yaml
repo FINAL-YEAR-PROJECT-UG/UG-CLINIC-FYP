@@ -1,0 +1,11 @@
+$kind: collection
+name: 'UG Clinic API'
+variables:
+  - key: 'baseUrl'
+    value: 'http://localhost:5000'
+  - key: 'accessToken'
+    value: ''
+  - key: 'refreshToken'
+    value: ''
+  - key: 'sessionToken'
+    value: ''
