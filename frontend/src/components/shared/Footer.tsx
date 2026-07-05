@@ -68,11 +68,11 @@ export default function Footer() {
           <div>
             <h3 className="font-bold mb-4 text-white">Services</h3>
             <ul className="space-y-2 text-sm text-blue-200">
-              <li>General Consultation</li>
-              <li>Mental Health</li>
-              <li>Sexual Health</li>
-              <li>Vaccinations</li>
-              <li>Nutrition</li>
+              <li><Link href="/services" className="hover:text-white transition-colors">General Consultation</Link></li>
+              <li><Link href="/services" className="hover:text-white transition-colors">Mental Health</Link></li>
+              <li><Link href="/services" className="hover:text-white transition-colors">Sexual Health</Link></li>
+              <li><Link href="/services" className="hover:text-white transition-colors">Vaccinations</Link></li>
+              <li><Link href="/services" className="hover:text-white transition-colors">Nutrition</Link></li>
             </ul>
           </div>
           <div>

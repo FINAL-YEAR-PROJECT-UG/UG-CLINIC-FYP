@@ -193,11 +193,6 @@ export default function ResourcesPageClient() {
             Trusted health guides, wellness tips, and educational materials to help you stay healthy
             throughout your time at the University of Ghana.
           </p>
-          <div className="mt-4 text-sm text-blue-200">
-            <Link href="/home" className="hover:text-white">Home</Link>
-            <span className="mx-2">/</span>
-            <span className="font-medium text-white">Health Resources</span>
-          </div>
         </div>
         <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none" style={{ height: 80 }}>
           <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H0Z" fill="#EEF1FB" />

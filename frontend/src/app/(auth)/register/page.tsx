@@ -139,11 +139,6 @@ export default function RegisterPage() {
           <div className="register-nav-subtitle">Quality Healthcare for Students</div>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-        {NAV_LINKS.map(({ name, href }) => (
-          <Link key={name} href={href} className="register-nav-link">{name}</Link>
-        ))}
-      </div>
     </nav>
   );
 
