@@ -45,7 +45,10 @@ model User {
   passwordHash        String
   firstName           String            @db.VarChar(100)
   lastName            String            @db.VarChar(100)
+  otherNames          String?           @db.VarChar(100)
   phone               String?           @db.VarChar(20)
+  gender              String?           @db.VarChar(20)
+  isResident          String?           @db.VarChar(20)
   program             String?           @db.VarChar(100)
   role                UserRole          @default(STUDENT)
   isActive            Boolean           @default(true)
@@ -234,6 +237,7 @@ model SecurityEvent {
   details         Json
   resolved        Boolean  @default(false)
   timestamp       DateTime @default(now())
+  user            User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([severity])

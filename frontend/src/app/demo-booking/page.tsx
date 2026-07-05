@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { appointmentApi } from "@/lib/appointmentApi";
 import { getErrorMessage } from "@/lib/utils";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import {
   Stethoscope,
   Brain,
@@ -472,51 +473,58 @@ function Step4Review({ step1, service, date, time, onConfirm, onBack, loading }:
 
   return (
     <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: "#3B4FD8", textAlign: "center", margin: "0 0 28px" }}>
-        Almost there! Please confirm your details before booking.
-      </h2>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
-        <div>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Your Information</h3>
-          {info.map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
-              <span style={{ color: "#6B7280" }}>{label}:</span>
-              <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
-            </div>
-          ))}
+      {loading ? (
+        <div style={{ padding: "60px 0" }}>
+          <LoadingSpinner size={80} />
         </div>
-        <div>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Appointment Details</h3>
-          {appt.map(([label, value]) => (
-            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
-              <span style={{ color: "#6B7280" }}>{label}:</span>
-              <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
-            </div>
-          ))}
+      ) : (
+        <>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#3B4FD8", textAlign: "center", margin: "0 0 28px" }}>
+            Almost there! Please confirm your details before booking.
+          </h2>
 
-          <div style={{ marginTop: 20, background: "#DBEAFE", borderRadius: 12, padding: "16px 20px" }}>
-            <ul style={{ margin: 0, paddingLeft: 18, color: "#1E40AF", fontSize: 13, lineHeight: 2 }}>
-              <li>Arrive 10 minutes early</li>
-              <li>Bring your Student ID card</li>
-              <li>This service is completely free</li>
-              <li>You can cancel up to 2 hours before</li>
-            </ul>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Your Information</h3>
+              {info.map(([label, value]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
+                  <span style={{ color: "#6B7280" }}>{label}:</span>
+                  <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Appointment Details</h3>
+              {appt.map(([label, value]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
+                  <span style={{ color: "#6B7280" }}>{label}:</span>
+                  <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
+                </div>
+              ))}
+
+              <div style={{ marginTop: 20, background: "#DBEAFE", borderRadius: 12, padding: "16px 20px" }}>
+                <ul style={{ margin: 0, paddingLeft: 18, color: "#1E40AF", fontSize: 13, lineHeight: 2 }}>
+                  <li>Arrive 10 minutes early</li>
+                  <li>Bring your Student ID card</li>
+                  <li>This service is completely free</li>
+                  <li>You can cancel up to 2 hours before</li>
+                </ul>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
-        <button style={{ ...btnSecondary, border: "none", color: "#3B4FD8" }} onClick={onBack}>Back</button>
-        <button
-          style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, display: "flex", alignItems: "center", gap: 8 }}
-          onClick={onConfirm}
-          disabled={loading}
-        >
-          <CalendarIcon size={16} color="#fff" />
-          {loading ? "Submitting..." : "Confirm & Book Appointment"}
-        </button>
-      </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
+            <button style={{ ...btnSecondary, border: "none", color: "#3B4FD8" }} onClick={onBack}>Back</button>
+            <button
+              style={{ ...btnPrimary, display: "flex", alignItems: "center", gap: 8 }}
+              onClick={onConfirm}
+            >
+              <CalendarIcon size={16} color="#fff" />
+              Confirm & Book Appointment
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

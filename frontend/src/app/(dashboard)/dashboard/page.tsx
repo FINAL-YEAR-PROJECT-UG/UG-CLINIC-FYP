@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { appointmentApi, type ApiAppointment } from '@/lib/appointmentApi';
 import { getErrorMessage } from '@/lib/utils';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import {
   Calendar,
   Clock,
   MapPin,
   CheckCircle2,
   MessageCircle,
-  Loader2,
   LogOut,
 } from 'lucide-react';
 
@@ -177,9 +177,8 @@ export default function DashboardPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">Upcoming Appointment</h2>
             {loading ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center gap-2 text-gray-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading…
+              <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm">
+                <LoadingSpinner size={60} />
               </div>
             ) : nextAppointment ? (
               <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -271,8 +270,8 @@ export default function DashboardPage() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
-                        Loading…
+                      <td colSpan={3} className="px-5 py-8">
+                        <LoadingSpinner size={40} />
                       </td>
                     </tr>
                   ) : past.length === 0 ? (

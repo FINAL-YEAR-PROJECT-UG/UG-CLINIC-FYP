@@ -5,19 +5,16 @@ import {
   validatePhoneNumber,
 } from '../utils/studentValidation';
 
-const ugEmailValidator = body('email')
+const emailValidator = body('email')
   .trim()
   .isEmail()
   .withMessage('Please provide a valid email address')
-  .normalizeEmail()
-  .custom((value) => {
-    if (!isUgStudentEmail(value)) {
-      throw new Error(
-        'Use your official UG student email ending in @st.ug.edu.gh. Personal emails are not accepted.'
-      );
-    }
-    return true;
-  });
+  .normalizeEmail();
+
+const usernameValidator = body('username')
+  .trim()
+  .notEmpty()
+  .withMessage('Username (email or student ID) is required');
 
 const studentIdValidator = body('studentId')
   .trim()
@@ -43,7 +40,7 @@ const phoneValidator = body('phone')
   });
 
 export const validateCheckAccount = [
-  ugEmailValidator,
+  emailValidator,
   studentIdValidator,
   (req: any, res: any, next: any) => {
     const errors = validationResult(req);
@@ -59,7 +56,7 @@ export const validateCheckAccount = [
 ];
 
 export const validateRegistration = [
-  ugEmailValidator,
+  emailValidator,
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')
@@ -79,8 +76,26 @@ export const validateRegistration = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage('Last name must be between 2 and 50 characters'),
+  body('otherNames')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Other names must not exceed 50 characters'),
   studentIdValidator,
   phoneValidator,
+  body('gender')
+    .optional()
+    .isIn(['male', 'female', 'other'])
+    .withMessage('Gender must be male, female, or other'),
+  body('isResident')
+    .optional()
+    .isIn(['resident', 'non-resident'])
+    .withMessage('Residency status must be resident or non-resident'),
+  body('program')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Program must not exceed 100 characters'),
   (req: any, res: any, next: any) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -95,7 +110,7 @@ export const validateRegistration = [
 ];
 
 export const validateLogin = [
-  ugEmailValidator,
+  usernameValidator,
   body('password')
     .notEmpty()
     .withMessage('Password is required'),

@@ -6,13 +6,16 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  otherNames?: string;
   studentId?: string;
   phone?: string;
+  gender?: string;
+  isResident?: string;
   program?: string;
 }
 
 export interface LoginData {
-  email: string;
+  username: string;
   password: string;
   rememberMe?: boolean;
 }

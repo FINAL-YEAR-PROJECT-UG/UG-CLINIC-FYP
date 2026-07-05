@@ -456,7 +456,7 @@ export const getActiveSessions = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      data: sessions.map((session) => ({
+      data: sessions.map((session: any) => ({
         id: session.id,
         ipAddress: session.ipAddress,
         userAgent: session.userAgent,

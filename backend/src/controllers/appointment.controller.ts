@@ -29,7 +29,7 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
       select: { timeSlot: true },
     });
 
-    const bookedSlots = appointments.map((a) => a.timeSlot);
+    const bookedSlots = appointments.map((a: { timeSlot: string }) => a.timeSlot);
 
     res.status(200).json({ success: true, data: { bookedSlots } });
   } catch (error) {

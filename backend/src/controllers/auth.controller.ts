@@ -65,14 +65,7 @@ export const checkAccount = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName, studentId, phone, program } = req.body;
-
-    if (!isUgStudentEmail(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Use your official UG student email ending in @st.ug.edu.gh. Personal emails are not accepted.',
-      });
-    }
+    const { email, password, firstName, lastName, otherNames, studentId, phone, gender, isResident, program } = req.body;
 
     if (studentId && !isValidStudentId(studentId)) {
       return res.status(400).json({
@@ -133,8 +126,11 @@ export const register = async (req: Request, res: Response) => {
         passwordHash,
         firstName,
         lastName,
+        otherNames: otherNames || null,
         studentId: studentId || null,
         phone: phone || null,
+        gender: gender || null,
+        isResident: isResident || null,
         program: program || null,
         role: 'STUDENT',
       },
@@ -143,8 +139,11 @@ export const register = async (req: Request, res: Response) => {
         email: true,
         firstName: true,
         lastName: true,
+        otherNames: true,
         studentId: true,
         phone: true,
+        gender: true,
+        isResident: true,
         program: true,
         role: true,
         isActive: true,
@@ -189,13 +188,18 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { username, password, rememberMe } = req.body;
     const ipAddress = req.ip;
     const userAgent = req.get('user-agent');
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Find user by email or studentId (username)
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: username },
+          { studentId: username }
+        ]
+      },
     });
 
     if (!user) {

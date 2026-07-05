@@ -28,7 +28,7 @@
     "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
+    "date-fns": "^4.0.0",
     "eslint-config-prettier": "^10.1.8",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
@@ -37,7 +37,7 @@
     "prettier": "^3.8.4",
     "react": "19.2.4",
     "react-aria": "^3.49.0",
-    "react-day-picker": "^8.10.0",
+    "react-day-picker": "^9.0.0",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.78.0",
     "react-stately": "^3.47.0",
@@ -49,11 +49,11 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20.19.43",
-    "@types/react": "^19.2.17",
+    "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }

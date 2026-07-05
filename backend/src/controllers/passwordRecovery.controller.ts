@@ -422,7 +422,7 @@ export const verifySecurityQuestions = async (req: Request, res: Response) => {
 
     let correctAnswers = 0;
     for (const answer of answers) {
-      const question = user.securityQuestions.find((q) => q.question === answer.question);
+      const question = user.securityQuestions.find((q: { question: string; answer: string }) => q.question === answer.question);
       if (question && question.answer === answer.answer) {
         correctAnswers++;
       }
