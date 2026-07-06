@@ -3,7 +3,6 @@ import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password';
 import { generateTokenPair, verifyRefreshToken, TokenPayload } from '../utils/jwt';
 import {
-  isUgStudentEmail,
   isValidStudentId,
   validatePhoneNumber,
 } from '../utils/studentValidation';
@@ -14,13 +13,6 @@ const LOCKOUT_DURATION_MINUTES = 30;
 export const checkAccount = async (req: Request, res: Response) => {
   try {
     const { email, studentId } = req.body;
-
-    if (!isUgStudentEmail(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Use your official UG student email ending in @st.ug.edu.gh.',
-      });
-    }
 
     if (!isValidStudentId(studentId)) {
       return res.status(400).json({

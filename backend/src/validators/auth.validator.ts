@@ -1,6 +1,5 @@
 import { body, validationResult } from 'express-validator';
 import {
-  isUgStudentEmail,
   isValidStudentId,
   validatePhoneNumber,
 } from '../utils/studentValidation';

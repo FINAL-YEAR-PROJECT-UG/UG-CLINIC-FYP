@@ -1,21 +1,5 @@
 const UG_STUDENT_EMAIL_DOMAIN = '@st.ug.edu.gh';
 
-const BLOCKED_EMAIL_DOMAINS = new Set([
-  'gmail.com',
-  'googlemail.com',
-  'yahoo.com',
-  'yahoo.co.uk',
-  'hotmail.com',
-  'outlook.com',
-  'live.com',
-  'icloud.com',
-  'proton.me',
-  'protonmail.com',
-  'aol.com',
-  'mail.com',
-  'zoho.com',
-]);
-
 /** Valid Ghana mobile network prefixes (without leading 0). Source: NCA numbering plan. */
 export const GHANA_MOBILE_PREFIXES = [
   '20', '23', '24', '25', '26', '27', '50', '53', '54', '55', '56', '57', '59',
@@ -23,25 +7,17 @@ export const GHANA_MOBILE_PREFIXES = [
 
 export function isUgStudentEmail(email: string): boolean {
   const normalized = email.trim().toLowerCase();
-
-  if (!/^[^\s@]+@st\.ug\.edu\.gh$/.test(normalized)) {
-    return false;
-  }
-
-  const [localPart, domain] = normalized.split('@');
-  if (!localPart || localPart.length < 2) {
-    return false;
-  }
-
-  if (BLOCKED_EMAIL_DOMAINS.has(domain)) {
-    return false;
-  }
-
-  return domain === UG_STUDENT_EMAIL_DOMAIN.slice(1);
+  return /^[^\s@]+@st\.ug\.edu\.gh$/.test(normalized);
 }
 
-export const ugStudentEmailMessage =
-  'Use your official UG student email ending in @st.ug.edu.gh. Personal emails (e.g. Gmail) are not accepted.';
+export function isValidEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(normalized);
+}
+
+export const emailValidationMessage =
+  'Please enter a valid email address (student email or personal email).';
 
 export function isValidStudentId(studentId: string): boolean {
   return /^\d{8}$/.test(studentId.trim());

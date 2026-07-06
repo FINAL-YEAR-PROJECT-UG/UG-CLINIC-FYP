@@ -1,6 +1,5 @@
 import { body, validationResult } from 'express-validator';
 import {
-  isUgStudentEmail,
   isValidStudentId,
 } from '../utils/studentValidation';
 
@@ -59,15 +58,7 @@ export const validateSendOTP = [
     .trim()
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail()
-    .custom((value) => {
-      if (!isUgStudentEmail(value)) {
-        throw new Error(
-          'Use your official UG student email ending in @st.ug.edu.gh.'
-        );
-      }
-      return true;
-    }),
+    .normalizeEmail(),
   body('studentId')
     .trim()
     .notEmpty()

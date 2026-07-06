@@ -1,42 +1,18 @@
 const UG_STUDENT_EMAIL_DOMAIN = 'st.ug.edu.gh';
 
-const BLOCKED_EMAIL_DOMAINS = new Set([
-  'gmail.com',
-  'googlemail.com',
-  'yahoo.com',
-  'yahoo.co.uk',
-  'hotmail.com',
-  'outlook.com',
-  'live.com',
-  'icloud.com',
-  'proton.me',
-  'protonmail.com',
-  'aol.com',
-  'mail.com',
-  'zoho.com',
-]);
-
 export const GHANA_MOBILE_PREFIXES = [
   '20', '23', '24', '25', '26', '27', '50', '53', '54', '55', '56', '57', '59',
 ];
 
 export function isUgStudentEmail(email: string): boolean {
   const normalized = email.trim().toLowerCase();
+  return /^[^\s@]+@st\.ug\.edu\.gh$/.test(normalized);
+}
 
-  if (!/^[^\s@]+@st\.ug\.edu\.gh$/.test(normalized)) {
-    return false;
-  }
-
-  const [localPart, domain] = normalized.split('@');
-  if (!localPart || localPart.length < 2) {
-    return false;
-  }
-
-  if (BLOCKED_EMAIL_DOMAINS.has(domain)) {
-    return false;
-  }
-
-  return domain === UG_STUDENT_EMAIL_DOMAIN;
+export function isValidEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(normalized);
 }
 
 export function isValidStudentId(studentId: string): boolean {

@@ -74,6 +74,36 @@
   box-shadow: 0 4px 12px rgba(59, 79, 216, 0.3);
 }
 
+.register-exit-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #fff;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.register-exit-button:hover {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+.register-exit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.1);
+}
+
 .register-hero {
   background: linear-gradient(135deg, #1E3A8A 0%, #3B4FD8 50%, #4F6BEB 100%);
   padding: 48px 24px 80px;
@@ -138,11 +168,29 @@
 
 .register-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 600px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 36px 32px 28px;
+}
+
+.register-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.register-form-grid .register-input-group {
+  margin-bottom: 0;
+}
+
+.register-form-grid .register-input-group:last-of-type {
+  margin-bottom: 0;
+}
+
+.register-full-width {
+  grid-column: 1 / -1;
 }
 
 .register-card-icon {
