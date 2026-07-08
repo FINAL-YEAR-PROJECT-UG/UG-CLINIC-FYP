@@ -6,6 +6,279 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id                  String               @id @default(uuid())
+  studentId           String?              @unique
+  email               String               @unique @db.VarChar(255)
+  passwordHash        String
+  firstName           String               @db.VarChar(100)
+  lastName            String               @db.VarChar(100)
+  phone               String?              @db.VarChar(20)
+  role                UserRole             @default(STUDENT)
+  isActive            Boolean              @default(true)
+  emailVerified       Boolean              @default(false)
+  phoneVerified       Boolean              @default(false)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  lastLoginAt         DateTime?
+  failedLoginAttempts Int                  @default(0)
+  lastActivityAt      DateTime?
+  lockedUntil         DateTime?
+  maxSessions         Int                  @default(3)
+  twoFactorEnabled    Boolean              @default(false)
+  program             String?              @db.VarChar(100)
+  deletedAt           DateTime?
+  gender              String?              @db.VarChar(20)
+  isResident          String?              @db.VarChar(20)
+  otherNames          String?              @db.VarChar(100)
+  doctorAppointments  Appointment[]        @relation("DoctorAppointments")
+  appointments        Appointment[]        @relation("UserAppointments")
+  auditLogs           AuditLog[]
+  backupRecoveryCodes BackupRecoveryCode[]
+  loginAttempts       FailedLoginAttempt[]
+  notifications       Notification[]
+  otpCodes            OTPCode[]
+  passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
+  resources           Resource[]
+  securityEvents      SecurityEvent[]
+  securityQuestions   SecurityQuestion[]
+  sessions            Session[]
+
+  @@index([email])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  userId      String
+  doctorId    String?
+  serviceId   String
+  date        DateTime
+  timeSlot    String            @db.VarChar(10)
+  status      AppointmentStatus @default(PENDING)
+  notes       String?           @db.VarChar(1000)
+  reason      String            @db.VarChar(500)
+  cancelledBy String?
+  cancelledAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+  doctor      User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  service     Service           @relation(fields: [serviceId], references: [id])
+  user        User              @relation("UserAppointments", fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([status])
+  @@index([date, timeSlot])
+  @@index([serviceId])
+  @@index([deletedAt])
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  name         String        @db.VarChar(255)
+  description  String?
+  duration     Int
+  category     String        @db.VarChar(100)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+  timeSlots    TimeSlot[]
+}
+
+model TimeSlot {
+  id              String   @id @default(uuid())
+  serviceId       String
+  date            DateTime
+  startTime       String   @db.VarChar(10)
+  endTime         String   @db.VarChar(10)
+  isAvailable     Boolean  @default(true)
+  maxBookings     Int      @default(1)
+  currentBookings Int      @default(0)
+  createdAt       DateTime @default(now())
+  service         Service  @relation(fields: [serviceId], references: [id])
+
+  @@unique([serviceId, date, startTime])
+  @@index([date])
+  @@index([date, isAvailable])
+}
+
+model Resource {
+  id            String   @id @default(uuid())
+  title         String   @db.VarChar(255)
+  description   String?
+  fileUrl       String   @db.VarChar(1000)
+  fileType      String   @db.VarChar(50)
+  fileSize      Int
+  category      String   @db.VarChar(100)
+  tags          String[]
+  isPublic      Boolean  @default(false)
+  uploadedBy    String
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  uploader      User     @relation(fields: [uploadedBy], references: [id])
+
+  @@index([category])
+  @@index([isPublic])
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String              @db.VarChar(255)
+  message   String
+  isRead    Boolean             @default(false)
+  sentVia   NotificationSentVia @default(IN_APP)
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   @db.VarChar(100)
+  entity    String   @db.VarChar(100)
+  entityId  String?
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?  @db.VarChar(50)
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entity])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model FailedLoginAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  ipAddress String?  @db.VarChar(50)
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([ipAddress])
+}
+
+model SecurityEvent {
+  id        String   @id @default(uuid())
+  type      String   @db.VarChar(50)
+  severity  String   @default("INFO")
+  userId    String?
+  ipAddress String?  @db.VarChar(50)
+  userAgent String?
+  details   Json
+  resolved  Boolean  @default(false)
+  timestamp DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([resolved])
+  @@index([type])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OTPCode {
+  id        String    @id @default(uuid())
+  code      String    @db.VarChar(10)
+  userId    String
+  phone     String    @db.VarChar(20)
+  type      String    @db.VarChar(50)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+model SecurityQuestion {
+  id        String   @id @default(uuid())
+  userId    String
+  question  String   @db.VarChar(500)
+  answer    String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model BackupRecoveryCode {
+  id        String    @id @default(uuid())
+  code      String    @unique @db.VarChar(20)
+  userId    String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+}
+
+model Session {
+  id           String    @id @default(uuid())
+  userId       String
+  token        String    @unique
+  ipAddress    String?   @db.VarChar(50)
+  userAgent    String?
+  lastActivity DateTime  @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([lastActivity])
+}
+
 enum UserRole {
   STUDENT
   RECEPTIONIST
@@ -36,291 +309,4 @@ enum NotificationSentVia {
   EMAIL
   SMS
   IN_APP
-}
-
-model User {
-  id                  String            @id @default(uuid())
-  studentId           String?           @unique
-  email               String            @unique @db.VarChar(255)
-  passwordHash        String
-  firstName           String            @db.VarChar(100)
-  lastName            String            @db.VarChar(100)
-  otherNames          String?           @db.VarChar(100)
-  phone               String?           @db.VarChar(20)
-  gender              String?           @db.VarChar(20)
-  isResident          String?           @db.VarChar(20)
-  program             String?           @db.VarChar(100)
-  role                UserRole          @default(STUDENT)
-  isActive            Boolean           @default(true)
-  emailVerified      Boolean           @default(false)
-  phoneVerified      Boolean           @default(false)
-  twoFactorEnabled   Boolean           @default(false)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  deletedAt           DateTime?         // Soft delete for audit trail
-  lastLoginAt         DateTime?
-  lastActivityAt      DateTime?
-  failedLoginAttempts Int              @default(0)
-  lockedUntil         DateTime?
-  maxSessions         Int              @default(3)
-  refreshTokens       RefreshToken[]
-  sessions            Session[]
-
-  appointments        Appointment[]     @relation("UserAppointments")
-  doctorAppointments  Appointment[]     @relation("DoctorAppointments")
-  resources           Resource[]
-  notifications       Notification[]
-  auditLogs           AuditLog[]
-  loginAttempts       FailedLoginAttempt[]
-  passwordResetTokens PasswordResetToken[]
-  otpCodes            OTPCode[]
-  securityQuestions   SecurityQuestion[]
-  backupRecoveryCodes BackupRecoveryCode[]
-  securityEvents      SecurityEvent[]
-
-  @@index([email])
-  @@index([createdAt])
-  @@index([deletedAt])
-}
-
-model Appointment {
-  id              String            @id @default(uuid())
-  userId          String
-  doctorId        String?
-  serviceId       String
-  date            DateTime
-  timeSlot        String            @db.VarChar(10)
-  status          AppointmentStatus @default(PENDING)
-  notes           String?           @db.VarChar(1000)
-  reason          String            @db.VarChar(500)
-  cancelledBy     String?
-  cancelledAt     DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  deletedAt       DateTime?         // Soft delete
-
-  user            User              @relation("UserAppointments", fields: [userId], references: [id])
-  doctor          User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  service         Service           @relation(fields: [serviceId], references: [id])
-
-  @@unique([userId, date])
-  @@index([userId, date])
-  @@index([status])
-  @@index([date, timeSlot])
-  @@index([serviceId])
-  @@index([deletedAt])
-}
-
-model Service {
-  id           String        @id @default(uuid())
-  name         String        @db.VarChar(255)
-  description  String?       @db.Text
-  duration     Int
-  category     String        @db.VarChar(100)
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-
-  appointments Appointment[]
-  timeSlots    TimeSlot[]
-}
-
-model TimeSlot {
-  id              String   @id @default(uuid())
-  serviceId       String
-  date            DateTime
-  startTime       String   @db.VarChar(10)
-  endTime         String   @db.VarChar(10)
-  isAvailable     Boolean  @default(true)
-  maxBookings     Int      @default(1)
-  currentBookings Int      @default(0)
-  createdAt       DateTime @default(now())
-
-  service         Service  @relation(fields: [serviceId], references: [id])
-
-  @@unique([serviceId, date, startTime])
-  @@index([date])
-  @@index([date, isAvailable])
-}
-
-model Resource {
-  id            String   @id @default(uuid())
-  title         String   @db.VarChar(255)
-  description   String?  @db.Text
-  fileUrl       String   @db.VarChar(1000)
-  fileType      String   @db.VarChar(50)
-  fileSize      Int
-  category      String   @db.VarChar(100)
-  tags          String[]
-  isPublic      Boolean  @default(false)
-  uploadedBy    String
-  downloadCount Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  uploader      User     @relation(fields: [uploadedBy], references: [id])
-
-  @@index([category])
-  @@index([isPublic])
-}
-
-model Notification {
-  id        String                @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String                @db.VarChar(255)
-  message   String                @db.Text
-  isRead    Boolean               @default(false)
-  sentVia   NotificationSentVia   @default(IN_APP)
-  createdAt DateTime              @default(now())
-
-  user      User                  @relation(fields: [userId], references: [id])
-
-  @@index([userId, isRead])
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?
-  action    String   @db.VarChar(100)
-  entity    String   @db.VarChar(100)
-  entityId  String?
-  oldValue  Json?
-  newValue  Json?
-  ipAddress String?  @db.VarChar(50)
-  userAgent String?  @db.Text
-  createdAt DateTime @default(now())
-
-  user      User?    @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([action])
-  @@index([createdAt])
-  @@index([entity])
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  revokedAt DateTime?
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model FailedLoginAttempt {
-  id        String   @id @default(uuid())
-  userId    String
-  ipAddress String?  @db.VarChar(50)
-  userAgent String?  @db.Text
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([createdAt])
-  @@index([ipAddress])
-}
-
-model SecurityEvent {
-  id              String   @id @default(uuid())
-  type            String   @db.VarChar(50)     // LOGIN_FAILED, INJECTION_ATTEMPT, UNAUTHORIZED_ACCESS
-  severity        String   @default("INFO")    // INFO, WARNING, CRITICAL
-  userId          String?
-  ipAddress       String?  @db.VarChar(50)
-  userAgent       String?  @db.Text
-  details         Json
-  resolved        Boolean  @default(false)
-  timestamp       DateTime @default(now())
-  user            User?    @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([severity])
-  @@index([timestamp])
-  @@index([resolved])
-  @@index([type])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  usedAt    DateTime?
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model OTPCode {
-  id        String   @id @default(uuid())
-  code      String   @db.VarChar(10)
-  userId    String
-  phone     String   @db.VarChar(20)
-  type      String   @db.VarChar(50)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  usedAt    DateTime?
-  attempts  Int      @default(0)
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([code])
-  @@index([userId])
-  @@index([phone])
-  @@index([expiresAt])
-}
-
-model SecurityQuestion {
-  id        String   @id @default(uuid())
-  userId    String
-  question  String   @db.VarChar(500)
-  answer    String   @db.VarChar(500)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model BackupRecoveryCode {
-  id        String   @id @default(uuid())
-  code      String   @unique @db.VarChar(20)
-  userId    String
-  usedAt    DateTime?
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([code])
-  @@index([userId])
-}
-
-model Session {
-  id           String   @id @default(uuid())
-  userId       String
-  token        String   @unique
-  ipAddress    String?  @db.VarChar(50)
-  userAgent    String?  @db.Text
-  lastActivity DateTime @default(now())
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  createdAt    DateTime @default(now())
-
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([lastActivity])
 }

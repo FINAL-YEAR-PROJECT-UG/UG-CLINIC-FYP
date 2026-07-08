@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
@@ -5,7 +6,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
-import dotenv from 'dotenv';
 import notFound from './middleware/notFound';
 import errorHandler from './middleware/errorHandler';
 import { sanitizeInputs } from './middleware/inputSanitizer';
@@ -18,8 +18,6 @@ import resourceRoutes from './routes/resource.routes';
 import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
 import staffRoutes from './routes/staff.routes';
-
-dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
