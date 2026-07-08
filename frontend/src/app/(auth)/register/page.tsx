@@ -32,8 +32,8 @@ const registerSchema = z
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message });
       }
     }),
-    gender: z.enum(['male', 'female', 'other'], { required_error: 'Please select your gender' }),
-    isResident: z.enum(['resident', 'non-resident'], { required_error: 'Please select residency status' }),
+    gender: z.enum(['male', 'female', 'other']),
+    isResident: z.enum(['resident', 'non-resident']),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -44,7 +44,7 @@ const registerSchema = z
     confirmPassword: z.string().min(6, 'Please confirm your password'),
     program: z.string().min(1, 'Please select a program'),
     otherProgram: z.string().optional(),
-    acceptPrivacyPolicy: z.literal(true, { errorMap: () => ({ message: 'You must accept the privacy policy' }) }),
+    acceptPrivacyPolicy: z.literal(true),
   })
   .superRefine((data, ctx) => {
     if (data.program === 'other') {
@@ -153,7 +153,7 @@ export default function RegisterPage() {
         Exit
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div className="register-nav-logo">UG</div>
+        <img src="/home/logo.svg" alt="UG Logo" className="register-nav-logo" />
         <div>
           <div className="register-nav-title">UG Student Clinic</div>
           <div className="register-nav-subtitle">Quality Healthcare for Students</div>

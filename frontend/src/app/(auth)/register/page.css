@@ -22,14 +22,7 @@
 .register-nav-logo {
   width: 36px;
   height: 36px;
-  background: #3B4FD8;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 13px;
+  object-fit: contain;
 }
 
 .register-nav-title {

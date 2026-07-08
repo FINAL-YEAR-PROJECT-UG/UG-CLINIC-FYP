@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   MessageCircle,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 
 const CLINIC_LOCATION = 'Student Clinic, UG Legon';

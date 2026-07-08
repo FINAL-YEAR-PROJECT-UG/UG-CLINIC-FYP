@@ -9,11 +9,11 @@ export const useAuth = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (email: string, password: string, rememberMe?: boolean) => {
+  const login = async (username: string, password: string, rememberMe?: boolean) => {
     setError(null);
     setLoading(true);
     try {
-      const response = await loginWithStore({ email, password, rememberMe });
+      const response = await loginWithStore({ username, password, rememberMe });
       if (response.success) {
         router.push('/dashboard');
       } else {
