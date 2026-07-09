@@ -1,6 +1,13 @@
 'use client';
 
 import Image from 'next/image';
+import logoIcon from '@/Assets/logo.svg';
+
+const getImageSrc = (image: any) => {
+  if (typeof image === 'string') return image;
+  if (image.src) return image.src;
+  return image;
+};
 
 interface LoadingSpinnerProps {
   size?: number;
@@ -12,7 +19,7 @@ export default function LoadingSpinner({ size = 80, className = '' }: LoadingSpi
     <div className={`flex flex-col items-center justify-center ${className}`}>
       <div className="relative animate-pulse">
         <Image
-          src="/home/logo.svg"
+          src={getImageSrc(logoIcon)}
           alt="Loading..."
           width={size}
           height={size}

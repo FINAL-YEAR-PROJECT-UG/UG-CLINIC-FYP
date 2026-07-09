@@ -20,6 +20,15 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import './HomePageClient.css';
+import integrityIcon from '@/Assets/integrity.svg';
+import respectIcon from '@/Assets/respect.svg';
+import excellenceIcon from '@/Assets/excellence.svg';
+import commitmentIcon from '@/Assets/commitment.svg';
+import healthHivIcon from '@/Assets/health-hiv.png';
+import healthFluIcon from '@/Assets/health-flu.png';
+import healthWellnessIcon from '@/Assets/health-wellness.svg';
+import welcomeIcon from '@/Assets/welcome.png';
+import { getImageSrc } from '@/lib/assets';
 
 export default function HomePageClient() {
   const router = useRouter();
@@ -63,22 +72,22 @@ export default function HomePageClient() {
     {
       title: 'Integrity',
       description: 'We maintain the highest ethical standards in all our healthcare practices and patient interactions.',
-      image: '/home/integrity.svg',
+      image: integrityIcon,
     },
     {
       title: 'Respect',
       description: 'Every patient is treated with dignity, compassion, and understanding in a safe environment.',
-      image: '/home/respect.svg',
+      image: respectIcon,
     },
     {
       title: 'Excellence',
       description: 'We strive for the highest quality care through continuous improvement and professional development.',
-      image: '/home/excellence.svg',
+      image: excellenceIcon,
     },
     {
       title: 'Commitment',
       description: 'Dedicated to serving our student community with accessible and comprehensive healthcare.',
-      image: '/home/commitment.svg',
+      image: commitmentIcon,
     },
   ];
 
@@ -91,7 +100,7 @@ export default function HomePageClient() {
       description: 'Free testing available. Learn about prevention and support resources.',
       action: 'Learn More',
       href: '/services',
-      image: '/home/health-hiv.png',
+      image: healthHivIcon,
       bgColor: 'bg-teal-600',
       fallbackIcon: HeartPulse,
     },
@@ -103,7 +112,7 @@ export default function HomePageClient() {
       description: 'Protect yourself this season. Book your flu shot appointment today.',
       action: 'Book Now',
       href: '',
-      image: '/home/health-flu.png',
+      image: healthFluIcon,
       bgColor: 'bg-orange-100',
       fallbackIcon: Syringe,
     },
@@ -115,7 +124,7 @@ export default function HomePageClient() {
       description: 'Simple strategies to maintain physical and mental wellbeing during exams.',
       action: 'Read More',
       href: '/resources',
-      image: '/home/health-wellness.svg',
+      image: healthWellnessIcon,
       bgColor: 'bg-yellow-50',
       fallbackIcon: Apple,
     },
@@ -165,7 +174,7 @@ export default function HomePageClient() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-80 lg:h-96 rounded-2xl overflow-hidden">
               <Image
-                src="/home/welcome.png"
+                src={welcomeIcon}
                 alt="Welcome to Student Clinic"
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -211,7 +220,7 @@ export default function HomePageClient() {
                 <CardHeader className="pb-2">
                   <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                     <img
-                      src={value.image}
+                      src={getImageSrc(value.image)}
                       alt={value.title}
                       className="w-full h-full object-contain p-2"
                     />

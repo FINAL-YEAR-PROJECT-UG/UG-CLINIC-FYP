@@ -9,12 +9,20 @@ import { useRouter } from 'next/navigation';
 import { registerWithStore } from '@/lib/authApi';
 import { getErrorMessage } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import AuthBrand from '@/components/shared/AuthBrand';
 import {
   isValidStudentId,
   studentIdMessage,
   validatePhoneNumber,
 } from '@/lib/validation';
 import './page.css';
+import logoIcon from '@/Assets/logo.svg';
+
+const getImageSrc = (image: any) => {
+  if (typeof image === 'string') return image;
+  if (image.src) return image.src;
+  return image;
+};
 
 const registerSchema = z
   .object({
@@ -153,11 +161,7 @@ export default function RegisterPage() {
         Exit
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <img src="/home/logo.svg" alt="UG Logo" className="register-nav-logo" />
-        <div>
-          <div className="register-nav-title">UG Student Clinic</div>
-          <div className="register-nav-subtitle">Quality Healthcare for Students</div>
-        </div>
+        <AuthBrand />
       </div>
     </nav>
   );

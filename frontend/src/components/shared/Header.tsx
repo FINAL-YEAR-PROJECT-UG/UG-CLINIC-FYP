@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import logoIcon from '@/Assets/logo.svg';
+import { getImageSrc } from '@/lib/assets';
 
 export default function Header() {
   const pathname = usePathname();
@@ -33,7 +35,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center gap-3">
             <Image
-              src="/home/logo.svg"
+              src={getImageSrc(logoIcon)}
               alt="UG Clinic Logo"
               width={40}
               height={40}

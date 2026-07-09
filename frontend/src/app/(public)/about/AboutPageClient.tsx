@@ -13,6 +13,14 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import './AboutPageClient.css';
+import compassionIcon from '@/Assets/compassion.svg';
+import excellenceAboutIcon from '@/Assets/excellence-about.svg';
+import integrityAboutIcon from '@/Assets/integrity-about.svg';
+import respectAboutIcon from '@/Assets/respect-about.svg';
+import whoWeAreIcon from '@/Assets/who-we-are.png';
+import missionIcon from '@/Assets/mission.svg';
+import visionIcon from '@/Assets/vision.svg';
+import { getImageSrc } from '@/lib/assets';
 
 export default function AboutPageClient() {
   const ourStory = [
@@ -42,22 +50,22 @@ export default function AboutPageClient() {
     {
       title: 'Compassion',
       description: 'We treat every patient with empathy, dignity, and understanding.',
-      image: '/home/compassion.svg',
+      image: compassionIcon,
     },
     {
       title: 'Excellence',
       description: 'We strive for the highest quality care through continuous improvement.',
-      image: '/home/excellence-about.svg',
+      image: excellenceAboutIcon,
     },
     {
       title: 'Integrity',
       description: 'We maintain the highest ethical standards in all our practices.',
-      image: '/home/integrity-about.svg',
+      image: integrityAboutIcon,
     },
     {
       title: 'Respect',
       description: 'We honor the dignity and worth of every individual.',
-      image: '/home/respect-about.svg',
+      image: respectAboutIcon,
     },
   ];
 
@@ -131,7 +139,7 @@ export default function AboutPageClient() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative h-80 lg:h-96 rounded-2xl overflow-hidden">
               <Image
-                src="/home/who-we-are.png"
+                src={whoWeAreIcon}
                 alt="Who We Are"
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -197,7 +205,7 @@ export default function AboutPageClient() {
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 bg-blue-100 rounded-2xl flex items-center justify-center overflow-hidden">
                   <img
-                    src="/home/mission.svg"
+                    src={getImageSrc(missionIcon)}
                     alt="Mission"
                     className="w-full h-full object-contain p-4"
                   />
@@ -217,7 +225,7 @@ export default function AboutPageClient() {
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 bg-blue-100 rounded-2xl flex items-center justify-center overflow-hidden">
                   <img
-                    src="/home/vision.svg"
+                    src={getImageSrc(visionIcon)}
                     alt="Vision"
                     className="w-full h-full object-contain p-4"
                   />
@@ -280,7 +288,7 @@ export default function AboutPageClient() {
                 <CardHeader className="pb-2">
                   <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                     <img
-                      src={value.image}
+                      src={getImageSrc(value.image)}
                       alt={value.title}
                       className="w-full h-full object-contain p-2"
                     />

@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginWithStore } from '@/lib/authApi';
+import AuthBrand from '@/components/shared/AuthBrand';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Please enter your email or student ID'),
@@ -59,7 +60,7 @@ export default function LoginPage() {
       } else {
         setError(response.message || 'Login failed. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
@@ -68,13 +69,7 @@ export default function LoginPage() {
 
   const header = (
     <nav style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, background: '#3B4FD8', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>UG</div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1F2937' }}>UG Student Clinic</div>
-          <div style={{ fontSize: 11, color: '#9CA3AF' }}>Quality Healthcare for Students</div>
-        </div>
-      </div>
+      <AuthBrand />
       <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         {[
           { name: 'Home', href: '/home' },

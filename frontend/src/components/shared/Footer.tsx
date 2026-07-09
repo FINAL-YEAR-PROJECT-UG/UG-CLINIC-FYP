@@ -3,6 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Phone, Mail, MapPin } from 'lucide-react';
+import logoIcon from '@/Assets/logo.svg';
+
+const getImageSrc = (image: any) => {
+  if (typeof image === 'string') return image;
+  if (image.src) return image.src;
+  return image;
+};
 
 // Inline social icons
 const FacebookIcon = () => (
@@ -37,7 +44,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <Image
-                src="/home/logo.svg"
+                src={getImageSrc(logoIcon)}
                 alt="UG Clinic Logo"
                 width={40}
                 height={40}

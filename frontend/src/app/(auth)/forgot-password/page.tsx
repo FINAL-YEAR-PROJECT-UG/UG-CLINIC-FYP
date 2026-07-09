@@ -7,6 +7,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
+import AuthBrand from '@/components/shared/AuthBrand';
 import './page.css';
 
 const forgotPasswordSchema = z.object({
@@ -43,9 +44,12 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const authHeader = <AuthBrand className="mb-6" />;
+
   if (success) {
     return (
       <div className="forgot-password-page">
+        {authHeader}
         <div className="forgot-password-card">
           <div className="forgot-password-success">
             <h1 className="forgot-password-title">Check Your Phone</h1>
@@ -64,6 +68,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="forgot-password-page">
+      {authHeader}
       <div className="forgot-password-card">
         <h1 className="forgot-password-title">Forgot Password?</h1>
         <p className="forgot-password-description">
