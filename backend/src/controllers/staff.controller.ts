@@ -508,3 +508,87 @@ export const toggle2FA = async (req: Request, res: Response) => {
     });
   }
 };
+
+// ---------- Staff-side student record management ----------
+
+export const listStudents = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const { query = '', page = '1', pageSize = '25' } = req.query as any;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const size = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 25));
+
+    const where: any = { role: 'STUDENT' };
+    if (query) {
+      where.OR = [
+        { firstName: { contains: String(query), mode: 'insensitive' } },
+        { lastName: { contains: String(query), mode: 'insensitive' } },
+        { email: { contains: String(query), mode: 'insensitive' } },
+        { studentId: { contains: String(query), mode: 'insensitive' } },
+      ];
+    }
+
+    const [students, total] = await Promise.all([
+      prisma.user.findMany({ where, skip: (pageNum - 1) * size, take: size, orderBy: { createdAt: 'desc' }, select: { id: true, firstName: true, lastName: true, email: true, studentId: true, program: true, phone: true, createdAt: true } }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.status(200).json({ success: true, data: { students, total, page: pageNum, pageSize: size } });
+  } catch (error) {
+    console.error('List students error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while listing students' });
+  }
+};
+
+export const getStudent = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const id = String(req.params.id);
+    const student = await prisma.user.findUnique({ where: { id }, select: { id: true, firstName: true, lastName: true, email: true, studentId: true, program: true, phone: true, gender: true, createdAt: true, updatedAt: true } });
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    res.status(200).json({ success: true, data: { student } });
+  } catch (error) {
+    console.error('Get student error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while fetching student' });
+  }
+};
+
+export const updateStudent = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const id = String(req.params.id);
+    const { firstName, lastName, phone, program, gender, isActive } = req.body || {};
+
+    const student = await prisma.user.findUnique({ where: { id } });
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    const data: any = {};
+    if (firstName !== undefined) data.firstName = String(firstName);
+    if (lastName !== undefined) data.lastName = String(lastName);
+    if (phone !== undefined) data.phone = String(phone);
+    if (program !== undefined) data.program = String(program);
+    if (gender !== undefined) data.gender = String(gender);
+    if (isActive !== undefined) data.isActive = !!isActive;
+
+    const updated = await prisma.user.update({ where: { id }, data });
+
+    res.status(200).json({ success: true, message: 'Student updated', data: { student: updated } });
+  } catch (error) {
+    console.error('Update student error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while updating student' });
+  }
+};
+

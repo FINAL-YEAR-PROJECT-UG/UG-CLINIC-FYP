@@ -8,6 +8,10 @@ import {
   revokeAllSessions,
   getActiveSessions,
   toggle2FA,
+  // staff management
+  listStudents,
+  getStudent,
+  updateStudent,
 } from '../controllers/staff.controller';
 import {
   validateStaffRegister,
@@ -27,5 +31,12 @@ router.delete('/session/:sessionId', authenticateStaff, revokeSession);
 router.delete('/sessions', authenticateStaff, revokeAllSessions);
 router.get('/sessions', authenticateStaff, getActiveSessions);
 router.post('/2fa/toggle', authenticateStaff, validateToggle2FA, toggle2FA);
+
+// Student record management (staff-only)
+router.get('/students', authenticateStaff, listStudents);
+router.get('/students/:id', authenticateStaff, getStudent);
+router.patch('/students/:id', authenticateStaff, updateStudent);
+
+export default router;
 
 export default router;
