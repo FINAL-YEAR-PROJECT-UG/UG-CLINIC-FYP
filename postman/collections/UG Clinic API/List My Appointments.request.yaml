@@ -1,14 +1,15 @@
 $kind: http-request
+name: List My Appointments
+description: ""
 method: GET
-url: '{{baseUrl}}/api/appointments'
+url: "{{baseUrl}}/api/appointments"
 order: 7000
 headers:
-  - key: Authorization
-    value: 'Bearer {{accessToken}}'
+  Authorization: Bearer {{accessToken}}
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |-
       pm.test('Appointments request returns expected auth outcome', function () {
         pm.expect(pm.response.code).to.be.oneOf([200, 401, 500]);
       });
+    language: text/javascript

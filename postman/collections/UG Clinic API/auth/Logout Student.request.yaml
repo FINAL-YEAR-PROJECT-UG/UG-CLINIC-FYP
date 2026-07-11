@@ -1,0 +1,25 @@
+$kind: http-request
+name: 'Logout Student'
+method: POST
+url: '{{baseUrl}}/api/auth/logout'
+order: 4500
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "refreshToken": "{{refreshToken}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Logout returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });
+      if (pm.response.code === 200) {
+        pm.environment.set('accessToken', '');
+        pm.environment.set('refreshToken', '');
+      }

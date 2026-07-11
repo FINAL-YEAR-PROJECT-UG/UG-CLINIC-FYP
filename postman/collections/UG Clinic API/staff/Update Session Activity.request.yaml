@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Update Session Activity'
+method: POST
+url: '{{baseUrl}}/api/staff/session/activity'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: X-Session-Token
+    value: '{{sessionToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Update session activity returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
+      });

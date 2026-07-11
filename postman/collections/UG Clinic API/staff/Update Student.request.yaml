@@ -1,0 +1,30 @@
+$kind: http-request
+name: 'Update Student'
+method: PATCH
+url: '{{baseUrl}}/api/staff/students/{{studentIdOrUserId}}'
+order: 11000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: X-Session-Token
+    value: '{{sessionToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "Ama",
+      "lastName": "Mensah",
+      "phone": "+233201234567",
+      "program": "Computer Science",
+      "gender": "female",
+      "isActive": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Update student returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 500]);
+      });

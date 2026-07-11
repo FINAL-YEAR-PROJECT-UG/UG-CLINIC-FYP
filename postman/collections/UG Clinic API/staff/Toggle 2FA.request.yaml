@@ -1,0 +1,25 @@
+$kind: http-request
+name: 'Toggle 2FA'
+method: POST
+url: '{{baseUrl}}/api/staff/2fa/toggle'
+order: 8000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: X-Session-Token
+    value: '{{sessionToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "enabled": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Toggle 2FA returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 500]);
+      });

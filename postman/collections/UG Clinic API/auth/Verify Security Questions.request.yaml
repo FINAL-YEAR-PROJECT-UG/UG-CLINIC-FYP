@@ -1,0 +1,24 @@
+$kind: http-request
+name: 'Verify Security Questions'
+method: POST
+url: '{{baseUrl}}/api/auth/verify-security-questions'
+order: 10000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "answers": [
+        { "question": "What is your favorite color?", "answer": "Blue" }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Verify security questions returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });

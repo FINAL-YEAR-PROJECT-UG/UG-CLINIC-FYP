@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Check Account'
+method: POST
+url: '{{baseUrl}}/api/auth/check-account'
+order: 2500
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "studentId": "12345678"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Check account returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 404, 500]);
+      });

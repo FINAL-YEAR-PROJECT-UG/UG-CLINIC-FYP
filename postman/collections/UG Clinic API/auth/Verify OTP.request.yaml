@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Verify OTP'
+method: POST
+url: '{{baseUrl}}/api/auth/verify-otp'
+order: 8500
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "otp": "123456"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Verify OTP returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });

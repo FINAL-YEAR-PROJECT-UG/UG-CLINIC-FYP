@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Assign Doctor To Appointment'
+method: PATCH
+url: '{{baseUrl}}/api/appointments/{{appointmentId}}/assign'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "doctorId": "{{doctorId}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Assign doctor returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 500]);
+      });

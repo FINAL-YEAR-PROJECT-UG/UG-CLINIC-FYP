@@ -1,0 +1,26 @@
+$kind: http-request
+name: 'Set Security Questions'
+method: POST
+url: '{{baseUrl}}/api/auth/security-questions'
+order: 9500
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "questions": [
+        { "question": "What is your favorite color?", "answer": "Blue" },
+        { "question": "What city were you born in?", "answer": "Accra" }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Set security questions returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });

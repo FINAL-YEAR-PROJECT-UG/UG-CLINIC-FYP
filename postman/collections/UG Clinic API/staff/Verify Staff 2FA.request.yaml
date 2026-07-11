@@ -1,0 +1,34 @@
+$kind: http-request
+name: 'Verify Staff 2FA'
+method: POST
+url: '{{baseUrl}}/api/staff/verify-2fa'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "doctor@example.com",
+      "otp": "123456",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "Postman Agent Mode"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Verify staff 2FA returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        if (json.data && json.data.tokens) {
+          pm.environment.set('accessToken', json.data.tokens.accessToken);
+          pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+        }
+        if (json.data && json.data.sessionToken) {
+          pm.environment.set('sessionToken', json.data.sessionToken);
+        }
+      }

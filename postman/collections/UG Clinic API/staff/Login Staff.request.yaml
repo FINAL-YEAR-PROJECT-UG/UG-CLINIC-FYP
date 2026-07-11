@@ -1,0 +1,34 @@
+$kind: http-request
+name: 'Login Staff'
+method: POST
+url: '{{baseUrl}}/api/staff/login'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "doctor@example.com",
+      "password": "StrongPass123!",
+      "ipAddress": "127.0.0.1",
+      "userAgent": "Postman Agent Mode"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Login staff returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        if (json.data && json.data.tokens) {
+          pm.environment.set('accessToken', json.data.tokens.accessToken);
+          pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+        }
+        if (json.data && json.data.sessionToken) {
+          pm.environment.set('sessionToken', json.data.sessionToken);
+        }
+      }

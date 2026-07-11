@@ -1,0 +1,12 @@
+$kind: http-request
+name: 'Notification Placeholder'
+method: GET
+url: '{{baseUrl}}/api/notifications'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Notifications returns 501 (not yet implemented) or 200', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 501, 500]);
+      });

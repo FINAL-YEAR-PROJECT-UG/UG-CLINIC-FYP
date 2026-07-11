@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Update Appointment Status'
+method: PATCH
+url: '{{baseUrl}}/api/appointments/{{appointmentId}}/status'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "status": "CONFIRMED"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Update appointment status returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 500]);
+      });

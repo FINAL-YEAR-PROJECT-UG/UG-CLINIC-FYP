@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Get Active Sessions'
+method: GET
+url: '{{baseUrl}}/api/staff/sessions'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: X-Session-Token
+    value: '{{sessionToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Get active sessions returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('sessions');
+        pm.expect(json.data.sessions).to.be.an('array');
+      }

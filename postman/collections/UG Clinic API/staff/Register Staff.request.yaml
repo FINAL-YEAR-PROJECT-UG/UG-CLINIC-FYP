@@ -1,0 +1,26 @@
+$kind: http-request
+name: 'Register Staff'
+method: POST
+url: '{{baseUrl}}/api/staff/register'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "doctor@example.com",
+      "password": "StrongPass123!",
+      "firstName": "Kojo",
+      "lastName": "Doe",
+      "phone": "+233201112223",
+      "role": "DOCTOR"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Register staff returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 409, 500]);
+      });

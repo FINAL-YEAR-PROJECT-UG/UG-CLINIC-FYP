@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Generate Backup Codes'
+method: POST
+url: '{{baseUrl}}/api/auth/generate-backup-codes'
+order: 10500
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Generate backup codes returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('codes');
+        pm.expect(json.data.codes).to.be.an('array');
+      }

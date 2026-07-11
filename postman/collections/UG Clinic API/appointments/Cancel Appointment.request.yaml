@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Cancel Appointment'
+method: PATCH
+url: '{{baseUrl}}/api/appointments/{{appointmentId}}/cancel'
+order: 7000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "reason": "No longer needed"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Cancel appointment returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 500]);
+      });

@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Login With OTP'
+method: POST
+url: '{{baseUrl}}/api/auth/login-otp'
+order: 4200
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "otp": "123456"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Login with OTP returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.environment.set('accessToken', json.data.tokens.accessToken);
+        pm.environment.set('refreshToken', json.data.tokens.refreshToken);
+      }

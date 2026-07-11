@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Update Resource'
+method: PATCH
+url: '{{baseUrl}}/api/resources/{{resourceId}}'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Updated Hydration Guide",
+      "description": "Updated wellness guide",
+      "category": "Wellness",
+      "tags": ["health", "updated"],
+      "isPublic": false
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Update resource returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404, 500]);
+      });

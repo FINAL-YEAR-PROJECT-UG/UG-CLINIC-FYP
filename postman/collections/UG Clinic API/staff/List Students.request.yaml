@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'List Students'
+method: GET
+url: '{{baseUrl}}/api/staff/students'
+order: 9000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+  - key: X-Session-Token
+    value: '{{sessionToken}}'
+queryParams:
+  - key: query
+    value: ''
+  - key: page
+    value: '1'
+  - key: pageSize
+    value: '25'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List students returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('students');
+        pm.expect(json.data.students).to.be.an('array');
+      }

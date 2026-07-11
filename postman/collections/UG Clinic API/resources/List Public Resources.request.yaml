@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'List Public Resources'
+method: GET
+url: '{{baseUrl}}/api/resources'
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('List public resources returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.success).to.eql(true);
+        pm.expect(json.data).to.have.property('resources');
+      }

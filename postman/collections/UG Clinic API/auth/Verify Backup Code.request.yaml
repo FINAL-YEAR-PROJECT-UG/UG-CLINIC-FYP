@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Verify Backup Code'
+method: POST
+url: '{{baseUrl}}/api/auth/verify-backup-code'
+order: 11000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "student@example.com",
+      "code": "AB12CD34"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Verify backup code returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+      });

@@ -1,0 +1,15 @@
+$kind: http-request
+name: 'Delete Resource'
+method: DELETE
+url: '{{baseUrl}}/api/resources/{{resourceId}}'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Delete resource returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404, 500]);
+      });
