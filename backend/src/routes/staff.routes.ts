@@ -38,5 +38,3 @@ router.get('/students/:id', authenticateStaff, getStudent);
 router.patch('/students/:id', authenticateStaff, updateStudent);
 
 export default router;
-
-export default router;

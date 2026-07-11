@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,6 +39,7 @@ const labelStyle: React.CSSProperties = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<'STUDENT' | 'STAFF'>('STUDENT');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +50,15 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get('role')?.toUpperCase();
+    if (role === 'STAFF' || role === 'STUDENT') {
+      setSelectedRole(role as 'STUDENT' | 'STAFF');
+    }
+  }, []);
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -119,8 +129,38 @@ export default function LoginPage() {
                 <line x1="15" y1="12" x2="3" y2="12" />
               </svg>
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1F2937', margin: '0 0 6px' }}>Sign in to your account</h2>
-            <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Enter your credentials to access the clinic portal</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 18 }}>
+              {['STUDENT', 'STAFF'].map((role) => {
+                const isActive = selectedRole === role;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setSelectedRole(role as 'STUDENT' | 'STAFF')}
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: 999,
+                      border: '1px solid',
+                      borderColor: isActive ? '#3B4FD8' : '#D1D5DB',
+                      background: isActive ? '#EEF2FF' : '#FFFFFF',
+                      color: isActive ? '#1D4ED8' : '#475569',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {role === 'STUDENT' ? 'Student' : 'Staff'}
+                  </button>
+                );
+              })}
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1F2937', margin: '0 0 6px' }}>
+              {selectedRole === 'STUDENT' ? 'Student sign in' : 'Staff sign in'}
+            </h2>
+            <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+              {selectedRole === 'STUDENT'
+                ? 'Enter your student login details to access your clinic dashboard.'
+                : 'Enter your staff credentials to access the staff dashboard.'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -130,13 +170,19 @@ export default function LoginPage() {
 
             {/* Username (Email or Student ID) */}
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Email or Student ID</label>
+              <label style={labelStyle}>{selectedRole === 'STUDENT' ? 'Email or Student ID' : 'Staff Email'}</label>
               <div style={{ position: 'relative' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
                   <rect width="20" height="16" x="2" y="4" rx="2" />
                   <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                 </svg>
-                <input type="text" placeholder="email or student ID" disabled={isLoading} style={{ ...inputStyle, borderColor: errors.username ? '#EF4444' : '#D1D5DB' }} {...register('username')} />
+                <input
+                  type="text"
+                  placeholder={selectedRole === 'STUDENT' ? 'email or student ID' : 'staff email'}
+                  disabled={isLoading}
+                  style={{ ...inputStyle, borderColor: errors.username ? '#EF4444' : '#D1D5DB' }}
+                  {...register('username')}
+                />
               </div>
               {errors.username && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{errors.username.message}</p>}
             </div>
@@ -194,12 +240,20 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginBottom: 16 }}>
-            <p style={{ fontSize: 13, color: '#6B7280' }}>
-              Don't have an account?{' '}
-              <Link href="/register" style={{ color: '#3B4FD8', fontWeight: 600, textDecoration: 'none' }}>Create account</Link>
-            </p>
-          </div>
+          {selectedRole === 'STUDENT' ? (
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#6B7280' }}>
+                Don't have an account?{' '}
+                <Link href="/register" style={{ color: '#3B4FD8', fontWeight: 600, textDecoration: 'none' }}>Create account</Link>
+              </p>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: '#6B7280' }}>
+                Staff members should use their clinic email and password. If you need access, please contact your administrator.
+              </p>
+            </div>
+          )}
 
           <p style={{ fontSize: 11, color: '#9CA3AF', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
             By signing in, you agree to our{' '}

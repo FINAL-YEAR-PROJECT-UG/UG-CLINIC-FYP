@@ -22,6 +22,38 @@ export interface ApiAppointment {
   doctor?: { firstName: string; lastName: string } | null;
 }
 
+export interface StaffDashboardAppointment {
+  id: string;
+  date: string;
+  timeSlot: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' | 'RESCHEDULED';
+  reason: string;
+  service?: { id: string; name: string; category?: string; duration?: number } | null;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    studentId?: string | null;
+    email: string;
+  };
+  doctor?: { firstName: string; lastName: string } | null;
+}
+
+export interface StaffDashboardSummary {
+  total: number;
+  today: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+  rescheduled: number;
+}
+
+export interface StaffDashboardData {
+  summary: StaffDashboardSummary;
+  appointments: StaffDashboardAppointment[];
+}
+
 export interface CreateAppointmentData {
   serviceId: string;
   date: string;
@@ -54,6 +86,11 @@ export const appointmentApi = {
     return response.data.data.appointments;
   },
 
+  getStaffDashboard: async (): Promise<StaffDashboardData> => {
+    const response = await api.get<{ success: boolean; data: StaffDashboardData }>('/appointments/staff');
+    return response.data.data;
+  },
+
   create: async (
     data: CreateAppointmentData
   ): Promise<{ success: boolean; message: string; data?: { appointment: ApiAppointment } }> => {
@@ -61,8 +98,11 @@ export const appointmentApi = {
     return response.data;
   },
 
-  cancel: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.patch(`/appointments/${id}/cancel`);
+  cancel: async (
+    id: string,
+    data: { cancellationReason: string; cancellationNote?: string }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.patch(`/appointments/${id}/cancel`, data);
     return response.data;
   },
 };

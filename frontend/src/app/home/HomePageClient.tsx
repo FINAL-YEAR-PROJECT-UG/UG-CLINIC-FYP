@@ -156,12 +156,14 @@ export default function HomePageClient() {
             Accessible, quality healthcare for every student. Your health and wellbeing are our priority.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105" onClick={handleBookingClick}>
-              Book Appointment
-            </Button>
-            <Link href="/about">
+            <Link href="/login?role=student">
+              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
+                Student Sign In
+              </Button>
+            </Link>
+            <Link href="/login?role=staff">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
-                Learn More
+                Staff Sign In
               </Button>
             </Link>
           </div>

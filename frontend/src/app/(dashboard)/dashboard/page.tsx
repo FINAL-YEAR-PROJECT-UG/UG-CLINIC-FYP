@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { appointmentApi, type ApiAppointment } from '@/lib/appointmentApi';
+import {
+  appointmentApi,
+  type ApiAppointment,
+  type StaffDashboardData,
+} from '@/lib/appointmentApi';
 import { getErrorMessage } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import {
@@ -59,14 +63,154 @@ const STATUS_PILL: Record<string, { label: string; className: string }> = {
   RESCHEDULED: { label: 'Rescheduled', className: 'bg-blue-100 text-blue-700' },
 };
 
+function getStaffRoleLabel(role: string) {
+  const normalizedRole = role?.toUpperCase?.() ?? '';
+  switch (normalizedRole) {
+    case 'DOCTOR':
+      return 'Doctor';
+    case 'RECEPTIONIST':
+      return 'Receptionist';
+    case 'ADMIN':
+      return 'Administrator';
+    default:
+      return 'Staff';
+  }
+}
+
+function StaffDashboard({
+  userRole,
+  staffData,
+  loading,
+  error,
+}: {
+  userRole: string;
+  staffData: StaffDashboardData | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  const normalizedUserRole = userRole?.toUpperCase?.() ?? '';
+  const summary = staffData?.summary ?? {
+    total: 0,
+    today: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0,
+    cancelled: 0,
+    rescheduled: 0,
+  };
+  const appointments = staffData?.appointments ?? [];
+
+  return (
+    <div className="space-y-8">
+      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-wide text-gray-500">Staff Dashboard</p>
+            <h1 className="text-3xl font-bold text-gray-900 mt-2">{getStaffRoleLabel(userRole)} overview</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Monitor clinic activity, manage appointment flow, and support students from one place.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Today&apos;s appointments</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.today}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Confirmed</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.confirmed}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Pending</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.pending}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Cancelled</p>
+              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.cancelled}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {error && (
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+          {error}
+        </div>
+      )}
+
+      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Upcoming appointments</h2>
+            <p className="text-sm text-gray-500">Latest scheduled visits for your clinic.</p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="py-16 flex items-center justify-center">
+            <LoadingSpinner size={40} />
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 p-10 text-center text-gray-500">
+            No upcoming appointments are available for this dashboard yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-gray-700">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Student</th>
+                  <th className="px-4 py-3">Service</th>
+                  {normalizedUserRole !== 'DOCTOR' && <th className="px-4 py-3">Doctor</th>}
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((appointment) => (
+                  <tr key={appointment.id} className="border-b border-gray-100 last:border-0">
+                    <td className="px-4 py-4 text-gray-700">{formatShortDate(appointment.date)}</td>
+                    <td className="px-4 py-4 text-gray-700">{appointment.timeSlot}</td>
+                    <td className="px-4 py-4 text-gray-700">
+                      {appointment.user.firstName} {appointment.user.lastName}
+                      <div className="text-xs text-gray-500">{appointment.user.studentId || appointment.user.email}</div>
+                    </td>
+                    <td className="px-4 py-4 text-gray-700">{appointment.service?.name || appointment.reason}</td>
+                    {normalizedUserRole !== 'DOCTOR' && (
+                      <td className="px-4 py-4 text-gray-700">
+                        {appointment.doctor ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}` : 'Unassigned'}
+                      </td>
+                    )}
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex rounded-full text-[11px] font-medium px-2.5 py-1 ${STATUS_PILL[appointment.status]?.className ?? 'bg-gray-100 text-gray-600'}`}>
+                        {STATUS_PILL[appointment.status]?.label ?? appointment.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
 
   const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
+  const [staffData, setStaffData] = useState<StaffDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [showCancelModalId, setShowCancelModalId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('MISTAKE');
+  const [cancelNote, setCancelNote] = useState<string>('');
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -78,6 +222,7 @@ export default function DashboardPage() {
     try {
       const data = await appointmentApi.getMyAppointments();
       setAppointments(data);
+      setStaffData(null);
       setError(null);
     } catch (err) {
       setError(getErrorMessage(err, 'Could not load your appointments.'));
@@ -86,35 +231,70 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const loadStaffDashboard = useCallback(async () => {
+    try {
+      const data = await appointmentApi.getStaffDashboard();
+      setStaffData(data);
+      setAppointments([]);
+      setError(null);
+    } catch (err) {
+      setStaffData(null);
+      setError(getErrorMessage(err, 'Could not load staff dashboard data.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     let active = true;
-    appointmentApi
-      .getMyAppointments()
-      .then((data) => {
-        if (active) {
-          setAppointments(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (active) setError(getErrorMessage(err, 'Could not load your appointments.'));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+
+    const loadData = async () => {
+      if (!active) return;
+      setLoading(true);
+      setError(null);
+      if (user?.role?.toUpperCase() !== 'STUDENT') {
+        await loadStaffDashboard();
+      } else {
+        await loadAppointments();
+      }
+    };
+
+    loadData();
     return () => {
       active = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role, loadAppointments, loadStaffDashboard]);
+
+  const openCancelModal = (id: string) => {
+    setShowCancelModalId(id);
+    setCancelReason('MISTAKE');
+    setCancelNote('');
+    setCancelError(null);
+  };
 
   const handleCancel = async (id: string) => {
-    setCancellingId(id);
+    // open confirmation modal that requires a reason
+    openCancelModal(id);
+  };
+
+  const confirmCancel = async () => {
+    if (!showCancelModalId) return;
+    setCancellingId(showCancelModalId);
+    setCancelError(null);
     try {
-      await appointmentApi.cancel(id);
+      if (!cancelReason || !cancelReason.trim()) {
+        setCancelError('Please select a reason for cancelling.');
+        return;
+      }
+      await appointmentApi.cancel(showCancelModalId, {
+        cancellationReason: cancelReason,
+        cancellationNote: cancelNote,
+      });
+      setShowCancelModalId(null);
       await loadAppointments();
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not cancel the appointment.'));
+      setCancelError(getErrorMessage(err, 'Could not cancel the appointment.'));
     } finally {
       setCancellingId(null);
     }
@@ -145,14 +325,18 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {firstName} 👋</h1>
-            <p className="text-blue-100 mt-1">Here are your clinic appointments.</p>
+            <p className="text-blue-100 mt-1">
+              {user?.role?.toUpperCase() !== 'STUDENT'
+                ? `Staff dashboard active — ${getStaffRoleLabel(user?.role ?? '')}`
+                : 'Here are your clinic appointments.'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/demo-booking"
               className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-all duration-200 hover:shadow-md hover:scale-105"
             >
-              Book new appointment
+              {user?.role?.toUpperCase() !== 'STUDENT' ? 'Manage appointments' : 'Book new appointment'}
             </Link>
             <button
               onClick={logout}
@@ -165,145 +349,216 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {showCancelModalId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg bg-white rounded-lg shadow-lg border border-gray-200 text-gray-900">
+            <div className="px-5 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Cancel appointment</h3>
+              <button
+                onClick={() => setShowCancelModalId(null)}
+                className="text-gray-600 hover:text-gray-800 bg-white rounded-full px-2"
+                aria-label="Close cancel modal"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-5 space-y-4 text-gray-800">
+              <p className="text-sm text-gray-600">Please select a reason for cancelling and optionally add more details.</p>
+
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Reason</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full border border-gray-200 bg-white text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="MISTAKE">Mistake / Wrong booking</option>
+                  <option value="NO_LONGER_NEEDED">No longer needed</option>
+                  <option value="SICK">Feeling better / Sick</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-700 mb-1">Details (optional)</label>
+                <textarea
+                  value={cancelNote}
+                  onChange={(e) => setCancelNote(e.target.value)}
+                  rows={4}
+                  className="w-full border border-gray-200 bg-white text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add any additional details about why you're cancelling"
+                />
+              </div>
+
+              {cancelError && (
+                <div className="text-sm text-red-600">{cancelError}</div>
+              )}
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowCancelModalId(null)}
+                  className="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-700 text-sm hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={confirmCancel}
+                  disabled={cancellingId === showCancelModalId}
+                  className="px-4 py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-60"
+                >
+                  {cancellingId === showCancelModalId ? 'Cancelling...' : 'Confirm cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-8">
-          {error && (
+          {user?.role?.toUpperCase() === 'STUDENT' && error && (
             <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
               {error}
             </div>
           )}
 
-          {/* Upcoming appointment */}
-          <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-3">Upcoming Appointment</h2>
-            {loading ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm">
-                <LoadingSpinner size={60} />
-              </div>
-            ) : nextAppointment ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
-                      STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
-                  </span>
-                  <div className="text-right">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">Booking Reference</p>
-                    <p className="text-sm font-semibold text-blue-700">{bookingReference(nextAppointment)}</p>
+          {user?.role?.toUpperCase() !== 'STUDENT' ? (
+            <StaffDashboard userRole={user?.role ?? ''} staffData={staffData} loading={loading} error={error} />
+          ) : (
+            <>
+              {/* Upcoming appointment */}
+              <section>
+                <h2 className="text-lg font-bold text-gray-900 mb-3">Upcoming Appointment</h2>
+                {loading ? (
+                  <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm">
+                    <LoadingSpinner size={60} />
                   </div>
-                </div>
+                ) : nextAppointment ? (
+                  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
+                          STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
+                      </span>
+                      <div className="text-right">
+                        <p className="text-[11px] uppercase tracking-wide text-gray-400">Booking Reference</p>
+                        <p className="text-sm font-semibold text-blue-700">{bookingReference(nextAppointment)}</p>
+                      </div>
+                    </div>
 
-                <h3 className="text-xl font-bold text-gray-900 mt-4">
-                  {nextAppointment.reason || nextAppointment.service?.name}
-                </h3>
+                    <h3 className="text-xl font-bold text-gray-900 mt-4">
+                      {nextAppointment.reason || nextAppointment.service?.name}
+                    </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500">Date</p>
-                      <p className="text-sm font-medium text-gray-800">{formatLongDate(nextAppointment.date)}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                      <div className="flex items-start gap-2">
+                        <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-500">Date</p>
+                          <p className="text-sm font-medium text-gray-800">{formatLongDate(nextAppointment.date)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-500">Time</p>
+                          <p className="text-sm font-medium text-gray-800">{nextAppointment.timeSlot}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-500">Location</p>
+                          <p className="text-sm font-medium text-gray-800">{CLINIC_LOCATION}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-4">
+                      <button
+                        onClick={() => handleCancel(nextAppointment.id)}
+                        disabled={cancellingId === nextAppointment.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none"
+                      >
+                        {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                        Cancel appointment
+                      </button>
+                      <Link
+                        href="/demo-booking"
+                        className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-all duration-200 hover:underline"
+                      >
+                        Reschedule
+                      </Link>
                     </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500">Time</p>
-                      <p className="text-sm font-medium text-gray-800">{nextAppointment.timeSlot}</p>
-                    </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm text-center">
+                    <p className="text-gray-600">You have no upcoming appointments.</p>
+                    <Link
+                      href="/demo-booking"
+                      className="mt-3 inline-flex items-center justify-center rounded-full bg-blue-700 text-white font-semibold px-5 py-2.5 text-sm hover:bg-blue-800 transition-colors"
+                    >
+                      Book an appointment
+                    </Link>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500">Location</p>
-                      <p className="text-sm font-medium text-gray-800">{CLINIC_LOCATION}</p>
-                    </div>
-                  </div>
-                </div>
+                )}
+              </section>
 
-                <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-4">
-                  <button
-                    onClick={() => handleCancel(nextAppointment.id)}
-                    disabled={cancellingId === nextAppointment.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none"
-                  >
-                    {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Cancel appointment
-                  </button>
-                  <Link
-                    href="/demo-booking"
-                    className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-all duration-200 hover:underline"
-                  >
-                    Reschedule
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm text-center">
-                <p className="text-gray-600">You have no upcoming appointments.</p>
-                <Link
-                  href="/demo-booking"
-                  className="mt-3 inline-flex items-center justify-center rounded-full bg-blue-700 text-white font-semibold px-5 py-2.5 text-sm hover:bg-blue-800 transition-colors"
-                >
-                  Book an appointment
-                </Link>
-              </div>
-            )}
-          </section>
-
-          {/* Past appointments */}
-          <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-3">Past Appointments</h2>
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
-                    <th className="font-medium px-5 py-3">Date</th>
-                    <th className="font-medium px-5 py-3">Service</th>
-                    <th className="font-medium px-5 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={3} className="px-5 py-8">
-                        <LoadingSpinner size={40} />
-                      </td>
-                    </tr>
-                  ) : past.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
-                        No past appointments yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    past.map((appt) => {
-                      const pill = STATUS_PILL[appt.status] ?? {
-                        label: appt.status,
-                        className: 'bg-gray-100 text-gray-600',
-                      };
-                      return (
-                        <tr key={appt.id} className="border-b border-gray-50 last:border-0">
-                          <td className="px-5 py-4 text-gray-700">{formatShortDate(appt.date)}</td>
-                          <td className="px-5 py-4 text-gray-700">{appt.reason || appt.service?.name}</td>
-                          <td className="px-5 py-4">
-                            <span className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${pill.className}`}>
-                              {pill.label}
-                            </span>
+              {/* Past appointments */}
+              <section>
+                <h2 className="text-lg font-bold text-gray-900 mb-3">Past Appointments</h2>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
+                        <th className="font-medium px-5 py-3">Date</th>
+                        <th className="font-medium px-5 py-3">Service</th>
+                        <th className="font-medium px-5 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan={3} className="px-5 py-8">
+                            <LoadingSpinner size={40} />
                           </td>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+                      ) : past.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
+                            No past appointments yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        past.map((appt) => {
+                          const pill = STATUS_PILL[appt.status] ?? {
+                            label: appt.status,
+                            className: 'bg-gray-100 text-gray-600',
+                          };
+                          return (
+                            <tr key={appt.id} className="border-b border-gray-50 last:border-0">
+                              <td className="px-5 py-4 text-gray-700">{formatShortDate(appt.date)}</td>
+                              <td className="px-5 py-4 text-gray-700">{appt.reason || appt.service?.name}</td>
+                              <td className="px-5 py-4">
+                                <span className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${pill.className}`}>
+                                  {pill.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </>
+          )}
         </div>
 
         {/* Right column */}
@@ -315,14 +570,24 @@ export default function DashboardPage() {
                 {getInitials(fullName)}
               </div>
               <h3 className="text-base font-bold text-gray-900 mt-3">{fullName}</h3>
-              <p className="text-xs text-gray-500">ID: {studentId}</p>
+              <p className="text-xs text-gray-500">
+                {user?.role?.toUpperCase() === 'STUDENT' ? `ID: ${studentId}` : `${getStaffRoleLabel(user?.role ?? '')}`}
+              </p>
             </div>
-
+ 
             <dl className="mt-5 space-y-4 text-sm">
-              <div>
-                <dt className="text-[11px] uppercase tracking-wide text-gray-400">Programme</dt>
-                <dd className="text-gray-800 mt-0.5">{programme}</dd>
-              </div>
+              {user?.role?.toUpperCase() !== 'STUDENT' && (
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wide text-gray-400">Role</dt>
+                  <dd className="text-gray-800 mt-0.5">{getStaffRoleLabel(user?.role ?? '')}</dd>
+                </div>
+              )}
+              {user?.role?.toUpperCase() === 'STUDENT' && (
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wide text-gray-400">Programme</dt>
+                  <dd className="text-gray-800 mt-0.5">{programme}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-[11px] uppercase tracking-wide text-gray-400">Email</dt>
                 <dd className="text-gray-800 mt-0.5 break-all">{email}</dd>

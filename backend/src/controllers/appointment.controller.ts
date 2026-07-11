@@ -306,7 +306,7 @@ export const getAllAppointments = async (req: AuthRequest, res: Response) => {
 
 export const assignDoctorToAppointment = async (req: AuthRequest, res: Response) => {
   try {
-    const userRole = req.user?.role;
+    const userRole = req.user?.role || '';
     if (!req.user || !['RECEPTIONIST', 'ADMIN'].includes(userRole)) {
       return res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
     }
@@ -315,7 +315,7 @@ export const assignDoctorToAppointment = async (req: AuthRequest, res: Response)
     const { doctorId } = req.body || {};
     if (!doctorId) return res.status(400).json({ success: false, message: 'doctorId is required' });
 
-    const doctor = await prisma.user.findUnique({ where: { id: doctorId } });
+    const doctor = await prisma.user.findUnique({ where: { id: String(doctorId) } });
     if (!doctor || doctor.role !== 'DOCTOR') {
       return res.status(404).json({ success: false, message: 'Doctor not found' });
     }
@@ -334,7 +334,7 @@ export const assignDoctorToAppointment = async (req: AuthRequest, res: Response)
 
 export const rescheduleAppointment = async (req: AuthRequest, res: Response) => {
   try {
-    const userRole = req.user?.role;
+    const userRole = req.user?.role || '';
     if (!req.user || !['RECEPTIONIST', 'ADMIN'].includes(userRole)) {
       return res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
     }
@@ -398,7 +398,7 @@ export const rescheduleAppointment = async (req: AuthRequest, res: Response) => 
 
 export const updateAppointmentStatus = async (req: AuthRequest, res: Response) => {
   try {
-    const userRole = req.user?.role;
+    const userRole = req.user?.role || '';
     if (!req.user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(userRole)) {
       return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
     }
@@ -427,7 +427,7 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
 
 export const updateTimeSlot = async (req: AuthRequest, res: Response) => {
   try {
-    const userRole = req.user?.role;
+    const userRole = req.user?.role || '';
     if (!req.user || !['RECEPTIONIST', 'ADMIN'].includes(userRole)) {
       return res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
     }

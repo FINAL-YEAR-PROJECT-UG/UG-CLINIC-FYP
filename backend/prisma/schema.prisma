@@ -51,23 +51,25 @@ model User {
 }
 
 model Appointment {
-  id          String            @id @default(uuid())
-  userId      String
-  doctorId    String?
-  serviceId   String
-  date        DateTime
-  timeSlot    String            @db.VarChar(10)
-  status      AppointmentStatus @default(PENDING)
-  notes       String?           @db.VarChar(1000)
-  reason      String            @db.VarChar(500)
-  cancelledBy String?
-  cancelledAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  deletedAt   DateTime?
-  doctor      User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  service     Service           @relation(fields: [serviceId], references: [id])
-  user        User              @relation("UserAppointments", fields: [userId], references: [id])
+  id                 String            @id @default(uuid())
+  userId             String
+  doctorId           String?
+  serviceId          String
+  date               DateTime
+  timeSlot           String            @db.VarChar(10)
+  status             AppointmentStatus @default(PENDING)
+  notes              String?           @db.VarChar(1000)
+  reason             String            @db.VarChar(500)
+  cancelledBy        String?
+  cancelledAt        DateTime?
+  cancellationReason String?           @db.VarChar(100)
+  cancellationNote   String?           @db.VarChar(1000)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deletedAt          DateTime?
+  doctor             User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  service            Service           @relation(fields: [serviceId], references: [id])
+  user               User              @relation("UserAppointments", fields: [userId], references: [id])
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -76,6 +78,7 @@ model Appointment {
   @@index([serviceId])
   @@index([deletedAt])
 }
+
 
 model Service {
   id           String        @id @default(uuid())
