@@ -7,9 +7,9 @@ headers:
     value: 'Bearer {{accessToken}}'
 queryParams:
   - key: date
-    value: '2026-07-01'
+    value: '{{appointmentDate}}'
   - key: serviceId
-    value: ''
+    value: '{{serviceId}}'
 scripts:
   - type: afterResponse
     language: text/javascript

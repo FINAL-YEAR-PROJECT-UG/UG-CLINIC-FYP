@@ -9,7 +9,7 @@ body:
   type: json
   content: |-
     {
-      "email": "student@example.com",
+      "username": "student@example.com",
       "password": "StrongPass123!",
       "rememberMe": true
     }
