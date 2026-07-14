@@ -3,7 +3,7 @@ import { body, validationResult } from 'express-validator';
 export const validateStaffRegister = [
   body('email')
     .isEmail()
-    .withMessage('Please provide a valid email address')
+    .withMessage('Please provide a valid staff email address')
     .normalizeEmail(),
   body('password')
     .isLength({ min: 8 })
@@ -47,7 +47,7 @@ export const validateStaffRegister = [
 export const validateStaffLogin = [
   body('email')
     .isEmail()
-    .withMessage('Please provide a valid email address')
+    .withMessage('Please provide a valid staff email address')
     .normalizeEmail(),
   body('password')
     .notEmpty()
@@ -75,7 +75,7 @@ export const validateStaffLogin = [
 export const validate2FA = [
   body('email')
     .isEmail()
-    .withMessage('Please provide a valid email address')
+    .withMessage('Please provide a valid staff email address')
     .normalizeEmail(),
   body('otp')
     .isLength({ min: 6, max: 6 })

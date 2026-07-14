@@ -11,7 +11,7 @@ import { loginWithStore } from '@/lib/authApi';
 import AuthBrand from '@/components/shared/AuthBrand';
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Please enter your email or student ID'),
+  username: z.string().min(1, 'Please enter your email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -178,7 +178,7 @@ export default function LoginPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder={selectedRole === 'STUDENT' ? 'email or student ID' : 'staff email'}
+                  placeholder={selectedRole === 'STUDENT' ? 'student ID or email' : 'staff email'}
                   disabled={isLoading}
                   style={{ ...inputStyle, borderColor: errors.username ? '#EF4444' : '#D1D5DB' }}
                   {...register('username')}

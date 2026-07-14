@@ -7,12 +7,12 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
     const { date, serviceId } = req.query;
 
     if (!date || typeof date !== 'string') {
-      return res.status(400).json({ success: false, message: 'date is required' });
+      return res.status(400).json({ success: false, message: 'Appointment date is required' });
     }
 
     const appointmentDate = new Date(date);
     if (Number.isNaN(appointmentDate.getTime())) {
-      return res.status(400).json({ success: false, message: 'Invalid date' });
+      return res.status(400).json({ success: false, message: 'Invalid appointment date format' });
     }
 
     const startOfDay = new Date(appointmentDate);
@@ -146,7 +146,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     if (!serviceId || !date || !timeSlot || !reason) {
       return res.status(400).json({
         success: false,
-        message: 'serviceId, date, timeSlot and reason are required',
+        message: 'Service, date, time slot, and reason are required',
       });
     }
 
@@ -222,7 +222,7 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
     const { cancellationReason, cancellationNote } = req.body || {};
 
     if (!cancellationReason || typeof cancellationReason !== 'string' || !cancellationReason.trim()) {
-      return res.status(400).json({ success: false, message: 'cancellationReason is required' });
+      return res.status(400).json({ success: false, message: 'Cancellation reason is required' });
     }
 
     const updated = await prisma.appointment.update({
@@ -313,7 +313,7 @@ export const assignDoctorToAppointment = async (req: AuthRequest, res: Response)
 
     const id = String(req.params.id);
     const { doctorId } = req.body || {};
-    if (!doctorId) return res.status(400).json({ success: false, message: 'doctorId is required' });
+    if (!doctorId) return res.status(400).json({ success: false, message: 'Doctor ID is required' });
 
     const doctor = await prisma.user.findUnique({ where: { id: String(doctorId) } });
     if (!doctor || doctor.role !== 'DOCTOR') {
@@ -341,7 +341,7 @@ export const rescheduleAppointment = async (req: AuthRequest, res: Response) => 
 
     const id = String(req.params.id);
     const { date, timeSlot } = req.body || {};
-    if (!date || !timeSlot) return res.status(400).json({ success: false, message: 'date and timeSlot are required' });
+    if (!date || !timeSlot) return res.status(400).json({ success: false, message: 'Date and time slot are required' });
 
     const appointment = await prisma.appointment.findUnique({ where: { id } });
     if (!appointment) return res.status(404).json({ success: false, message: 'Appointment not found' });
@@ -405,10 +405,10 @@ export const updateAppointmentStatus = async (req: AuthRequest, res: Response) =
 
     const id = String(req.params.id);
     const { status } = req.body || {};
-    if (!status) return res.status(400).json({ success: false, message: 'status is required' });
+    if (!status) return res.status(400).json({ success: false, message: 'Appointment status is required' });
 
     const allowed = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'];
-    if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Invalid status' });
+    if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Invalid appointment status' });
 
     const updateData: any = { status };
     if (status === 'CANCELLED') {

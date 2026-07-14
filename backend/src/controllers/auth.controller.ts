@@ -17,7 +17,7 @@ export const checkAccount = async (req: Request, res: Response) => {
     if (!isValidStudentId(studentId)) {
       return res.status(400).json({
         success: false,
-        message: 'Student ID must be exactly 8 digits.',
+        message: 'Student ID must be exactly 8 digits (numbers only)',
       });
     }
 
@@ -62,7 +62,7 @@ export const register = async (req: Request, res: Response) => {
     if (studentId && !isValidStudentId(studentId)) {
       return res.status(400).json({
         success: false,
-        message: 'Student ID must be exactly 8 digits.',
+        message: 'Student ID must be exactly 8 digits (numbers only)',
       });
     }
 
@@ -203,7 +203,7 @@ export const login = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Invalid email or student ID',
       });
     }
 
@@ -212,7 +212,7 @@ export const login = async (req: Request, res: Response) => {
       const remainingTime = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
       return res.status(423).json({
         success: false,
-        message: `Account locked. Try again in ${remainingTime} minutes`,
+        message: `Your account is temporarily locked. Try again in ${remainingTime} minutes`,
       });
     }
 
@@ -220,7 +220,7 @@ export const login = async (req: Request, res: Response) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Account is inactive',
+        message: 'Your account is inactive. Please contact the clinic for assistance',
       });
     }
 
@@ -257,14 +257,14 @@ export const login = async (req: Request, res: Response) => {
 
         return res.status(423).json({
           success: false,
-          message: `Account locked due to too many failed attempts. Try again in ${LOCKOUT_DURATION_MINUTES} minutes`,
+          message: `Your account has been locked due to too many failed login attempts. Try again in ${LOCKOUT_DURATION_MINUTES} minutes`,
         });
       }
 
       const remainingAttempts = MAX_FAILED_ATTEMPTS - updatedUser.failedLoginAttempts;
       return res.status(401).json({
         success: false,
-        message: `Invalid credentials. ${remainingAttempts} attempts remaining`,
+        message: `Invalid email or student ID. ${remainingAttempts} attempts remaining`,
       });
     }
 
@@ -454,7 +454,7 @@ export const loginWithOTP = async (req: Request, res: Response) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Account is inactive',
+        message: 'Your account is inactive. Please contact the clinic for assistance',
       });
     }
 

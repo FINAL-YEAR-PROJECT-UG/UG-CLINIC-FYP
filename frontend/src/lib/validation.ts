@@ -17,7 +17,7 @@ export function isValidEmail(email: string): boolean {
 }
 
 export const emailValidationMessage =
-  'Please enter a valid email address (student email or personal email).';
+  'Please enter a valid email address';
 
 export function isValidStudentId(studentId: string): boolean {
   return /^\d{8}$/.test(studentId.trim());

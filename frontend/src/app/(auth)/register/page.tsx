@@ -33,7 +33,7 @@ const registerSchema = z
       .string()
       .trim()
       .refine(isValidStudentId, studentIdMessage),
-    email: z.string().trim().toLowerCase().email('Please enter a valid email address (student or personal email)'),
+    email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
     phone: z.string().trim().superRefine((value, ctx) => {
       const result = validatePhoneNumber(value);
       if (!result.valid) {
@@ -49,7 +49,7 @@ const registerSchema = z
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
-    confirmPassword: z.string().min(6, 'Please confirm your password'),
+    confirmPassword: z.string().min(8, 'Please confirm your password'),
     program: z.string().min(1, 'Please select a program'),
     otherProgram: z.string().optional(),
     acceptPrivacyPolicy: z.literal(true),
@@ -69,7 +69,7 @@ const registerSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['confirmPassword'],
-        message: 'Passwords do not match',
+        message: 'Password confirmation does not match',
       });
     }
   });

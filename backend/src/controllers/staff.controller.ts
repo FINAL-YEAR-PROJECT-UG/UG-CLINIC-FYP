@@ -26,11 +26,16 @@ export const staffRegister = async (req: Request, res: Response) => {
     if (!['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid role. Must be RECEPTIONIST, DOCTOR, or ADMIN',
+        message: 'Invalid staff role. Must be RECEPTIONIST, DOCTOR, or ADMIN',
       });
     }
 
     const passwordHash = await hashPassword(password);
+    const smsConfigured = Boolean(
+      process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_PHONE_NUMBER
+    );
 
     const user = await prisma.user.create({
       data: {
@@ -40,7 +45,7 @@ export const staffRegister = async (req: Request, res: Response) => {
         lastName,
         phone,
         role,
-        twoFactorEnabled: true,
+        twoFactorEnabled: smsConfigured,
         maxSessions: MAX_CONCURRENT_SESSIONS,
       },
     });
@@ -76,28 +81,28 @@ export const staffLogin = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid staff email or password',
       });
     }
 
     if (!['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. Staff only',
+        message: 'Access denied. This endpoint is for staff members only',
       });
     }
 
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Account is inactive. Please contact administrator',
+        message: 'Your staff account is inactive. Please contact the administrator',
       });
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       return res.status(403).json({
         success: false,
-        message: 'Account is locked. Please try again later',
+        message: 'Your account is temporarily locked. Please try again later',
       });
     }
 
@@ -121,18 +126,24 @@ export const staffLogin = async (req: Request, res: Response) => {
 
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password',
+        message: 'Invalid staff email or password',
       });
     }
 
-    if (user.twoFactorEnabled && !user.phoneVerified) {
+    const smsConfigured = Boolean(
+      process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_PHONE_NUMBER
+    );
+
+    if (user.twoFactorEnabled && !user.phoneVerified && smsConfigured) {
       return res.status(400).json({
         success: false,
-        message: 'Phone number must be verified for 2FA',
+        message: 'Your phone number must be verified for two-factor authentication',
       });
     }
 
-    if (user.twoFactorEnabled) {
+    if (user.twoFactorEnabled && smsConfigured) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -150,7 +161,7 @@ export const staffLogin = async (req: Request, res: Response) => {
 
       return res.status(200).json({
         success: true,
-        message: 'OTP sent to your phone',
+        message: 'A verification code has been sent to your phone',
         requires2FA: true,
         data: {
           email: user.email,
@@ -162,7 +173,7 @@ export const staffLogin = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: 'Staff login successful',
       data: {
         user: {
           id: user.id,
@@ -194,7 +205,7 @@ export const verify2FA = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found',
+        message: 'Staff account not found',
       });
     }
 
@@ -210,14 +221,14 @@ export const verify2FA = async (req: Request, res: Response) => {
     if (!otpRecord) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired OTP',
+        message: 'Invalid or expired verification code',
       });
     }
 
     if (otpRecord.expiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired',
+        message: 'Verification code has expired',
       });
     }
 
@@ -230,7 +241,7 @@ export const verify2FA = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: 'Staff login successful',
       data: {
         user: {
           id: user.id,

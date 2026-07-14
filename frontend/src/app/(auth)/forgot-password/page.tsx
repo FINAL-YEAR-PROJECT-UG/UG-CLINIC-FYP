@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
       <div className="forgot-password-card">
         <h1 className="forgot-password-title">Forgot Password?</h1>
         <p className="forgot-password-description">
-          Enter your email to receive a password reset link
+          Enter your student email to receive a password reset link
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="forgot-password-form">

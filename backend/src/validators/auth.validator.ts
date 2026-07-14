@@ -7,13 +7,13 @@ import {
 const emailValidator = body('email')
   .trim()
   .isEmail()
-  .withMessage('Please provide a valid email address')
+  .withMessage('Please provide a valid student email address')
   .normalizeEmail();
 
 const usernameValidator = body('username')
   .trim()
   .notEmpty()
-  .withMessage('Username (email or student ID) is required');
+  .withMessage('Email or student ID is required');
 
 const studentIdValidator = body('studentId')
   .trim()
@@ -21,7 +21,7 @@ const studentIdValidator = body('studentId')
   .withMessage('Student ID is required')
   .custom((value) => {
     if (!isValidStudentId(value)) {
-      throw new Error('Student ID must be exactly 8 digits.');
+      throw new Error('Student ID must be exactly 8 digits (numbers only)');
     }
     return true;
   });

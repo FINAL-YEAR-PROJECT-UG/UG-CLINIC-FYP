@@ -15,7 +15,9 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seeders/index.ts",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "create-staff": "ts-node scripts/create-staff.ts",
+    "diagnose-staff": "ts-node scripts/diagnose-staff.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
