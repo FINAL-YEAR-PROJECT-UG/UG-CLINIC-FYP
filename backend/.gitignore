@@ -1,4 +1,58 @@
+# Dependencies
 node_modules/
+.pnp/
+.pnp.js
+
+# Build output
 dist/
+build/
+
+# Environment variables
 .env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
 logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Testing
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# AI Assistants
+.claude/
+.qodo/
+.cursor/
+.cursorignore
+.ai/
+.copilot/
+.github/copilot/
+.aide/
+.windsurf/
+.devin/
+.cline/

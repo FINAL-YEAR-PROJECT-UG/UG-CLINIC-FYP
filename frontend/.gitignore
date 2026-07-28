@@ -40,3 +40,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# AI Assistants
+.claude/
+.qodo/
+.cursor/
+.cursorignore
+.ai/
+.copilot/
+.github/copilot/
+.aide/
+.windsurf/
+.devin/
+.cline/
+

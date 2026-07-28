@@ -1,7 +1,7 @@
 $kind: http-request
 name: 'Get Staff Dashboard'
 method: GET
-url: '{{baseUrl}}/api/appointments/staff'
+url: '{{baseUrl}}/api/appointments/staff/dashboard'
 order: 1000
 headers:
   - key: Authorization
@@ -13,3 +13,8 @@ scripts:
       pm.test('Staff dashboard returns expected outcome', function () {
         pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
       });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('summary');
+        pm.expect(json.data).to.have.property('upcomingAppointments');
+      }

@@ -18,6 +18,7 @@ import resourceRoutes from './routes/resource.routes';
 import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
 import staffRoutes from './routes/staff.routes';
+import newsRoutes from './routes/news.routes';
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
@@ -81,6 +82,7 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/news', newsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

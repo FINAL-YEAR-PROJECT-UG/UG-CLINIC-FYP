@@ -59,10 +59,10 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, firstName, lastName, otherNames, studentId, phone, gender, isResident, program } = req.body;
 
-    if (studentId && !isValidStudentId(studentId)) {
+    if (!studentId || !isValidStudentId(studentId)) {
       return res.status(400).json({
         success: false,
-        message: 'Student ID must be exactly 8 digits (numbers only)',
+        message: 'Student registration requires a valid 8-digit Student ID',
       });
     }
 
@@ -111,7 +111,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user
+    // Create user - Student registration only
     const user = await prisma.user.create({
       data: {
         email,
@@ -119,7 +119,7 @@ export const register = async (req: Request, res: Response) => {
         firstName,
         lastName,
         otherNames: otherNames || null,
-        studentId: studentId || null,
+        studentId,
         phone: phone || null,
         gender: gender || null,
         isResident: isResident || null,
@@ -190,12 +190,22 @@ export const login = async (req: Request, res: Response) => {
     const ipAddress = req.ip;
     const userAgent = req.get('user-agent');
 
-    // Find user by email or studentId (username)
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password are required',
+      });
+    }
+
+    const cleanUsername = String(username).trim();
+    const cleanEmail = cleanUsername.toLowerCase();
+
+    // Find user by email (case-insensitive) or studentId (exact match after trim)
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: username },
-          { studentId: username }
+          { email: { equals: cleanEmail, mode: 'insensitive' } },
+          { studentId: cleanUsername }
         ]
       },
     });
@@ -284,20 +294,65 @@ export const login = async (req: Request, res: Response) => {
       email: user.email,
       role: user.role,
     };
-    const tokens = generateTokenPair(payload);
+    let tokens = generateTokenPair(payload);
 
     // Store refresh token in database
     const refreshTokenExpiry = rememberMe
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for remember me
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days default
 
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
+    // Clean up expired refresh tokens for this user first
+    await prisma.refreshToken.deleteMany({
+      where: {
         userId: user.id,
-        expiresAt: refreshTokenExpiry,
+        expiresAt: { lt: new Date() },
       },
     });
+
+    // Enforce max sessions - revoke oldest active tokens if over limit
+    const activeTokens = await prisma.refreshToken.findMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const sessionLimit = Math.max(1, user.maxSessions || 3);
+    if (activeTokens.length >= sessionLimit) {
+      const toRevoke = activeTokens.slice(0, activeTokens.length - sessionLimit + 1);
+      if (toRevoke.length > 0) {
+        await prisma.refreshToken.updateMany({
+          where: { id: { in: toRevoke.map(t => t.id) } },
+          data: { revokedAt: new Date() },
+        });
+      }
+    }
+
+    // Create refresh token with retry for unique constraint collisions
+    let attempts = 0;
+    let stored = false;
+    while (attempts < 3 && !stored) {
+      try {
+        await prisma.refreshToken.create({
+          data: {
+            token: tokens.refreshToken,
+            userId: user.id,
+            expiresAt: refreshTokenExpiry,
+          },
+        });
+        stored = true;
+      } catch (createError: any) {
+        if (createError?.code === 'P2002' && attempts < 2) {
+          attempts++;
+          tokens = generateTokenPair(payload);
+          await new Promise(r => setTimeout(r, 10));
+        } else {
+          throw createError;
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -319,9 +374,16 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Login error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
+    const isDev = process.env.NODE_ENV !== 'production';
     res.status(500).json({
       success: false,
       message: 'An error occurred during login',
+      details: isDev ? (error instanceof Error ? error.message : String(error)) : undefined,
     });
   }
 };
@@ -397,8 +459,15 @@ export const refreshToken = async (req: Request, res: Response) => {
     // Verify the token
     const payload = verifyRefreshToken(refreshToken);
 
+    // Create clean payload without exp property for new tokens
+    const cleanPayload: TokenPayload = {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role,
+    };
+
     // Generate new token pair
-    const newTokens = generateTokenPair(payload);
+    const newTokens = generateTokenPair(cleanPayload);
 
     // Revoke old refresh token and create new one
     await prisma.refreshToken.update({
@@ -504,20 +573,65 @@ export const loginWithOTP = async (req: Request, res: Response) => {
       email: user.email,
       role: user.role,
     };
-    const tokens = generateTokenPair(payload);
+    let tokens = generateTokenPair(payload);
 
     // Store refresh token in database
     const refreshTokenExpiry = rememberMe
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for remember me
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days default
 
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
+    // Clean up expired refresh tokens for this user first
+    await prisma.refreshToken.deleteMany({
+      where: {
         userId: user.id,
-        expiresAt: refreshTokenExpiry,
+        expiresAt: { lt: new Date() },
       },
     });
+
+    // Enforce max sessions - revoke oldest active tokens if over limit
+    const activeTokens = await prisma.refreshToken.findMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const sessionLimit = Math.max(1, user.maxSessions || 3);
+    if (activeTokens.length >= sessionLimit) {
+      const toRevoke = activeTokens.slice(0, activeTokens.length - sessionLimit + 1);
+      if (toRevoke.length > 0) {
+        await prisma.refreshToken.updateMany({
+          where: { id: { in: toRevoke.map(t => t.id) } },
+          data: { revokedAt: new Date() },
+        });
+      }
+    }
+
+    // Create refresh token with retry for unique constraint collisions
+    let attempts = 0;
+    let stored = false;
+    while (attempts < 3 && !stored) {
+      try {
+        await prisma.refreshToken.create({
+          data: {
+            token: tokens.refreshToken,
+            userId: user.id,
+            expiresAt: refreshTokenExpiry,
+          },
+        });
+        stored = true;
+      } catch (createError: any) {
+        if (createError?.code === 'P2002' && attempts < 2) {
+          attempts++;
+          tokens = generateTokenPair(payload);
+          await new Promise(r => setTimeout(r, 10));
+        } else {
+          throw createError;
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,

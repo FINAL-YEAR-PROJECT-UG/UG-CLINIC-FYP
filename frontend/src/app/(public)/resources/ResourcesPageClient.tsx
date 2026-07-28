@@ -2,10 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
-import { useAuthStore } from '@/stores/authStore';
 import {
   Search,
   FileText,
@@ -141,8 +139,6 @@ const faqs = [
 const INITIAL_VISIBLE = 6;
 
 export default function ResourcesPageClient() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [tab, setTab] = useState<'all' | ResKind>('all');
   const [category, setCategory] = useState('All');
   const [query, setQuery] = useState('');
@@ -173,20 +169,12 @@ export default function ResourcesPageClient() {
     }, 1200);
   };
 
-  const handleBookingClick = () => {
-    if (isAuthenticated) {
-      router.push('/demo-booking');
-    } else {
-      router.push('/login');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#EEF1FB]">
       <Header />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-blue-900 to-blue-700 text-white pb-24">
+      <section className="relative bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">Health Resources</h1>
           <p className="text-blue-100 max-w-2xl mx-auto text-lg">
@@ -207,7 +195,7 @@ export default function ResourcesPageClient() {
               key={t.id}
               onClick={() => { setTab(t.id); setVisible(INITIAL_VISIBLE); }}
               className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                tab === t.id ? 'bg-white text-blue-900 shadow-lg scale-105' : 'bg-blue-800/40 text-white border border-blue-400/30 hover:bg-blue-700/60 hover:scale-105'
+                tab === t.id ? 'bg-white text-[#1e3a8a] shadow-lg scale-105' : 'bg-[#1e3a8a]/40 text-white border border-[#3b82f6]/30 hover:bg-[#1e3a8a]/60 hover:scale-105'
               }`}
             >
               {t.label}
@@ -221,7 +209,7 @@ export default function ResourcesPageClient() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); setVisible(INITIAL_VISIBLE); }}
               placeholder="Search resources, guides, topics..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -247,7 +235,7 @@ export default function ResourcesPageClient() {
         <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col md:flex-row items-center gap-6">
           <div className="flex-1">
             <span className="inline-block bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full mb-3">FEATURED</span>
-            <h2 className="text-2xl font-extrabold text-blue-950 mb-2">Student Mental Health Guide 2026</h2>
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Student Mental Health Guide 2026</h2>
             <p className="text-gray-600 mb-4 max-w-xl">
               A comprehensive guide to managing stress, anxiety, and burnout — with practical tools and where to get help on campus.
             </p>
@@ -257,15 +245,15 @@ export default function ResourcesPageClient() {
               <span>English</span>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Read Now</button>
-              <button className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-50 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+              <button className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Read Now</button>
+              <button className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-50 hover:border-[#3b82f6] hover:shadow-md transition-all duration-200">
                 <Download className="h-4 w-4" /> Download PDF
               </button>
             </div>
           </div>
           <div className="flex-shrink-0">
             <div className="h-40 w-40 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <HandHeart className="h-20 w-20 text-blue-200" />
+              <HandHeart className="h-20 w-20 text-[#1e3a8a]/30" />
             </div>
           </div>
         </div>
@@ -273,7 +261,7 @@ export default function ResourcesPageClient() {
 
       {/* All resources grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <h2 className="text-xl font-bold text-blue-950 mb-6">All Resources</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">All Resources</h2>
         {shown.length === 0 ? (
           <div className="bg-white rounded-xl p-10 text-center text-gray-500">No resources match your filters.</div>
         ) : (
@@ -301,10 +289,10 @@ export default function ResourcesPageClient() {
                     <span className="flex items-center gap-1">{meta.Icon === Download ? <Download className="h-3.5 w-3.5" /> : meta.Icon === PlayCircle ? <PlayCircle className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{r.meta}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="flex-1 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
+                    <button className="flex-1 bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-sm font-semibold py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
                       {meta.cta}
                     </button>
-                    <button aria-label="Bookmark" className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition-all duration-200">
+                    <button aria-label="Bookmark" className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-[#3b82f6] hover:text-[#1e3a8a] transition-all duration-200">
                       <Bookmark className="h-4 w-4" />
                     </button>
                   </div>
@@ -317,7 +305,7 @@ export default function ResourcesPageClient() {
           <div className="text-center mt-8">
             <button
               onClick={() => setVisible((v) => v + 3)}
-              className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 hover:border-blue-400 hover:shadow-md transition-all duration-200"
+              className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 hover:border-[#3b82f6] hover:shadow-md transition-all duration-200"
             >
               Load more resources <ChevronDown className="h-4 w-4" />
             </button>
@@ -326,7 +314,7 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* Browse by category */}
-      <section className="bg-blue-600 text-white mt-16">
+      <section className="bg-[#1e3a8a] text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
           <h2 className="text-2xl font-bold text-center mb-8">Browse by Category</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -341,7 +329,7 @@ export default function ResourcesPageClient() {
                     setVisible(INITIAL_VISIBLE);
                     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="bg-white rounded-xl p-5 flex flex-col items-center gap-2 text-blue-900 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  className="bg-white rounded-xl p-5 flex flex-col items-center gap-2 text-[#1e3a8a] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   <div className="h-11 w-11 rounded-lg bg-blue-50 flex items-center justify-center">
                     <Icon className="h-6 w-6 text-blue-700" />
@@ -360,7 +348,7 @@ export default function ResourcesPageClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mb-4">For Students</span>
-            <h2 className="text-3xl font-extrabold text-blue-950 mb-4">Got a Health Article to Share?</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Got a Health Article to Share?</h2>
             <p className="text-gray-600 mb-6">
               We welcome health-related articles from students, medical professionals, and wellbeing volunteers.
               Share your knowledge and help fellow students stay healthy.
@@ -382,18 +370,18 @@ export default function ResourcesPageClient() {
               </div>
             ) : (
               <form onSubmit={handleSubmitArticle} className="space-y-4">
-                <h3 className="font-bold text-blue-950 mb-2">Submit Your Article</h3>
+                <h3 className="font-bold text-gray-900 mb-2">Submit Your Article</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input required placeholder="Full name" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                  <input required type="email" placeholder="Email address" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                  <input required placeholder="Full name" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
+                  <input required type="email" placeholder="Email address" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
                 </div>
-                <input required placeholder="Article title" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                <select className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer">
+                <input required placeholder="Article title" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
+                <select className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all cursor-pointer">
                   {CATEGORIES.filter((c) => c !== 'All').map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg py-8 text-sm text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg py-8 text-sm text-gray-500 cursor-pointer hover:border-[#3b82f6] hover:bg-blue-50 transition-all">
                   <UploadCloud className="h-7 w-7" />
                   Drag and drop your article file, or click to browse
                   <input type="file" className="hidden" />
@@ -414,7 +402,7 @@ export default function ResourcesPageClient() {
       {/* Newsletter */}
       <section className="bg-[#E7EAF7]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
-          <Mail className="h-9 w-9 text-blue-900 mx-auto mb-3" />
+          <Mail className="h-9 w-9 text-[#1e3a8a] mx-auto mb-3" />
           <h2 className="text-2xl font-bold text-blue-950 mb-2">Stay Updated on Health Tips</h2>
           <p className="text-gray-600 mb-6">Get the latest health resources and wellness tips delivered to your inbox.</p>
           {subscribed ? (
@@ -427,7 +415,7 @@ export default function ResourcesPageClient() {
               className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
             >
               <input required type="email" placeholder="your.email@ug.edu.gh" className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-              <button type="submit" className="bg-blue-900 hover:bg-blue-800 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Subscribe</button>
+              <button type="submit" className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">Subscribe</button>
             </form>
           )}
         </div>
@@ -437,7 +425,7 @@ export default function ResourcesPageClient() {
       <section className="bg-[#EEF1FB]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-blue-950">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
             <p className="text-gray-600 mt-2">Got questions about our resources?</p>
           </div>
           <div className="space-y-3">
@@ -463,15 +451,15 @@ export default function ResourcesPageClient() {
       {/* CTA */}
       <section className="bg-[#EEF1FB] pb-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-blue-700 to-blue-500 rounded-2xl text-white text-center px-6 py-12">
+          <div className="bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] rounded-2xl text-white text-center px-6 py-12">
             <h2 className="text-3xl font-bold mb-3">Have a Health Concern?</h2>
             <p className="text-blue-100 mb-8 max-w-xl mx-auto">
               Don&apos;t wait — book an appointment with the UG Student Clinic or reach out to our team.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={handleBookingClick} className="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105">
+              <Link href="/login" className="bg-white text-[#1e3a8a] font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105">
                 Book Appointment
-              </button>
+              </Link>
               <Link href="/contact" className="border border-white/70 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 hover:shadow-lg transition-all duration-200 hover:scale-105">
                 Contact the Clinic
               </Link>

@@ -1,0 +1,15 @@
+$kind: http-request
+name: 'Auto Confirm Pending'
+method: POST
+url: '{{baseUrl}}/api/staff/auto-confirm-pending'
+order: 16000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Auto confirm pending returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 500]);
+      });

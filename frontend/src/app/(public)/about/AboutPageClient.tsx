@@ -12,7 +12,6 @@ import {
   Clock,
   CheckCircle2,
 } from 'lucide-react';
-import './AboutPageClient.css';
 import compassionIcon from '@/Assets/compassion.svg';
 import excellenceAboutIcon from '@/Assets/excellence-about.svg';
 import integrityAboutIcon from '@/Assets/integrity-about.svg';
@@ -110,7 +109,7 @@ export default function AboutPageClient() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             About Our Clinic
@@ -120,12 +119,12 @@ export default function AboutPageClient() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/services">
-              <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-semibold px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
+              <Button size="lg" className="bg-white text-[#1e3a8a] hover:bg-gray-100 font-semibold px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105">
                 Our Services
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 rounded-md transition-all duration-200 hover:shadow-lg hover:scale-105">
+              <Button size="lg" className="bg-white text-[#1e3a8a] hover:bg-gray-100 font-semibold px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105">
                 Contact Us
               </Button>
             </Link>
@@ -147,7 +146,7 @@ export default function AboutPageClient() {
               />
             </div>
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-6">
                 Who We Are
               </h2>
               <p className="text-gray-600 mb-4 leading-relaxed">
@@ -157,11 +156,11 @@ export default function AboutPageClient() {
                 Our team of experienced healthcare professionals is committed to delivering high-quality, accessible, and confidential care in a supportive environment.
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-[#1e3a8a] rounded-full flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-blue-900 text-sm">Serving Since 2010</p>
+                  <p className="font-semibold text-[#1e3a8a] text-sm">Serving Since 2010</p>
                   <p className="text-xs text-gray-500">Over 14 years of dedicated service</p>
                 </div>
               </div>
@@ -174,7 +173,7 @@ export default function AboutPageClient() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Our Story</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-4">Our Story</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               From humble beginnings to a comprehensive healthcare center serving thousands of students.
             </p>
@@ -183,10 +182,10 @@ export default function AboutPageClient() {
             {ourStory.map((milestone, index) => (
               <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4">
                     <span className="text-white font-bold text-lg">{milestone.year}</span>
                   </div>
-                  <CardTitle className="text-lg text-blue-900">{milestone.title}</CardTitle>
+                  <CardTitle className="text-lg text-[#1e3a8a]">{milestone.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600 leading-relaxed">{milestone.description}</p>
@@ -212,7 +211,7 @@ export default function AboutPageClient() {
                 </div>
               </div>
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-6">Our Mission</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-6">Our Mission</h2>
                 <p className="text-gray-600 mb-4 leading-relaxed">
                   To provide accessible, comprehensive, and student-centered healthcare services that promote physical, mental, and emotional wellbeing. We are committed to creating a supportive environment where every student can thrive academically and personally.
                 </p>
@@ -232,7 +231,7 @@ export default function AboutPageClient() {
                 </div>
               </div>
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-6">Our Vision</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-6">Our Vision</h2>
                 <p className="text-gray-600 mb-4 leading-relaxed">
                   To be the leading student healthcare provider in Ghana, setting the standard for excellence in university health services. We envision a future where every student has access to quality healthcare that supports their academic success and personal growth.
                 </p>
@@ -249,7 +248,7 @@ export default function AboutPageClient() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Our Team</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-4">Our Team</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Meet the dedicated healthcare professionals committed to your wellbeing.
             </p>
@@ -258,11 +257,11 @@ export default function AboutPageClient() {
             {team.map((member, index) => (
               <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow text-center">
                 <CardHeader className="pb-2">
-                  <div className="w-20 h-20 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <Users className="h-10 w-10 text-blue-900" />
+                  <div className="w-20 h-20 bg-blue-50 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <Users className="h-10 w-10 text-[#1e3a8a]" />
                   </div>
-                  <CardTitle className="text-lg text-blue-900">{member.name}</CardTitle>
-                  <p className="text-sm text-blue-600 font-medium">{member.role}</p>
+                  <CardTitle className="text-lg text-[#1e3a8a]">{member.name}</CardTitle>
+                  <p className="text-sm text-[#1e3a8a] font-medium">{member.role}</p>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600 leading-relaxed">{member.description}</p>
@@ -277,7 +276,7 @@ export default function AboutPageClient() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Our Core Values</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-4">Our Core Values</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               The principles that guide everything we do at the Student Clinic.
             </p>
@@ -286,14 +285,14 @@ export default function AboutPageClient() {
             {coreValues.map((value, index) => (
               <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-blue-900 rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
+                  <div className="w-12 h-12 bg-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
                     <img
                       src={getImageSrc(value.image)}
                       alt={value.title}
                       className="w-full h-full object-contain p-2"
                     />
                   </div>
-                  <CardTitle className="text-lg text-blue-900">{value.title}</CardTitle>
+                  <CardTitle className="text-lg text-[#1e3a8a]">{value.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600 leading-relaxed">{value.description}</p>
@@ -305,7 +304,7 @@ export default function AboutPageClient() {
       </section>
 
       {/* Achievements Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-900 to-blue-700">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Our Achievements</h2>
@@ -338,7 +337,7 @@ export default function AboutPageClient() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Why Choose Us</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-[#1e3a8a] mb-4">Why Choose Us</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               What sets our clinic apart in providing exceptional student healthcare.
             </p>
@@ -353,7 +352,7 @@ export default function AboutPageClient() {
               'Comprehensive range of medical services',
             ].map((feature, index) => (
               <div key={index} className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="w-6 h-6 bg-[#1e3a8a] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <CheckCircle2 className="w-4 h-4 text-white" />
                 </div>
                 <p className="text-gray-700 leading-relaxed">{feature}</p>

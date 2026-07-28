@@ -8,14 +8,10 @@ headers:
     value: application/json
   - key: Authorization
     value: 'Bearer {{accessToken}}'
-  - key: X-Session-Token
-    value: '{{sessionToken}}'
 body:
   type: json
   content: |-
     {
-      "firstName": "Ama",
-      "lastName": "Mensah",
       "phone": "+233201234567",
       "program": "Computer Science",
       "gender": "female",

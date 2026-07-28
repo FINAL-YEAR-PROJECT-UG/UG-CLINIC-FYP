@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-to-a-secret-with-at-least-32-characters';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '5m';
@@ -16,11 +17,25 @@ export interface TokenPair {
 }
 
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as any);
+  return jwt.sign(
+    payload,
+    JWT_SECRET,
+    {
+      expiresIn: JWT_EXPIRES_IN,
+      jwtid: randomUUID(),
+    } as any
+  );
 }
 
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN } as any);
+  return jwt.sign(
+    payload,
+    JWT_SECRET,
+    {
+      expiresIn: JWT_REFRESH_EXPIRES_IN,
+      jwtid: randomUUID(),
+    } as any
+  );
 }
 
 export function generateTokenPair(payload: TokenPayload): TokenPair {

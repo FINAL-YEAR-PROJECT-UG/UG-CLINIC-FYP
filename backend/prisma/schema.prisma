@@ -27,10 +27,12 @@ model User {
   maxSessions         Int                  @default(3)
   twoFactorEnabled    Boolean              @default(false)
   program             String?              @db.VarChar(100)
-  deletedAt           DateTime?
   gender              String?              @db.VarChar(20)
   isResident          String?              @db.VarChar(20)
   otherNames          String?              @db.VarChar(100)
+  dateOfBirth         DateTime?
+  deletedAt           DateTime?
+  doctorStatus        DoctorStatus         @default(AVAILABLE)
   doctorAppointments  Appointment[]        @relation("DoctorAppointments")
   appointments        Appointment[]        @relation("UserAppointments")
   auditLogs           AuditLog[]
@@ -44,6 +46,7 @@ model User {
   securityEvents      SecurityEvent[]
   securityQuestions   SecurityQuestion[]
   sessions            Session[]
+  newsPosts           NewsPost[]
 
   @@index([email])
   @@index([createdAt])
@@ -67,9 +70,9 @@ model Appointment {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   deletedAt          DateTime?
-  doctor             User?             @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  service            Service           @relation(fields: [serviceId], references: [id])
-  user               User              @relation("UserAppointments", fields: [userId], references: [id])
+  doctor             User?             @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
+  service            Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  user               User              @relation("UserAppointments", fields: [userId], references: [id], onDelete: Restrict)
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -102,7 +105,7 @@ model TimeSlot {
   maxBookings     Int      @default(1)
   currentBookings Int      @default(0)
   createdAt       DateTime @default(now())
-  service         Service  @relation(fields: [serviceId], references: [id])
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([serviceId, date, startTime])
   @@index([date])
@@ -123,7 +126,7 @@ model Resource {
   downloadCount Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  uploader      User     @relation(fields: [uploadedBy], references: [id])
+  uploader      User     @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
 
   @@index([category])
   @@index([isPublic])
@@ -138,7 +141,7 @@ model Notification {
   isRead    Boolean             @default(false)
   sentVia   NotificationSentVia @default(IN_APP)
   createdAt DateTime            @default(now())
-  user      User                @relation(fields: [userId], references: [id])
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
 }
@@ -154,7 +157,7 @@ model AuditLog {
   ipAddress String?  @db.VarChar(50)
   userAgent String?
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([action])
@@ -199,7 +202,7 @@ model SecurityEvent {
   details   Json
   resolved  Boolean  @default(false)
   timestamp DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([severity])
@@ -312,4 +315,26 @@ enum NotificationSentVia {
   EMAIL
   SMS
   IN_APP
+}
+
+enum DoctorStatus {
+  AVAILABLE
+  BUSY
+  ON_LEAVE
+}
+
+model NewsPost {
+  id        String   @id @default(uuid())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  category  String   @db.VarChar(50)
+  priority  String   @db.VarChar(20)
+  isPublic  Boolean  @default(true)
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([category])
+  @@index([createdAt])
 }

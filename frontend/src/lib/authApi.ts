@@ -8,6 +8,7 @@ export interface RegisterData {
   lastName: string;
   otherNames?: string;
   studentId?: string;
+  dateOfBirth?: string;
   phone?: string;
   gender?: string;
   isResident?: string;

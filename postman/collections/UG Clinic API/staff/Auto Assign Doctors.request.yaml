@@ -1,0 +1,15 @@
+$kind: http-request
+name: 'Auto Assign Doctors'
+method: POST
+url: '{{baseUrl}}/api/staff/auto-assign-doctors'
+order: 15000
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Auto assign doctors returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 500]);
+      });

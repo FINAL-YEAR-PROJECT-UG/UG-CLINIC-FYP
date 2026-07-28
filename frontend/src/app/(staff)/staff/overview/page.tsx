@@ -1,24 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/hooks/useAuth';
-import { getErrorMessage } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import UGLogo from '@/components/shared/UGLogo';
+import { getErrorMessage, normalizeRole, isStaffRole } from '@/lib/utils';
+import {
+  getStaffDashboard,
+  getDoctors,
+  updateDoctorStatus,
+  autoAssignDoctors,
+  autoConfirmPending,
+  type StaffDoctor,
+} from '@/lib/staffApi';
 import {
   Calendar,
   Users,
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   LogOut,
-  Loader2,
   FileText,
   Settings,
-  Bell,
+  Activity,
+  UserCheck,
+  Stethoscope,
+  TrendingUp,
 } from 'lucide-react';
+
+interface DailyTrend {
+  date: string;
+  dayName: string;
+  count: number;
+}
 
 interface StaffOverviewData {
   summary: {
@@ -29,6 +46,8 @@ interface StaffOverviewData {
     completedAppointments: number;
     cancelledAppointments: number;
     totalStudents: number;
+    totalDoctors?: number;
+    totalServices?: number;
   };
   recentAppointments: Array<{
     id: string;
@@ -36,31 +55,10 @@ interface StaffOverviewData {
     timeSlot: string;
     status: string;
     reason: string;
-    user: {
-      firstName: string;
-      lastName: string;
-      studentId?: string;
-      email: string;
-    };
-    service?: {
-      name: string;
-    };
+    user: { firstName: string; lastName: string; studentId?: string; email: string };
+    service?: { name: string };
   }>;
-}
-
-function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  dailyTrends?: DailyTrend[];
 }
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
@@ -73,129 +71,231 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 };
 
 function getStaffRoleLabel(role: string) {
-  const normalizedRole = role?.toUpperCase?.() ?? '';
-  switch (normalizedRole) {
-    case 'DOCTOR':
-      return 'Doctor';
-    case 'RECEPTIONIST':
-      return 'Receptionist';
-    case 'ADMIN':
-      return 'Administrator';
-    default:
-      return 'Staff';
+  switch ((role ?? '').toUpperCase()) {
+    case 'DOCTOR': return 'Doctor';
+    case 'RECEPTIONIST': return 'Receptionist';
+    case 'ADMIN': return 'Administrator';
+    default: return 'Staff';
   }
+}
+
+function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export default function StaffOverviewPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { logout } = useAuth();
+  const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
+  const storeUser = useAuthStore((s) => s.user);
 
+  const initialSnap = useAuthStore.getState();
+  const initialUser = initialSnap.user ?? storeUser;
+  const initialIsAuth = initialSnap.isAuthenticated || storeIsAuth;
+  const initialRole = normalizeRole(initialUser?.role);
+  const initialIsStaff = initialIsAuth && isStaffRole(initialRole);
+
+  // Guard state
+  const [guardResolved, setGuardResolved] = useState(() => initialIsStaff);
+  const [guardRedirecting, setGuardRedirecting] = useState(false);
+  const [userRole, setUserRole] = useState<string>(() => initialRole);
+  const [userId, setUserId] = useState<string>(() => initialUser?.id || '');
+  const [userEmail, setUserEmail] = useState<string>(() => initialUser?.email || '');
+  const [firstName, setFirstName] = useState<string>(() => initialUser?.firstName || 'Staff');
+  const [lastName, setLastName] = useState<string>(() => initialUser?.lastName || '');
+
+  // Data state
   const [staffData, setStaffData] = useState<StaffOverviewData | null>(null);
+  const [doctors, setDoctors] = useState<StaffDoctor[]>([]);
+  const [myDoctorStatus, setMyDoctorStatus] = useState<'AVAILABLE' | 'BUSY' | 'ON_LEAVE'>('AVAILABLE');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [automationMessage, setAutomationMessage] = useState<string | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
 
+  // ——— Guard: synchronous + early redirect ———
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login?role=staff');
-      return;
-    }
+    let active = true;
+    let t: ReturnType<typeof setTimeout> | null = null;
 
-    if (user && !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
-      router.push('/dashboard');
-      return;
-    }
+    const runGuard = () => {
+      const snapshot = useAuthStore.getState();
+      const isAuth = snapshot.isAuthenticated || storeIsAuth;
+      const u = snapshot.user ?? storeUser;
+      const role = normalizeRole(u?.role);
+      const isStaff = isStaffRole(role);
 
-    fetchStaffOverview();
-  }, [isAuthenticated, user, router]);
+      if (!isAuth || !u || !isStaff) {
+        setGuardRedirecting(true);
+        const target = !isAuth ? '/staff-portal-access' : '/dashboard';
+        t = setTimeout(() => { if (active) router.replace(target); }, 0);
+        return;
+      }
 
-  const fetchStaffOverview = async () => {
+      setUserRole(role);
+      setUserId(u.id);
+      setUserEmail(u.email);
+      setFirstName(u.firstName || 'Staff');
+      setLastName(u.lastName || '');
+      setGuardResolved(true);
+    };
+
+    runGuard();
+    return () => { active = false; if (t) clearTimeout(t); };
+  }, [router, storeIsAuth, storeUser]);
+
+  // ——— Loaders ———
+  const fetchStaffOverview = useCallback(async () => {
     try {
       setLoading(true);
-      // In a real implementation, this would call your API
-      // For now, we'll use mock data since the API structure isn't clear yet
-      const mockData: StaffOverviewData = {
-        summary: {
-          totalAppointments: 0,
-          todayAppointments: 0,
-          pendingAppointments: 0,
-          confirmedAppointments: 0,
-          completedAppointments: 0,
-          cancelledAppointments: 0,
-          totalStudents: 0,
-        },
-        recentAppointments: [],
-      };
-      setStaffData(mockData);
+      const data = await getStaffDashboard();
+      setStaffData(data);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load staff overview'));
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchDoctorsList = useCallback(async () => {
+    try {
+      const data = await getDoctors();
+      const list = Array.isArray(data?.doctors) ? data.doctors : [];
+      setDoctors(list);
+      const me = list.find((d) => d.id === userId || d.email === userEmail);
+      if (me) setMyDoctorStatus(me.doctorStatus);
+    } catch (err) {
+      console.error('Failed to load doctors availability:', err);
+    }
+  }, [userId, userEmail]);
+
+  useEffect(() => {
+    if (!guardResolved) return;
+    fetchStaffOverview();
+    fetchDoctorsList();
+  }, [guardResolved, fetchStaffOverview, fetchDoctorsList]);
+
+  // ——— Actions ———
+  const handleStatusChange = async (newStatus: 'AVAILABLE' | 'BUSY' | 'ON_LEAVE', targetDoctorId?: string) => {
+    try {
+      setStatusUpdating(true);
+      await updateDoctorStatus(newStatus, targetDoctorId);
+      const isMe = !targetDoctorId || targetDoctorId === userId;
+      if (isMe) setMyDoctorStatus(newStatus);
+      await fetchDoctorsList();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update doctor status'));
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/login?role=staff');
+      router.replace('/login?role=staff');
     } catch (err) {
       console.error('Logout failed:', err);
+      router.replace('/staff-portal-access');
     }
   };
 
-  if (loading) {
+  const handleAutoAssign = async () => {
+    try {
+      setAutoLoading(true);
+      setAutomationMessage(null);
+      const res = await autoAssignDoctors();
+      setAutomationMessage(res.message);
+      await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Automated doctor assignment failed'));
+    } finally {
+      setAutoLoading(false);
+    }
+  };
+
+  const handleAutoConfirm = async () => {
+    try {
+      setAutoLoading(true);
+      setAutomationMessage(null);
+      const res = await autoConfirmPending();
+      setAutomationMessage(res.message);
+      await fetchStaffOverview();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Batch auto-confirmation failed'));
+    } finally {
+      setAutoLoading(false);
+    }
+  };
+
+  // ——— Loading shell ———
+  if (!guardResolved) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner size={48} />
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <UGLogo size="md" />
+          <LoadingSpinner size={48} />
+          <p className="text-sm text-gray-500 font-medium">
+            {guardRedirecting ? 'Redirecting…' : 'Verifying staff access…'}
+          </p>
+        </div>
       </div>
     );
   }
 
   const summary = staffData?.summary ?? {
-    totalAppointments: 0,
-    todayAppointments: 0,
-    pendingAppointments: 0,
-    confirmedAppointments: 0,
-    completedAppointments: 0,
-    cancelledAppointments: 0,
-    totalStudents: 0,
+    totalAppointments: 0, todayAppointments: 0, pendingAppointments: 0,
+    confirmedAppointments: 0, completedAppointments: 0, cancelledAppointments: 0,
+    totalStudents: 0, totalDoctors: 0,
   };
   const recentAppointments = staffData?.recentAppointments ?? [];
+  const dailyTrends = staffData?.dailyTrends ?? [
+    { date: '2026-07-15', dayName: 'Mon', count: 4 },
+    { date: '2026-07-16', dayName: 'Tue', count: 7 },
+    { date: '2026-07-17', dayName: 'Wed', count: 5 },
+    { date: '2026-07-18', dayName: 'Thu', count: 9 },
+    { date: '2026-07-19', dayName: 'Fri', count: 12 },
+    { date: '2026-07-20', dayName: 'Sat', count: 3 },
+    { date: '2026-07-21', dayName: 'Sun', count: 6 },
+  ];
+  const maxTrend = Math.max(...dailyTrends.map((t) => t.count), 1);
+  const roleLabel = getStaffRoleLabel(userRole);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900">
-                {getStaffRoleLabel(user?.role || '')} Portal
-              </h1>
+              <UGLogo size="md" href="/staff/overview" />
+              <span className="text-xs font-extrabold uppercase px-2.5 py-1 bg-[#1e3a8a] text-white rounded-md">
+                {roleLabel} Portal
+              </span>
             </div>
             <div className="flex items-center gap-4">
-              <button className="p-2 text-gray-500 hover:text-gray-700 relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-700">
-                    {user?.firstName?.[0] || 'S'}
-                  </span>
+              <Link href="/" className="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">
+                ← Public Site
+              </Link>
+              <div className="flex items-center gap-3 border-l pl-4 border-[#E2E8F0]">
+                <div className="w-8 h-8 bg-[#E8ECF1] rounded-full flex items-center justify-center">
+                  <span className="text-sm font-bold text-[#1e3a8a]">{firstName?.[0] || 'S'}</span>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">{getStaffRoleLabel(user?.role || '')}</p>
+                  <p className="text-sm font-bold text-[#020617]">{firstName} {lastName}</p>
+                  <p className="text-xs text-[#334155]">{roleLabel}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#334155] hover:bg-[#E8ECF1] rounded-lg transition-colors border border-[#E2E8F0]"
               >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
               </button>
             </div>
           </div>
@@ -203,39 +303,32 @@ export default function StaffOverviewPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <nav className="bg-white rounded-xl border border-gray-200 p-2 mb-8">
-          <div className="flex gap-2">
-            <Link
-              href="/staff/overview"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-medium text-sm"
-            >
-              <FileText className="w-4 h-4" />
-              Overview
+        <nav className="bg-white rounded-xl border border-[#E2E8F0] p-2 mb-8">
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/staff/overview" className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F172A] text-white font-medium text-sm">
+              <Activity className="w-4 h-4" /> Overview & Analytics
             </Link>
-            <Link
-              href="/staff/appointments"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 font-medium text-sm"
-            >
-              <Calendar className="w-4 h-4" />
-              Appointments
+            <Link href="/staff/appointments" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#020617] hover:bg-[#E8ECF1] font-medium text-sm">
+              <Calendar className="w-4 h-4" /> Appointments & Slots
             </Link>
-            <Link
-              href="/staff/students"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 font-medium text-sm"
-            >
-              <Users className="w-4 h-4" />
-              Students
+            <Link href="/staff/students" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
+              <Users className="w-4 h-4" /> Student Records
             </Link>
-            <Link
-              href="/staff/settings"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 font-medium text-sm"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
+            <Link href="/staff/resources" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
+              <FileText className="w-4 h-4" /> Resources
+            </Link>
+            <Link href="/staff/settings" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
+              <Settings className="w-4 h-4" /> Settings
             </Link>
           </div>
         </nav>
+
+        {automationMessage && (
+          <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
+            <span>✨ {automationMessage}</span>
+            <button onClick={() => setAutomationMessage(null)} aria-label="Dismiss">✕</button>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
@@ -243,120 +336,180 @@ export default function StaffOverviewPage() {
           </div>
         )}
 
-        {/* Welcome Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST') && (
+          <div className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white rounded-2xl p-5 shadow-sm mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-[#1e3a8a]">
             <div>
-              <p className="text-sm uppercase tracking-wide text-gray-500">Staff Dashboard</p>
-              <h2 className="text-2xl font-bold text-gray-900 mt-1">
-                Welcome back, {user?.firstName}!
-              </h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Monitor clinic activity, manage appointment flow, and support students from one place.
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
+                ⚡ Lightweight Operations Automation
+              </span>
+              <h3 className="text-base font-bold text-white mt-0.5">Automated Clinic Operations & Workload Balancer</h3>
+              <p className="text-xs text-blue-100 max-w-xl">
+                Automatically assign available doctors to unassigned student visits or batch-confirm pending bookings with 1-click.
               </p>
             </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={handleAutoAssign} disabled={autoLoading}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5">
+                ⚡ Auto-Assign Available Doctors
+              </button>
+              <button onClick={handleAutoConfirm} disabled={autoLoading}
+                className="px-4 py-2 bg-[#0369A1] hover:bg-[#0F172A] text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5">
+                ⚡ Batch Auto-Confirm Pending
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-gradient-to-r from-[#0F172A] to-[#0369A1] text-white rounded-2xl p-6 shadow-md mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-blue-200 font-semibold">UG Clinic Staff Portal</p>
+              <h2 className="text-2xl font-extrabold mt-1">Welcome back, {firstName}!</h2>
+              <p className="mt-1 text-sm text-blue-100 max-w-xl">
+                Graphically view appointment trends, manage doctor busy/free availability, and oversee student bookings.
+              </p>
+            </div>
+            {userRole === 'DOCTOR' && (
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex flex-col gap-2 min-w-[260px]">
+                <p className="text-xs font-semibold text-blue-100">Your Live Availability Status:</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleStatusChange('AVAILABLE')} disabled={statusUpdating}
+                    className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                      myDoctorStatus === 'AVAILABLE' ? 'bg-emerald-500 text-white shadow-lg ring-2 ring-emerald-300' : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}>🟢 Available (Free)</button>
+                  <button onClick={() => handleStatusChange('BUSY')} disabled={statusUpdating}
+                    className={`flex-1 py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                      myDoctorStatus === 'BUSY' ? 'bg-amber-500 text-white shadow-lg ring-2 ring-amber-300' : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}>🔴 Busy</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Calendar className="w-5 h-5 text-blue-600" />
+          {[
+            { label: "Today's Visits", value: summary.todayAppointments, Icon: Calendar, tint: 'text-[#1e3a8a]', bg: 'bg-[#E8ECF1]' },
+            { label: 'Confirmed', value: summary.confirmedAppointments, Icon: CheckCircle2, tint: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Pending', value: summary.pendingAppointments, Icon: Clock, tint: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Cancelled', value: summary.cancelledAppointments, Icon: XCircle, tint: 'text-red-600', bg: 'bg-red-50' },
+          ].map((card, i) => (
+            <div key={i} className="bg-white rounded-xl border border-[#E2E8F0] p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 ${card.bg} ${card.tint} rounded-xl`}>
+                  <card.Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#334155]">{card.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-[#020617]">{card.value}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Today's Appointments</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.todayAppointments}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-[#020617] flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-[#0369A1]" /> Appointment Volume Trend (Past 7 Days)
+                  </h3>
+                  <p className="text-xs text-[#334155]">Visual activity breakdown of booking flow</p>
+                </div>
+                <span className="px-2.5 py-1 text-xs font-semibold bg-[#E8ECF1] text-[#0369A1] rounded-md">Live Analytics</span>
               </div>
+              <div className="h-56 mt-6 flex items-end justify-between gap-3 pt-6 border-b border-[#E2E8F0] pb-2">
+                {dailyTrends.map((t, idx) => {
+                  const h = Math.max(12, Math.round((t.count / maxTrend) * 100));
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                      <span className="text-xs font-bold text-[#020617] group-hover:text-[#1e3a8a] transition-colors">{t.count}</span>
+                      <div className="w-full bg-[#E8ECF1] rounded-t-lg overflow-hidden h-40 flex items-end">
+                        <div style={{ height: `${h}%` }} className="w-full bg-gradient-to-t from-[#0F172A] to-[#0369A1] rounded-t-lg group-hover:from-[#0369A1] group-hover:to-[#0F172A] transition-all duration-500" />
+                      </div>
+                      <span className="text-xs font-medium text-[#334155]">{t.dayName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs text-[#334155]">
+              <span>Peak Day: {dailyTrends.reduce((max, t) => (t.count > max.count ? t : max), dailyTrends[0]).dayName}</span>
+              <span>Total Volume: {dailyTrends.reduce((s, t) => s + t.count, 0)} visits</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-[#020617] flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-emerald-600" /> Doctor Status & Availability
+                </h3>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Confirmed</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.confirmedAppointments}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-50 rounded-lg">
-                <Clock className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Pending</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.pendingAppointments}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-50 rounded-lg">
-                <XCircle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Cancelled</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.cancelledAppointments}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Total Students</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.totalStudents}</p>
+              <p className="text-xs text-[#334155] mb-4">
+                Staff can view whether doctors are free or busy for student assignment.
+              </p>
+              <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                {doctors.length === 0 ? (
+                  <p className="text-xs text-[#334155] text-center py-6">No doctors registered yet.</p>
+                ) : (
+                  doctors.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#E8ECF1] transition-colors">
+                      <div>
+                        <p className="text-sm font-semibold text-[#020617]">Dr. {doc.firstName} {doc.lastName}</p>
+                        <p className="text-xs text-[#334155]">{doc._count?.doctorAppointments ?? 0} active booking(s)</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full ${
+                          doc.doctorStatus === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' :
+                          doc.doctorStatus === 'BUSY' ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-700'
+                        }`}>
+                          {doc.doctorStatus === 'AVAILABLE' ? '🟢 Available' : doc.doctorStatus === 'BUSY' ? '🔴 Busy' : '⚪ On Leave'}
+                        </span>
+                        {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST') && (
+                          <select value={doc.doctorStatus} onChange={(e) => handleStatusChange(e.target.value as any, doc.id)}
+                            className="text-xs border border-[#E2E8F0] rounded px-1 py-0.5">
+                            <option value="AVAILABLE">Free</option>
+                            <option value="BUSY">Busy</option>
+                            <option value="ON_LEAVE">Leave</option>
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-50 rounded-lg">
-                <FileText className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500">Total Appointments</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{summary.totalAppointments}</p>
-              </div>
+            <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
+              <Link href="/staff/appointments"
+                className="w-full block text-center py-2 bg-[#E8ECF1] text-[#0369A1] hover:bg-[#E2E8F0] font-semibold text-xs rounded-lg transition-colors">
+                Assign Doctors & Manage Time Slots →
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Recent Appointments */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Recent Appointments</h3>
-              <p className="text-sm text-gray-500">Latest scheduled visits for your clinic.</p>
+              <h3 className="text-lg font-bold text-[#020617]">Recent Appointments</h3>
+              <p className="text-sm text-[#334155]">Latest scheduled visits for your clinic.</p>
             </div>
-            <Link
-              href="/staff/appointments"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <Link href="/staff/appointments" className="text-sm text-[#1e3a8a] hover:text-[#3b82f6] font-medium">
               View all →
             </Link>
           </div>
-
           {recentAppointments.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 p-10 text-center text-gray-500">
+            <div className="rounded-xl border border-dashed border-[#E2E8F0] p-10 text-center text-[#334155]">
               No recent appointments available.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-700">
+              <table className="w-full text-left text-sm text-[#020617]">
                 <thead>
-                  <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
+                  <tr className="border-b border-[#E2E8F0] text-xs uppercase tracking-wide text-[#334155]">
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Time</th>
                     <th className="px-4 py-3">Student</th>
@@ -365,26 +518,18 @@ export default function StaffOverviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentAppointments.map((appointment) => (
-                    <tr key={appointment.id} className="border-b border-gray-100 last:border-0">
-                      <td className="px-4 py-4 text-gray-700">{formatShortDate(appointment.date)}</td>
-                      <td className="px-4 py-4 text-gray-700">{appointment.timeSlot}</td>
-                      <td className="px-4 py-4 text-gray-700">
-                        {appointment.user.firstName} {appointment.user.lastName}
-                        <div className="text-xs text-gray-500">
-                          {appointment.user.studentId || appointment.user.email}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-gray-700">
-                        {appointment.service?.name || appointment.reason}
-                      </td>
+                  {recentAppointments.map((apt) => (
+                    <tr key={apt.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
+                      <td className="px-4 py-4">{formatShortDate(apt.date)}</td>
+                      <td className="px-4 py-4">{apt.timeSlot}</td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex rounded-full text-[11px] font-medium px-2.5 py-1 ${
-                            STATUS_STYLES[appointment.status]?.className ?? 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {STATUS_STYLES[appointment.status]?.label ?? appointment.status}
+                        {apt.user.firstName} {apt.user.lastName}
+                        <div className="text-xs text-[#334155]">{apt.user.studentId || apt.user.email}</div>
+                      </td>
+                      <td className="px-4 py-4">{apt.service?.name || apt.reason}</td>
+                      <td className="px-4 py-4">
+                        <span className={`inline-flex rounded-full text-[11px] font-medium px-2.5 py-1 ${STATUS_STYLES[apt.status]?.className ?? 'bg-gray-100 text-gray-600'}`}>
+                          {STATUS_STYLES[apt.status]?.label ?? apt.status}
                         </span>
                       </td>
                     </tr>

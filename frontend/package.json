@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3001",
+    "dev": "set \"NODE_OPTIONS=--max-old-space-size=8192\" && set \"TURBOPACK_WORKER_PARALLELISM=2\" && next dev -H 0.0.0.0 -p 3001",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3001",
     "lint": "eslint src",
@@ -33,6 +33,7 @@
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
     "next": "16.2.9",
+    "next-auth": "^4.24.15",
     "next-themes": "^0.4.6",
     "prettier": "^3.8.4",
     "react": "19.2.4",

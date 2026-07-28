@@ -91,12 +91,27 @@ export const validateVerifyOTP = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  body('otp')
+  // Accept either 'otp' or 'code'
+  body(['otp', 'code'])
+    .optional()
     .isLength({ min: 6, max: 6 })
     .withMessage('OTP must be 6 digits')
     .isNumeric()
     .withMessage('OTP must be numeric'),
   (req: any, res: any, next: any) => {
+    // Check that at least one of 'otp' or 'code' is provided
+    if (!req.body.otp && !req.body.code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: [{
+          type: 'field',
+          msg: 'OTP is required',
+          path: 'otp',
+          location: 'body'
+        }],
+      });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -114,7 +129,9 @@ export const validateResetPasswordWithOTP = [
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail(),
-  body('otp')
+  // Accept either 'otp' or 'code'
+  body(['otp', 'code'])
+    .optional()
     .isLength({ min: 6, max: 6 })
     .withMessage('OTP must be 6 digits')
     .isNumeric()
@@ -131,6 +148,19 @@ export const validateResetPasswordWithOTP = [
     .matches(/[!@#$%^&*(),.?":{}|<>]/)
     .withMessage('New password must contain at least one special character'),
   (req: any, res: any, next: any) => {
+    // Check that at least one of 'otp' or 'code' is provided
+    if (!req.body.otp && !req.body.code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: [{
+          type: 'field',
+          msg: 'OTP is required',
+          path: 'otp',
+          location: 'body'
+        }],
+      });
+    }
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({

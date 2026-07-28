@@ -12,8 +12,8 @@ body:
   type: json
   content: |-
     {
-      "date": "2026-07-16",
-      "timeSlot": "11:00"
+      "date": "{{appointmentDate}}",
+      "timeSlot": "{{timeSlot}}"
     }
 scripts:
   - type: afterResponse

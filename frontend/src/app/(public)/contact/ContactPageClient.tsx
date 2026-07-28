@@ -225,14 +225,14 @@ export default function ContactPageClient() {
   };
 
   const inputClass =
-    'w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none';
+    'w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none';
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-blue-900 to-blue-700 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">Contact Us</h1>
           <p className="text-blue-100 max-w-2xl mx-auto text-lg">
@@ -245,7 +245,7 @@ export default function ContactPageClient() {
             <a href="mailto:clinic@ug.edu.gh" className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
               <Mail className="h-4 w-4" /> Email Us
             </a>
-            <a href="#contact-form" className="inline-flex items-center gap-2 bg-white text-blue-900 hover:bg-gray-100 px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
+            <a href="#contact-form" className="inline-flex items-center gap-2 bg-white text-[#1e3a8a] hover:bg-gray-100 px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
               <Send className="h-4 w-4" /> Send a Message
             </a>
           </div>
@@ -270,7 +270,7 @@ export default function ContactPageClient() {
         <div className="text-center mb-10">
           <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Get in Touch</p>
           <h2 className="text-3xl font-bold text-blue-900">Ways to Get in Touch</h2>
-          <div className="mt-3 h-1 w-12 bg-blue-700 rounded-full mx-auto" />
+          <div className="mt-3 h-1 w-12 bg-[#1e3a8a] rounded-full mx-auto" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {ways.map((w) => {
@@ -314,7 +314,7 @@ export default function ContactPageClient() {
           {/* Map / directions */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col">
             <div className="relative h-56 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
-              <MapPin className="h-12 w-12 text-blue-700" />
+              <MapPin className="h-12 w-12 text-[#1e3a8a]" />
               <span className="absolute bottom-3 left-3 text-xs font-medium text-blue-900 bg-white/80 rounded px-2 py-1">
                 University of Ghana, Legon
               </span>
@@ -349,7 +349,7 @@ export default function ContactPageClient() {
             </ul>
 
             <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-700" /> Operating Hours
+              <Clock className="h-5 w-5 text-[#1e3a8a]" /> Operating Hours
             </h3>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               {hours.map((h) => (
@@ -382,7 +382,7 @@ export default function ContactPageClient() {
               <p className="text-gray-600 mb-6">Thank you for reaching out. Our team will respond within 24 hours.</p>
               <button
                 onClick={() => setSubmitted(false)}
-                className="bg-blue-900 hover:bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-md transition-colors"
+                className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white font-semibold px-6 py-2.5 rounded-md transition-colors"
               >
                 Send Another Message
               </button>
@@ -450,7 +450,7 @@ export default function ContactPageClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Departments</p>
-            <h2 className="text-3xl font-bold text-blue-900">Contact a Specific Department</h2>
+            <h2 className="text-3xl font-bold text-[#1e3a8a]">Contact a Specific Department</h2>
             <p className="text-gray-600 mt-2">Reach the right team directly.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -496,7 +496,7 @@ export default function ContactPageClient() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">FAQ</p>
-            <h2 className="text-3xl font-bold text-blue-900">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold text-[#1e3a8a]">Frequently Asked Questions</h2>
             <p className="text-gray-600 mt-2">Quick answers to common questions.</p>
           </div>
           <div className="space-y-3">
@@ -520,7 +520,7 @@ export default function ContactPageClient() {
       </section>
 
       {/* Connect online */}
-      <section className="bg-blue-950 text-white">
+      <section className="bg-[#1e3a8a] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <p className="text-xs font-bold tracking-widest text-blue-300 uppercase mb-2">Stay Connected</p>
           <h2 className="text-3xl font-bold mb-3">Connect With Us Online</h2>
@@ -532,7 +532,7 @@ export default function ContactPageClient() {
                 <a
                   key={s.name}
                   href={s.href}
-                  className="bg-blue-900/60 hover:bg-blue-800 rounded-xl p-6 flex flex-col items-center gap-2 transition-colors"
+                  className="bg-[#1e3a8a]/80 hover:bg-[#1e3a8a] rounded-xl p-6 flex flex-col items-center gap-2 transition-colors"
                 >
                   <Icon className="h-7 w-7 text-blue-200" />
                   <span className="font-semibold">{s.name}</span>

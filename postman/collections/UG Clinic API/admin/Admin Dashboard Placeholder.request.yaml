@@ -8,5 +8,5 @@ scripts:
     language: text/javascript
     code: |-
       pm.test('Admin dashboard returns 501 (not yet implemented) or 200', function () {
-        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 501, 500]);
+        pm.expect(pm.response.code).to.be.oneOf([200, 501, 500]);
       });

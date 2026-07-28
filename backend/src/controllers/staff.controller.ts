@@ -74,8 +74,19 @@ export const staffLogin = async (req: Request, res: Response) => {
   try {
     const { email, password, ipAddress, userAgent } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required',
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: { equals: cleanEmail, mode: 'insensitive' },
+      },
     });
 
     if (!user) {
@@ -100,7 +111,7 @@ export const staffLogin = async (req: Request, res: Response) => {
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      return res.status(403).json({
+      return res.status(423).json({
         success: false,
         message: 'Your account is temporarily locked. Please try again later',
       });
@@ -108,21 +119,14 @@ export const staffLogin = async (req: Request, res: Response) => {
 
     const isPasswordValid = await comparePassword(password, user.passwordHash);
     if (!isPasswordValid) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginAttempts: { increment: 1 },
-        },
-      });
-
-      if (user.failedLoginAttempts + 1 >= 5) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            lockedUntil: new Date(Date.now() + 30 * 60 * 1000),
-          },
-        });
+      const newCount = user.failedLoginAttempts + 1;
+      const updates: any = {
+        failedLoginAttempts: newCount,
+      };
+      if (newCount >= 5) {
+        updates.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
       }
+      await prisma.user.update({ where: { id: user.id }, data: updates });
 
       return res.status(401).json({
         success: false,
@@ -181,22 +185,36 @@ export const staffLogin = async (req: Request, res: Response) => {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          studentId: user.studentId,
+          phone: user.phone,
+          program: user.program,
+          isActive: user.isActive,
         },
         tokens,
       },
     });
-  } catch (error) {
-    console.error('Staff login error:', error);
-    res.status(500).json({
+  } catch (error: any) {
+    console.error('Staff login error:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    });
+    const payload: any = {
       success: false,
       message: 'An error occurred during login',
-    });
+    };
+    if (process.env.NODE_ENV !== 'production') {
+      payload.details = error?.message || String(error);
+      payload.code = error?.code;
+    }
+    res.status(500).json(payload);
   }
 };
 
 export const verify2FA = async (req: Request, res: Response) => {
   try {
-    const { email, otp, ipAddress, userAgent } = req.body;
+    const { email, otp, token, code, ipAddress, userAgent } = req.body;
+    const otpValue = otp || token || code;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -212,7 +230,7 @@ export const verify2FA = async (req: Request, res: Response) => {
     const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
-        code: otp,
+        code: otpValue,
         type: 'login_2fa',
         usedAt: null,
       },
@@ -413,7 +431,7 @@ export const revokeSession = async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      success: false,
+      success: true,
       message: 'Session revoked successfully',
     });
   } catch (error) {
@@ -581,14 +599,26 @@ export const updateStudent = async (req: Request, res: Response) => {
     }
 
     const id = String(req.params.id);
-    const { firstName, lastName, phone, program, gender, isActive } = req.body || {};
+    const { firstName, lastName, studentId, dateOfBirth, phone, program, gender, isActive } = req.body || {};
 
     const student = await prisma.user.findUnique({ where: { id } });
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
+    // Prevent modification of immutable fields
+    if (firstName !== undefined && firstName !== student.firstName) {
+      return res.status(400).json({ success: false, message: 'First name cannot be modified after account creation' });
+    }
+    if (lastName !== undefined && lastName !== student.lastName) {
+      return res.status(400).json({ success: false, message: 'Last name cannot be modified after account creation' });
+    }
+    if (studentId !== undefined && studentId !== student.studentId) {
+      return res.status(400).json({ success: false, message: 'Student ID cannot be modified after account creation' });
+    }
+    if (dateOfBirth !== undefined && dateOfBirth !== student.dateOfBirth?.toISOString()) {
+      return res.status(400).json({ success: false, message: 'Date of birth cannot be modified after account creation' });
+    }
+
     const data: any = {};
-    if (firstName !== undefined) data.firstName = String(firstName);
-    if (lastName !== undefined) data.lastName = String(lastName);
     if (phone !== undefined) data.phone = String(phone);
     if (program !== undefined) data.program = String(program);
     if (gender !== undefined) data.gender = String(gender);
@@ -602,4 +632,177 @@ export const updateStudent = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'An error occurred while updating student' });
   }
 };
+
+export const listDoctors = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const doctors = await prisma.user.findMany({
+      where: { role: 'DOCTOR', isActive: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        doctorStatus: true,
+        _count: {
+          select: {
+            doctorAppointments: {
+              where: {
+                status: 'CONFIRMED',
+              },
+            },
+          },
+        },
+      },
+      orderBy: { firstName: 'asc' },
+    });
+
+    res.status(200).json({ success: true, data: { doctors } });
+  } catch (error) {
+    console.error('List doctors error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while fetching doctors' });
+  }
+};
+
+export const updateDoctorStatus = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const { doctorId, status } = req.body || {};
+    const targetDoctorId = doctorId || user.userId;
+
+    if (!status || !['AVAILABLE', 'BUSY', 'ON_LEAVE'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid doctor status. Must be AVAILABLE, BUSY, or ON_LEAVE' });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: targetDoctorId },
+      data: { doctorStatus: status as any },
+      select: { id: true, firstName: true, lastName: true, doctorStatus: true },
+    });
+
+    res.status(200).json({ success: true, message: 'Doctor status updated', data: { doctor: updated } });
+  } catch (error) {
+    console.error('Update doctor status error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while updating doctor status' });
+  }
+};
+
+export const getStudentHistory = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const id = String(req.params.id);
+    const student = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        appointments: {
+          orderBy: { date: 'desc' },
+          include: {
+            service: { select: { id: true, name: true, category: true } },
+            doctor: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
+      },
+    });
+
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+
+    res.status(200).json({ success: true, data: { student } });
+  } catch (error) {
+    console.error('Get student history error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred while fetching student history' });
+  }
+};
+
+export const autoAssignDoctors = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    // Find unassigned appointments
+    const unassigned = await prisma.appointment.findMany({
+      where: {
+        doctorId: null,
+        status: { in: ['PENDING', 'CONFIRMED'] },
+      },
+    });
+
+    if (unassigned.length === 0) {
+      return res.status(200).json({ success: true, message: 'No unassigned appointments found.', data: { assignedCount: 0 } });
+    }
+
+    // Find available doctors
+    const availableDoctors = await prisma.user.findMany({
+      where: { role: 'DOCTOR', isActive: true, doctorStatus: 'AVAILABLE' },
+      include: {
+        _count: {
+          select: { doctorAppointments: { where: { status: 'CONFIRMED' } } },
+        },
+      },
+      orderBy: { firstName: 'asc' },
+    });
+
+    if (availableDoctors.length === 0) {
+      return res.status(400).json({ success: false, message: 'No available doctors currently on status FREE/AVAILABLE.' });
+    }
+
+    let count = 0;
+    for (let i = 0; i < unassigned.length; i++) {
+      const targetDoctor = availableDoctors[i % availableDoctors.length];
+      await prisma.appointment.update({
+        where: { id: unassigned[i].id },
+        data: { doctorId: targetDoctor.id, status: 'CONFIRMED' },
+      });
+      count++;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Automated assignment complete: Assigned ${count} appointment(s) to active doctors.`,
+      data: { assignedCount: count },
+    });
+  } catch (error) {
+    console.error('Auto assign doctors error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred during automated doctor assignment' });
+  }
+};
+
+export const autoConfirmPending = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const updated = await prisma.appointment.updateMany({
+      where: { status: 'PENDING' },
+      data: { status: 'CONFIRMED' },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Batch auto-confirmation complete: Confirmed ${updated.count} pending booking(s).`,
+      data: { confirmedCount: updated.count },
+    });
+  } catch (error) {
+    console.error('Auto confirm pending error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred during batch confirmation' });
+  }
+};
+
+
 

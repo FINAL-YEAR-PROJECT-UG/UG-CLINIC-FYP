@@ -12,7 +12,9 @@ body:
   type: json
   content: |-
     {
-      "isBooked": true
+      "isAvailable": true,
+      "maxBookings": 3,
+      "currentBookings": 1
     }
 scripts:
   - type: afterResponse

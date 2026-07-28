@@ -40,18 +40,22 @@ export interface StaffDashboardAppointment {
 }
 
 export interface StaffDashboardSummary {
-  total: number;
-  today: number;
-  pending: number;
-  confirmed: number;
-  completed: number;
-  cancelled: number;
-  rescheduled: number;
+  totalAppointments: number;
+  todayAppointments: number;
+  pendingAppointments: number;
+  confirmedAppointments: number;
+  completedAppointments: number;
+  cancelledAppointments: number;
+  totalStudents: number;
+  totalDoctors: number;
+  totalServices: number;
 }
 
 export interface StaffDashboardData {
   summary: StaffDashboardSummary;
-  appointments: StaffDashboardAppointment[];
+  recentAppointments: StaffDashboardAppointment[];
+  upcomingAppointments: StaffDashboardAppointment[];
+  dailyTrends?: Array<{ date: string; dayName: string; count: number }>;
 }
 
 export interface CreateAppointmentData {
@@ -60,6 +64,7 @@ export interface CreateAppointmentData {
   timeSlot: string;
   reason: string;
   notes?: string;
+  doctorId?: string;
 }
 
 export const appointmentApi = {
@@ -87,7 +92,7 @@ export const appointmentApi = {
   },
 
   getStaffDashboard: async (): Promise<StaffDashboardData> => {
-    const response = await api.get<{ success: boolean; data: StaffDashboardData }>('/appointments/staff');
+    const response = await api.get<{ success: boolean; data: StaffDashboardData }>('/appointments/staff/dashboard');
     return response.data.data;
   },
 

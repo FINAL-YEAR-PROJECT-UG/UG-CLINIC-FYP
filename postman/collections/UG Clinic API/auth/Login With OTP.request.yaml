@@ -11,14 +11,16 @@ body:
   content: |-
     {
       "email": "student@example.com",
-      "otp": "123456"
+      "studentId": "12345678",
+      "otp": "123456",
+      "rememberMe": true
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |-
       pm.test('Login with OTP returns expected outcome', function () {
-        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
+        pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 500]);
       });
       if (pm.response.code === 200) {
         const json = pm.response.json();

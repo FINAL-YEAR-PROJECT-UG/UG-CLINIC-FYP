@@ -1,12 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/authStore";
-import { appointmentApi } from "@/lib/appointmentApi";
-import { getErrorMessage } from "@/lib/utils";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/authStore';
+import { appointmentApi } from '@/lib/appointmentApi';
+import { getDoctors, type StaffDoctor } from '@/lib/staffApi';
+import {
+  getErrorMessage,
+  normalizeRole,
+  isStaffRole,
+  getHomeRouteForRole,
+  getLoginRouteForRole,
+} from '@/lib/utils';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import UGLogo from '@/components/shared/UGLogo';
 import {
   Stethoscope,
   Brain,
@@ -15,804 +23,663 @@ import {
   Zap,
   Syringe,
   Pill,
-  Eye,
-  HeartPulse,
-  Calendar as CalendarIcon,
   Check,
   ChevronLeft,
-  ChevronRight,
-  Download,
-} from "lucide-react";
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-interface Step1Data {
-  studentId: string;
-  studentName: string;
-  dobDay: string;
-  dobMonth: string;
-  dobYear: string;
-  studentEmail: string;
-  alternateEmail: string;
-  mobilePhone: string;
-  whatsappPhone: string;
-  bookingFor: string;
-}
+  Printer,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  Eye,
+} from 'lucide-react';
 
 interface ServiceOption {
   id: string;
   title: string;
-  desc?: string;
-  icon: React.ComponentType<{ size?: number; color?: string }>;
-  bg: string;
-  fg: string;
-  note?: string;
-  badge?: string;
-  unavailable?: boolean;
+  desc: string;
+  category: string;
+  icon: React.ComponentType<{ className?: string }>;
+  duration: string;
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────────
 const SERVICES: ServiceOption[] = [
-  { id: "general", title: "General Consultation", desc: "Common illnesses and routine health checkups.", icon: Stethoscope, bg: "#EEF2FF", fg: "#3B4FD8" },
-  { id: "mental", title: "Mental Health & Counselling", desc: "Confidential support for emotional wellbeing.", icon: Brain, bg: "#F3E8FF", fg: "#9333EA" },
-  { id: "hiv", title: "HIV/AIDS Testing & Support", desc: "Free testing, counseling, and ongoing care.", icon: Ribbon, bg: "#FEE2E2", fg: "#DC2626" },
-  { id: "nutrition", title: "Nutrition & Dietetics", desc: "Meal planning and dietary health advice.", icon: Leaf, bg: "#DCFCE7", fg: "#16A34A" },
-  { id: "screening", title: "Health Screening", desc: "Comprehensive physical exams and diagnostics.", icon: Zap, bg: "#FFEDD5", fg: "#EA580C" },
-  { id: "vaccination", title: "Vaccinations", desc: "Travel vaccines and seasonal immunizations.", icon: Syringe, bg: "#DCFCE7", fg: "#16A34A" },
-  { id: "prescription", title: "Prescription & Medication", desc: "Refill requests and pharmacy consultations.", icon: Pill, bg: "#FEF9C3", fg: "#CA8A04" },
-  { id: "eye", title: "Eye Care & Dental Services", icon: Eye, bg: "#DBEAFE", fg: "#2563EB", badge: "OFF-SITE ONLY", note: "Visit UG Hospital behind Legon Police Station", unavailable: true },
-  { id: "emergency", title: "Emergency & First Aid", icon: HeartPulse, bg: "#FEE2E2", fg: "#DC2626", note: "Walk-ins accepted, no booking needed.", unavailable: true },
+  { id: 'general', category: 'consultation', title: 'General Consultation', desc: 'Routine medical checkups, physical symptoms, and general health advice.', icon: Stethoscope, duration: '20 mins' },
+  { id: 'mental', category: 'specialist', title: 'Mental Health & Counseling', desc: 'Confidential psychological support, stress management, and guidance.', icon: Brain, duration: '45 mins' },
+  { id: 'hiv', category: 'screening', title: 'HIV/AIDS Testing & Wellness', desc: 'Voluntary testing, pre/post counselling, and confidential care.', icon: Ribbon, duration: '30 mins' },
+  { id: 'nutrition', category: 'specialist', title: 'Nutrition & Dietetics', desc: 'Personalized meal planning, BMI consultations, and healthy lifestyle guidance.', icon: Leaf, duration: '30 mins' },
+  { id: 'screening', category: 'screening', title: 'Comprehensive Health Screening', desc: 'Blood pressure, glucose tests, lab work, and physical evaluation.', icon: Zap, duration: '40 mins' },
+  { id: 'vaccination', category: 'preventative', title: 'Vaccinations & Immunizations', desc: 'Travel vaccines, seasonal flu shots, and booster immunizations.', icon: Syringe, duration: '15 mins' },
+  { id: 'prescription', category: 'pharmacy', title: 'Prescription & Pharmacy Refill', desc: 'Medication refills and pharmacist consultation for students.', icon: Pill, duration: '15 mins' },
 ];
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  'General Medicine': Stethoscope,
+  'Dental': Syringe,
+  'Ophthalmology': Eye,
+  'consultation': Stethoscope,
+  'specialist': Brain,
+  'screening': Ribbon,
+  'preventative': Syringe,
+  'pharmacy': Pill,
+};
 
 const TIME_SLOT_LABELS = [
-  "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
-  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM",
-  "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
+  '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
+  '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM',
+  '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM',
+  '03:30 PM', '04:00 PM',
 ];
 
-const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+const CATEGORIES: Array<{ key: string; label: string }> = [
+  { key: 'all', label: 'All Services' },
+  { key: 'consultation', label: 'Consultation' },
+  { key: 'specialist', label: 'Specialist' },
+  { key: 'screening', label: 'Screening' },
+  { key: 'preventative', label: 'Preventative' },
 ];
-const MONTHS_SHORT = MONTHS.map((m) => m);
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-const YEARS = Array.from({ length: 50 }, (_, i) => String(2006 - i));
 
-function formatLongDate(d: Date): string {
-  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-// Parse time slot label (e.g., "08:00 AM") to minutes since midnight
-function parseTimeSlotToMinutes(timeSlot: string): number {
-  const [time, period] = timeSlot.split(' ');
-  const [hours, minutes] = time.split(':').map(Number);
-  const hours24 = period === 'PM' && hours !== 12 ? hours + 12 : period === 'AM' && hours === 12 ? 0 : hours;
-  return hours24 * 60 + minutes;
-}
-
-// Check if a time slot is in the past for a given date
-function isTimeSlotPast(timeSlot: string, date: Date): boolean {
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  
-  if (!isToday) return false;
-  
-  const slotMinutes = parseTimeSlotToMinutes(timeSlot);
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  
-  return slotMinutes < currentMinutes;
-}
-
-// ── Stepper ────────────────────────────────────────────────────────────────────
-function Stepper({ current }: { current: number }) {
-  const steps = [
-    { num: 1, label: "Your Details" },
-    { num: 2, label: "Select Service" },
-    { num: 3, label: "Date & Time" },
-    { num: 4, label: "Confirm" },
-  ];
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", marginBottom: 36 }}>
-      {steps.map((s, idx) => {
-        const isActive = current === s.num;
-        const isDone = current > s.num;
-        const accent = isActive || isDone ? "#3B4FD8" : "#9CA3AF";
-        return (
-          <div key={s.num} style={{ display: "flex", alignItems: "flex-start", flex: idx < 3 ? 1 : "none" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 64 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%",
-                border: `2px solid ${accent}`,
-                background: isDone || isActive ? "#3B4FD8" : "transparent",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: isDone || isActive ? "#fff" : "#9CA3AF", fontWeight: 700, fontSize: 14,
-              }}>
-                {isDone ? <Check size={18} color="#fff" /> : s.num}
-              </div>
-              <div style={{ fontSize: 12, color: accent, marginTop: 8, fontWeight: isActive ? 600 : 500, textAlign: "center" }}>{s.label}</div>
-            </div>
-            {idx < 3 && (
-              <div style={{ flex: 1, height: 2, background: isDone ? "#3B4FD8" : "#E5E7EB", marginTop: 17, marginLeft: -4, marginRight: -4 }} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return (
-    <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>
-      {children} {required && <span style={{ color: "#EF4444" }}>*</span>}
-    </label>
-  );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", border: "1px solid #D1D5DB",
-  borderRadius: 8, fontSize: 14, color: "#111827", background: "#fff",
-  outline: "none", boxSizing: "border-box",
+const getTimeSlotDate = (timeStr: string, baseDate: Date) => {
+  const date = new Date(baseDate);
+  const [timePart, ampm] = timeStr.split(' ');
+  const [hoursStr, minutesStr] = timePart.split(':');
+  let hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+  if (ampm === 'PM' && hours !== 12) hours += 12;
+  else if (ampm === 'AM' && hours === 12) hours = 0;
+  date.setHours(hours, minutes, 0, 0);
+  return date;
 };
 
-const selectStyle: React.CSSProperties = { ...inputStyle, appearance: "none" as const };
-
-// ── Step 1: Your Details ─────────────────────────────────────────────────────────
-function Step1({ data, onChange, onContinue }: {
-  data: Step1Data;
-  onChange: (d: Step1Data) => void;
-  onContinue: () => void;
-}) {
-  const set = (key: keyof Step1Data) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    onChange({ ...data, [key]: e.target.value });
-
-  const handleContinue = () => {
-    if (!data.studentId || !data.studentName || !data.studentEmail || !data.mobilePhone || !data.dobDay || !data.dobMonth || !data.dobYear) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-    onContinue();
-  };
-
-  return (
-    <div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 24px" }}>
-        <div>
-          <FieldLabel required>Student ID</FieldLabel>
-          <input style={inputStyle} placeholder="e.g. 10812345" value={data.studentId} onChange={set("studentId")} />
-        </div>
-        <div>
-          <FieldLabel required>Student Name</FieldLabel>
-          <input style={inputStyle} placeholder="Full name" value={data.studentName} onChange={set("studentName")} />
-        </div>
-        <div>
-          <FieldLabel required>Date of Birth</FieldLabel>
-          <div style={{ display: "flex", gap: 8 }}>
-            <select style={{ ...selectStyle, flex: 1 }} value={data.dobDay} onChange={set("dobDay")}>
-              <option value="">Day</option>
-              {DAYS.map(d => <option key={d}>{d}</option>)}
-            </select>
-            <select style={{ ...selectStyle, flex: 1 }} value={data.dobMonth} onChange={set("dobMonth")}>
-              <option value="">Month</option>
-              {MONTHS.map(m => <option key={m}>{m}</option>)}
-            </select>
-            <select style={{ ...selectStyle, flex: 1 }} value={data.dobYear} onChange={set("dobYear")}>
-              <option value="">Year</option>
-              {YEARS.map(y => <option key={y}>{y}</option>)}
-            </select>
-          </div>
-        </div>
-        <div>
-          <FieldLabel required>Student Email</FieldLabel>
-          <input style={inputStyle} type="email" placeholder="you@st.ug.edu.gh" value={data.studentEmail} onChange={set("studentEmail")} />
-        </div>
-        <div>
-          <FieldLabel>Alternate Email</FieldLabel>
-          <input style={inputStyle} type="email" placeholder="Optional" value={data.alternateEmail} onChange={set("alternateEmail")} />
-        </div>
-        <div>
-          <FieldLabel required>Mobile Phone Number</FieldLabel>
-          <input style={inputStyle} placeholder="+233 ..." value={data.mobilePhone} onChange={set("mobilePhone")} />
-        </div>
-        <div>
-          <FieldLabel>WhatsApp Phone Number</FieldLabel>
-          <input style={inputStyle} placeholder="Optional" value={data.whatsappPhone} onChange={set("whatsappPhone")} />
-        </div>
-        <div>
-          <FieldLabel required>Who is this booking for?</FieldLabel>
-          <select style={selectStyle} value={data.bookingFor} onChange={set("bookingFor")}>
-            <option value="Myself">Myself</option>
-            <option value="Dependent">Dependent</option>
-          </select>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32 }}>
-        <button style={{ ...btnSecondary, opacity: 0.5 }} disabled>‹ Back</button>
-        <button style={btnPrimary} onClick={handleContinue}>Continue ›</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Step 2: Select Service ───────────────────────────────────────────────────────
-function Step2Service({ selected, onSelect, onContinue, onBack }: {
-  selected: string;
-  onSelect: (title: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <div>
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: "#3B4FD8", margin: "0 0 6px" }}>Select a Service</h2>
-        <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>Choose the type of care you need. Click a service to select it.</p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {SERVICES.map((s) => {
-          const isSelected = selected === s.title;
-          const Icon = s.icon;
-          return (
-            <button
-              key={s.id}
-              onClick={() => !s.unavailable && onSelect(s.title)}
-              disabled={s.unavailable}
-              style={{
-                textAlign: "left",
-                border: isSelected ? "2px solid #3B4FD8" : s.id === "eye" ? "1px solid #FCD34D" : "1px solid #E5E7EB",
-                background: isSelected ? "#EEF2FF" : s.id === "eye" ? "#FFFBEB" : "#fff",
-                borderRadius: 12, padding: 18, position: "relative",
-                cursor: s.unavailable ? "default" : "pointer",
-                minHeight: 150, display: "flex", flexDirection: "column",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon size={20} color={s.fg} />
-                </div>
-                {isSelected && (
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#3B4FD8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Check size={14} color="#fff" />
-                  </div>
-                )}
-              </div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: isSelected ? "#3B4FD8" : "#1F2937", margin: "14px 0 4px" }}>{s.title}</h3>
-              {s.badge && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", letterSpacing: "0.05em", margin: "4px 0" }}>{s.badge}</div>
-              )}
-              {s.desc && <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>{s.desc}</p>}
-              {s.note && s.id === "eye" && (
-                <div style={{ marginTop: 8, border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#B45309" }}>{s.note}</div>
-              )}
-              {s.note && s.id === "emergency" && (
-                <p style={{ fontSize: 13, color: "#DC2626", fontStyle: "italic", margin: 0 }}>{s.note}</p>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
-        <button style={btnSecondary} onClick={onBack}>‹ Back</button>
-        <button style={btnPrimary} onClick={onContinue}>Continue ›</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Step 3: Date & Time ──────────────────────────────────────────────────────────
-function BookingCalendar({ selected, onSelect }: { selected: Date | null; onSelect: (d: Date) => void }) {
-  const [view, setView] = useState<Date>(() => selected ?? new Date());
-  const year = view.getFullYear();
-  const month = view.getMonth();
+const isTimeSlotPast = (timeStr: string, selectedDate: Date) => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const cells: { date: Date; current: boolean }[] = [];
-  for (let i = 0; i < firstWeekday; i++) {
-    cells.push({ date: new Date(year, month, 1 - firstWeekday + i), current: false });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ date: new Date(year, month, d), current: true });
-  }
-  while (cells.length % 7 !== 0 || cells.length < 42) {
-    const last = cells[cells.length - 1].date;
-    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), current: false });
-    if (cells.length >= 42) break;
-  }
-
-  const sameDay = (a: Date, b: Date | null) =>
-    !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: "#3B4FD8", margin: 0 }}>{MONTHS[month]} {year}</h3>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => setView(new Date(year, month - 1, 1))} aria-label="Previous month" style={iconBtn}><ChevronLeft size={18} color="#6B7280" /></button>
-          <button onClick={() => setView(new Date(year, month + 1, 1))} aria-label="Next month" style={iconBtn}><ChevronRight size={18} color="#6B7280" /></button>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 6 }}>
-        {WEEKDAY_HEADERS.map((w) => (
-          <div key={w} style={{ textAlign: "center", fontSize: 11, fontWeight: 600, color: "#9CA3AF", padding: "4px 0" }}>{w}</div>
-        ))}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
-        {cells.map(({ date, current }, i) => {
-          const isPast = date < today;
-          const disabled = !current || isPast;
-          const isSelected = sameDay(date, selected);
-          const isToday = sameDay(date, today);
-          return (
-            <button
-              key={i}
-              disabled={disabled}
-              onClick={() => onSelect(date)}
-              style={{
-                height: 40, borderRadius: 999, border: isToday && !isSelected ? "1px solid #3B4FD8" : "none",
-                background: isSelected ? "#3B4FD8" : "transparent",
-                color: isSelected ? "#fff" : disabled ? "#D1D5DB" : "#1F2937",
-                fontSize: 14, fontWeight: isSelected || isToday ? 700 : 500,
-                cursor: disabled ? "default" : "pointer",
-              }}
-            >
-              {date.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Step3DateTime({ date, time, bookedSlots, onSelectDate, onSelectTime, onContinue, onBack }: {
-  date: Date | null;
-  time: string;
-  bookedSlots: string[];
-  onSelectDate: (d: Date) => void;
-  onSelectTime: (t: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  const handleContinue = () => {
-    if (!date || !time) {
-      alert("Please select a date and time.");
-      return;
-    }
-    onContinue();
-  };
-
-  return (
-    <div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-        <BookingCalendar selected={date} onSelect={onSelectDate} />
-
-        <div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>
-            {date ? `Available time slots for ${formatLongDate(date)}` : "Select a date to see available times"}
-          </h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            {TIME_SLOT_LABELS.map((label) => {
-              const isSelected = time === label;
-              const isBooked = bookedSlots.includes(label);
-              const isPast = date ? isTimeSlotPast(label, date) : false;
-              const disabled = isBooked || !date || isPast;
-              return (
-                <button
-                  key={label}
-                  disabled={disabled}
-                  onClick={() => onSelectTime(label)}
-                  style={{
-                    padding: "12px 4px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                    border: isSelected ? "none" : "1px solid #E5E7EB",
-                    background: isSelected ? "#3B4FD8" : isBooked || isPast ? "#F3F4F6" : "#fff",
-                    color: isSelected ? "#fff" : isBooked || isPast ? "#9CA3AF" : "#374151",
-                    cursor: disabled ? "default" : "pointer",
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", gap: 20, marginTop: 18, fontSize: 13, color: "#6B7280" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#fff", "#D1D5DB")} />Available</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#3B4FD8")} />Selected</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#D1D5DB")} />Booked</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={legendDot("#F3F4F6")} />Past</span>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
-        <button style={btnSecondary} onClick={onBack}>‹ Back</button>
-        <button style={btnPrimary} onClick={handleContinue}>Continue ›</button>
-      </div>
-    </div>
-  );
-}
-
-function legendDot(bg: string, border?: string): React.CSSProperties {
-  return { width: 12, height: 12, borderRadius: "50%", background: bg, border: border ? `1px solid ${border}` : "none", display: "inline-block" };
-}
-
-// ── Step 4: Review & Confirm ─────────────────────────────────────────────────────
-function Step4Review({ step1, service, date, time, onConfirm, onBack, loading }: {
-  step1: Step1Data;
-  service: string;
-  date: Date | null;
-  time: string;
-  onConfirm: () => void;
-  onBack: () => void;
-  loading: boolean;
-}) {
-  const dob = [step1.dobDay, step1.dobMonth, step1.dobYear].filter(Boolean).join(" ");
-  const info: [string, string][] = [
-    ["Student Name", step1.studentName],
-    ["Student ID", step1.studentId],
-    ["Date of Birth", dob],
-    ["Email", step1.studentEmail],
-    ["Mobile", step1.mobilePhone],
-    ["WhatsApp", step1.whatsappPhone || "—"],
-    ["Booking for", step1.bookingFor],
-  ];
-  const appt: [string, string][] = [
-    ["Service", service],
-    ["Date", date ? formatLongDate(date) : "—"],
-    ["Time", time || "—"],
-    ["Location", "Student Clinic, UG Legon"],
-    ["Doctor", "Auto-assigned on arrival"],
-  ];
-
-  return (
-    <div>
-      {loading ? (
-        <div style={{ padding: "60px 0" }}>
-          <LoadingSpinner size={80} />
-        </div>
-      ) : (
-        <>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#3B4FD8", textAlign: "center", margin: "0 0 28px" }}>
-            Almost there! Please confirm your details before booking.
-          </h2>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Your Information</h3>
-              {info.map(([label, value]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
-                  <span style={{ color: "#6B7280" }}>{label}:</span>
-                  <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "#3B4FD8", margin: "0 0 16px" }}>Appointment Details</h3>
-              {appt.map(([label, value]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #F3F4F6", fontSize: 14 }}>
-                  <span style={{ color: "#6B7280" }}>{label}:</span>
-                  <span style={{ color: "#1F2937", fontWeight: 500, textAlign: "right" }}>{value || "—"}</span>
-                </div>
-              ))}
-
-              <div style={{ marginTop: 20, background: "#DBEAFE", borderRadius: 12, padding: "16px 20px" }}>
-                <ul style={{ margin: 0, paddingLeft: 18, color: "#1E40AF", fontSize: 13, lineHeight: 2 }}>
-                  <li>Arrive 10 minutes early</li>
-                  <li>Bring your Student ID card</li>
-                  <li>This service is completely free</li>
-                  <li>You can cancel up to 2 hours before</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 32, borderTop: "1px solid #F3F4F6", paddingTop: 24 }}>
-            <button style={{ ...btnSecondary, border: "none", color: "#3B4FD8" }} onClick={onBack}>Back</button>
-            <button
-              style={{ ...btnPrimary, display: "flex", alignItems: "center", gap: 8 }}
-              onClick={onConfirm}
-            >
-              <CalendarIcon size={16} color="#fff" />
-              Confirm & Book Appointment
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Success ──────────────────────────────────────────────────────────────────────
-function SuccessScreen({ step1, service, date, time, bookingRef, onBookAnother }: {
-  step1: Step1Data;
-  service: string;
-  date: Date | null;
-  time: string;
-  bookingRef: string;
-  onBookAnother: () => void;
-}) {
-  const firstName = step1.studentName.split(" ")[0] || "there";
-  const rows: [string, string][] = [
-    ["Service", service],
-    ["Date", date ? formatLongDate(date) : "—"],
-    ["Time", time || "—"],
-    ["Location", "Student Clinic, UG Legon"],
-    ["Doctor", "To be assigned on arrival"],
-  ];
-
-  return (
-    <div style={{ textAlign: "center", maxWidth: 540, margin: "0 auto", padding: "16px 0" }}>
-      <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-        <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Check size={26} color="#fff" />
-        </div>
-      </div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: "#3B4FD8", margin: "0 0 8px" }}>Appointment Confirmed!</h2>
-      <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 24px" }}>
-        Your booking has been successfully submitted. See you soon, {firstName}!
-      </p>
-
-      <div style={{ background: "#EEF2FF", borderRadius: 12, padding: "18px 24px", marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.08em" }}>BOOKING REFERENCE</div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#3B4FD8", marginTop: 4 }}>{bookingRef}</div>
-      </div>
-
-      <div style={{ border: "1px solid #E5E7EB", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
-        {rows.map(([label, value], i) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < rows.length - 1 ? "1px solid #F3F4F6" : "none", fontSize: 14 }}>
-            <span style={{ color: "#6B7280" }}>{label}:</span>
-            <span style={{ color: "#1F2937", fontWeight: 600 }}>{value}</span>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
-        A confirmation has been sent to <strong style={{ color: "#3B4FD8" }}>{step1.studentEmail}</strong>
-      </p>
-
-      <Link href="/dashboard" style={{ textDecoration: "none" }}>
-        <button style={{ ...btnPrimary, width: "100%", background: "linear-gradient(to right, #3730A3, #3B4FD8)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <CalendarIcon size={16} color="#fff" /> View my appointments
-        </button>
-      </Link>
-
-      <button onClick={() => window.print()} style={{ background: "none", border: "none", color: "#3B4FD8", fontWeight: 600, fontSize: 14, cursor: "pointer", margin: "16px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%" }}>
-        <Download size={16} color="#3B4FD8" /> Download confirmation
-      </button>
-
-      <button onClick={onBookAnother} style={{ background: "none", border: "none", color: "#3B4FD8", fontWeight: 600, fontSize: 14, cursor: "pointer", marginBottom: 20 }}>
-        Book another appointment
-      </button>
-
-      <p style={{ fontSize: 13, color: "#6B7280" }}>
-        Need to cancel or reschedule? <Link href="/dashboard" style={{ color: "#1F2937", fontWeight: 600 }}>Visit your dashboard</Link> anytime.
-      </p>
-    </div>
-  );
-}
-
-// ── Button styles ──────────────────────────────────────────────────────────────
-const btnPrimary: React.CSSProperties = {
-  padding: "11px 28px", background: "#3B4FD8", color: "#fff",
-  border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14,
-  cursor: "pointer", transition: "background 0.15s",
+  const isSameDay = today.getFullYear() === selectedDate.getFullYear()
+    && today.getMonth() === selectedDate.getMonth()
+    && today.getDate() === selectedDate.getDate();
+  if (!isSameDay) return false;
+  return getTimeSlotDate(timeStr, selectedDate) < new Date();
 };
 
-const btnSecondary: React.CSSProperties = {
-  padding: "11px 20px", background: "transparent", color: "#6B7280",
-  border: "1px solid #D1D5DB", borderRadius: 8, fontWeight: 500, fontSize: 14,
-  cursor: "pointer",
-};
+const findNextAvailableSlot = (selectedDate: Date, booked: string[]) => TIME_SLOT_LABELS.find(
+  (slot) => !isTimeSlotPast(slot, selectedDate) && !booked.includes(slot)
+);
 
-const iconBtn: React.CSSProperties = {
-  width: 32, height: 32, borderRadius: 8, border: "1px solid #E5E7EB",
-  background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-};
-
-// ── Main Page ──────────────────────────────────────────────────────────────────
-export default function BookingPage() {
+export default function StudentBookingPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [bookingRef, setBookingRef] = useState("");
 
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  // Read auth synchronously from store (zustand persist hydrates from localStorage sync)
+  const storeAuth = useAuthStore((s) => s.isAuthenticated);
+  const storeUser = useAuthStore((s) => s.user);
+  const storeTokens = useAuthStore((s) => s.tokens);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
+  // Initial guard state: start unresolved until validated. Use sync store snapshot
+  // to pre-compute whether we are already likely valid, avoiding unnecessary flash.
+  const initialSnap = useAuthStore.getState();
+  const initialRole = normalizeRole(initialSnap.user?.role);
+  const initialIsAuth = initialSnap.isAuthenticated && !!initialSnap.user;
+  const initialIsStudent = initialRole === 'STUDENT';
 
-  // Prefill the patient details from the signed-in student (read once on mount).
-  const [step1, setStep1] = useState<Step1Data>(() => {
-    const user = useAuthStore.getState().user;
-    // Handle case where user might have only one name stored in both fields
-    const fullName = user 
-      ? (user.firstName === user.lastName || !user.lastName)
-        ? user.firstName 
-        : `${user.firstName} ${user.lastName}`.trim()
-      : "";
-    return {
-      studentId: user?.studentId ?? "",
-      studentName: fullName,
-      dobDay: "", dobMonth: "", dobYear: "",
-      studentEmail: user?.email ?? "",
-      alternateEmail: "",
-      mobilePhone: user?.phone ?? "",
-      whatsappPhone: "",
-      bookingFor: "Myself",
-    };
-  });
-  const [service, setService] = useState("General Consultation");
-  const [date, setDate] = useState<Date | null>(null);
-  const [time, setTime] = useState("");
+  const [guardResolved, setGuardResolved] = useState<boolean>(() => initialIsAuth && initialIsStudent);
+  const [guardRedirecting, setGuardRedirecting] = useState<boolean>(false);
+  const [servicesFetched, setServicesFetched] = useState<ServiceOption[]>(SERVICES);
+  const [confirmedId, setConfirmedId] = useState<string>('');
+  const [confirmedReference, setConfirmedReference] = useState<string>('');
+  const [confirmedStatus, setConfirmedStatus] = useState<'PENDING' | 'CONFIRMED'>('CONFIRMED');
+
+  // Form State
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedService, setSelectedService] = useState<ServiceOption>(SERVICES[0]);
+  const [bookingDate, setBookingDate] = useState<Date>(new Date());
+  const [bookingTime, setBookingTime] = useState<string>('09:00 AM');
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+
+  // Data Loading
+  const [doctors, setDoctors] = useState<StaffDoctor[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!date || step !== 3) {
-      setBookedSlots([]);
-      return;
-    }
+    // #region debug-point A:booking-page-first-paint
+    fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"booking-auth-flash",runId:"pre-fix",hypothesisId:"A",location:"demo-booking/page.tsx:firstPaint",msg:"[DEBUG] Booking page first paint snapshot",data:{initialIsAuth,initialIsStudent,guardResolvedInitial:initialIsAuth&&initialIsStudent,hasUser:!!initialSnap.user,hasAccessToken:!!initialSnap.tokens?.accessToken,role:initialRole},ts:Date.now()})}).catch(()=>{});
+    // #endregion
+  }, [initialIsAuth, initialIsStudent, initialRole, initialSnap.user, initialSnap.tokens]);
 
-    let cancelled = false;
+  // ——— Route Guard: validate synchronously on mount using store snapshot ———
+  // Zustand persist hydrates localStorage synchronously before first render,
+  // so store.getState() is authoritative immediately.
+  useEffect(() => {
+    let active = true;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    (async () => {
-      try {
-        const services = await appointmentApi.listServices();
-        const match = services.find(
-          (s) => s.name.toLowerCase() === service.toLowerCase()
-        );
-        const slots = await appointmentApi.getAvailability(
-          date.toISOString(),
-          match?.id
-        );
-        if (!cancelled) setBookedSlots(slots);
-      } catch {
-        if (!cancelled) setBookedSlots([]);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [date, service, step]);
-
-  const handleSelectDate = (d: Date) => {
-    setDate(d);
-    setTime("");
-  };
-
-  const handleReturn = () => {
-    router.push(isAuthenticated ? "/dashboard" : "/home");
-  };
-
-  const handleConfirm = async () => {
-    if (!isAuthenticated) {
-      alert("Please sign in to book an appointment.");
-      router.push("/login");
-      return;
-    }
-    if (!date || !time) {
-      alert("Please select a date and time.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const services = await appointmentApi.listServices();
-      const match = services.find(
-        (s) => s.name.toLowerCase() === service.toLowerCase()
-      );
-      const serviceId = match?.id ?? services[0]?.id;
-      if (!serviceId) {
-        alert("No clinic services are available right now. Please try again later.");
+    const runGuard = () => {
+      const state = useAuthStore.getState();
+      const currentUser = state.user ?? storeUser;
+      const currentAuth = state.isAuthenticated || storeAuth;
+      const currentTokens = state.tokens ?? storeTokens;
+      const role = normalizeRole(currentUser?.role);
+      // #region debug-point B:booking-guard-state
+      fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"booking-auth-flash",runId:"pre-fix",hypothesisId:"B",location:"demo-booking/page.tsx:runGuard",msg:"[DEBUG] Booking guard evaluated state",data:{currentAuth,hasUser:!!currentUser,hasAccessToken:!!currentTokens?.accessToken,role,guardResolvedBefore:guardResolved},ts:Date.now()})}).catch(()=>{});
+      // #endregion
+      if (!currentAuth || !currentUser) {
+        setGuardRedirecting(true);
+        const target = getLoginRouteForRole(role);
+        // #region debug-point D:booking-redirect-login
+        fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"booking-auth-flash",runId:"pre-fix",hypothesisId:"D",location:"demo-booking/page.tsx:redirectLogin",msg:"[DEBUG] Booking guard redirecting to login",data:{target,currentAuth,hasUser:!!currentUser,hasAccessToken:!!currentTokens?.accessToken,role},ts:Date.now()})}).catch(()=>{});
+        // #endregion
+        // Delay replace by 0 ticks to let loading screen paint; avoids back-button issues
+        redirectTimer = setTimeout(() => {
+          if (active) router.replace(target);
+        }, 0);
         return;
       }
 
-      const response = await appointmentApi.create({
-        serviceId,
-        date: date.toISOString(),
-        timeSlot: time,
-        reason: service,
-      });
-
-      if (response.success && response.data) {
-        const appt = response.data.appointment;
-        const year = new Date(appt.date).getFullYear();
-        setBookingRef(`UGC-${year}-${appt.id.slice(0, 5).toUpperCase()}`);
-        setSubmitted(true);
-      } else {
-        alert(response.message || "Failed to book appointment. Please try again.");
+      if (role !== 'STUDENT') {
+        setGuardRedirecting(true);
+        const target = isStaffRole(role)
+          ? '/staff/appointments'
+          : getHomeRouteForRole(role, true);
+        // #region debug-point D:booking-redirect-nonstudent
+        fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"booking-auth-flash",runId:"pre-fix",hypothesisId:"D",location:"demo-booking/page.tsx:redirectNonStudent",msg:"[DEBUG] Booking guard redirecting non-student",data:{target,currentAuth,hasUser:!!currentUser,hasAccessToken:!!currentTokens?.accessToken,role},ts:Date.now()})}).catch(()=>{});
+        // #endregion
+        redirectTimer = setTimeout(() => {
+          if (active) router.replace(target);
+        }, 0);
+        return;
       }
+
+      // #region debug-point C:booking-guard-resolved
+      fetch("http://127.0.0.1:7777/event",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sessionId:"booking-auth-flash",runId:"pre-fix",hypothesisId:"C",location:"demo-booking/page.tsx:guardResolved",msg:"[DEBUG] Booking guard resolved student access",data:{currentAuth,hasUser:!!currentUser,hasAccessToken:!!currentTokens?.accessToken,role},ts:Date.now()})}).catch(()=>{});
+      // #endregion
+      setGuardResolved(true);
+    };
+
+    runGuard();
+    return () => {
+      active = false;
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
+  }, [router, storeAuth, storeUser, storeTokens]);
+
+  // ——— Data Fetching ———
+  const fetchDoctors = useCallback(async () => {
+    try {
+      const data = await getDoctors();
+      setDoctors(Array.isArray(data?.doctors) ? data.doctors : []);
+    } catch {
+      setDoctors([]);
+    }
+  }, []);
+
+  const fetchAvailability = useCallback(async (date: Date, serviceId: string) => {
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const availability = await appointmentApi.getAvailability(dateStr, serviceId);
+      const slots = Array.isArray(availability) ? availability : ((availability as any)?.bookedSlots ?? []);
+      setBookedSlots(slots);
+      if (isTimeSlotPast(bookingTime, date) || slots.includes(bookingTime)) {
+        const next = findNextAvailableSlot(date, slots);
+        if (next) setBookingTime(next);
+      }
+    } catch {
+      setBookedSlots([]);
+    }
+  }, [bookingTime]);
+
+  useEffect(() => {
+    if (!guardResolved) return;
+    fetchDoctors();
+  }, [guardResolved, fetchDoctors]);
+
+  useEffect(() => {
+    if (!guardResolved) return;
+    fetchAvailability(bookingDate, selectedService.id);
+  }, [guardResolved, bookingDate, selectedService.id, fetchAvailability]);
+
+  useEffect(() => {
+    if (!guardResolved) return;
+    if (isTimeSlotPast(bookingTime, bookingDate) || bookedSlots.includes(bookingTime)) {
+      const next = findNextAvailableSlot(bookingDate, bookedSlots);
+      if (next) setBookingTime(next);
+    }
+  }, [guardResolved, bookedSlots, bookingTime, bookingDate]);
+
+  // ——— Booking Submit ———
+  const handleConfirmBooking = async () => {
+    if (!reason.trim()) {
+      setError('Please briefly state the reason for your visit.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      const payload: any = {
+        serviceId: selectedService.id,
+        date: bookingDate.toISOString().split('T')[0],
+        timeSlot: bookingTime,
+        reason: reason.trim(),
+      };
+      if (notes.trim()) payload.notes = notes.trim();
+      if (selectedDoctorId) payload.doctorId = selectedDoctorId;
+
+      const envelope = await appointmentApi.create(payload);
+      const appointment = envelope?.data?.appointment;
+
+      const id: string = appointment?.id || String(Date.now());
+      const year = new Date(bookingDate).getFullYear();
+      const shortId = id.replace(/-/g, '').slice(0, 6).toUpperCase().padStart(6, '0');
+      const reference = `UGC-${year}-${shortId}`;
+      const status =
+        appointment?.status === 'PENDING' || appointment?.status === 'CONFIRMED'
+          ? appointment.status
+          : selectedDoctorId
+            ? 'CONFIRMED'
+            : 'PENDING';
+
+      setConfirmedId(id);
+      setConfirmedReference(reference);
+      setConfirmedStatus(status);
+      setStep(4);
     } catch (err) {
-      alert(getErrorMessage(err, "An error occurred. Please try again."));
+      setError(getErrorMessage(err, 'Failed to complete booking. You may already have a booking on this date.'));
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const resetBooking = () => {
-    setSubmitted(false);
-    setStep(1);
-    setStep1({ studentId: "", studentName: "", dobDay: "", dobMonth: "", dobYear: "", studentEmail: "", alternateEmail: "", mobilePhone: "", whatsappPhone: "", bookingFor: "Myself" });
-    setService("General Consultation");
-    setDate(null);
-    setTime("");
-    setBookedSlots([]);
-  };
+  const filteredServices = servicesFetched.filter(
+    (s) => selectedCategory === 'all' || s.category === selectedCategory
+  );
+
+  // ——— Paint loading shell until guard is resolved ———
+  if (!guardResolved) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <UGLogo size="md" />
+          <LoadingSpinner size={48} />
+          <p className="text-sm text-gray-500 font-medium">
+            {guardRedirecting ? 'Redirecting…' : 'Verifying access…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", minHeight: "100vh", background: "#F3F4F6", width: "100%", overflowX: "hidden" }}>
-      {/* Navbar */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #E5E7EB", padding: "0 16px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: "#3B4FD8", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>UG</div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#1F2937" }}>UG Student Clinic</div>
-            <div style={{ fontSize: 11, color: "#9CA3AF" }}>Quality Healthcare for Students</div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={handleReturn}
-            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "#3B4FD8", background: "#fff", border: "1px solid #3B4FD8", borderRadius: 8, padding: "9px 18px", cursor: "pointer" }}
->
-            <ChevronLeft size={16} /> Return
-          </button>
-          <Link href="/demo-booking">
-            <button style={btnPrimary}>Book Appointment</button>
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <header className="bg-white border-b border-gray-200 px-6 py-3.5 sticky top-0 z-20 shadow-2xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <UGLogo size="md" href="/dashboard" />
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-[#1e3a8a] transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <div style={{ background: "#3B4FD8", padding: "40px 24px 60px", textAlign: "center" }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, color: "#fff", margin: "0 0 12px" }}>Book an Appointment</h1>
-        <p style={{ fontSize: 15, color: "rgba(255,255,255,0.85)", maxWidth: 520, margin: "0 auto" }}>
-          Schedule a visit with the University of Ghana, Legon Student Clinic in three quick steps. Free for all students.
-        </p>
-      </div>
-
-      {/* Form Card */}
-      <div style={{ maxWidth: submitted ? 720 : 920, margin: "-24px auto 40px", padding: "0 16px" }}>
-        <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 1px 8px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          <div style={{ background: "#F9FAFB", borderBottom: "1px solid #E5E7EB", padding: "12px 28px", textAlign: "center" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              {submitted ? "Booking Complete" : step === 4 ? "Review Your Details" : "Complete the form below"}
-            </span>
-          </div>
-
-          <div style={{ padding: "32px 28px" }}>
-            {submitted ? (
-              <SuccessScreen step1={step1} service={service} date={date} time={time} bookingRef={bookingRef} onBookAnother={resetBooking} />
-            ) : (
-              <>
-                <Stepper current={step} />
-                {step === 1 && <Step1 data={step1} onChange={setStep1} onContinue={() => setStep(2)} />}
-                {step === 2 && <Step2Service selected={service} onSelect={setService} onContinue={() => setStep(3)} onBack={() => setStep(1)} />}
-                {step === 3 && <Step3DateTime date={date} time={time} bookedSlots={bookedSlots} onSelectDate={handleSelectDate} onSelectTime={setTime} onContinue={() => setStep(4)} onBack={() => setStep(2)} />}
-                {step === 4 && <Step4Review step1={step1} service={service} date={date} time={time} onConfirm={handleConfirm} onBack={() => setStep(3)} loading={loading} />}
-              </>
-            )}
-          </div>
+      <div className="bg-gradient-to-r from-[#1e3a8a] via-blue-900 to-indigo-900 text-white py-8 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 mb-2 border border-white/15">
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
+            UG Health Services Online Appointment System
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Book a Clinic Visit</h1>
+          <p className="text-xs sm:text-sm text-blue-100/90 mt-1">
+            Follow the steps below to schedule an appointment with UG Health Center doctors.
+          </p>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer style={{ background: "#111827", padding: "20px 24px", textAlign: "center" }}>
-        <span style={{ fontSize: 13, color: "#6B7280" }}>© 2026 University Student Clinic. All rights reserved.</span>
-      </footer>
+      <div className="max-w-4xl w-full mx-auto px-4 py-8 flex-1">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-8 shadow-xs">
+          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+            {[
+              { s: 1, label: 'Select Service' },
+              { s: 2, label: 'Date & Time' },
+              { s: 3, label: 'Doctor & Reason' },
+              { s: 4, label: 'Confirmation' },
+            ].map((tile) => {
+              const active = step === tile.s;
+              const done = step > tile.s;
+              return (
+                <div
+                  key={tile.s}
+                  className={`p-2.5 rounded-xl transition-all ${
+                    active ? 'bg-blue-50 text-[#1e3a8a] font-bold border border-blue-200' :
+                    done ? 'text-emerald-700 font-semibold' : 'text-gray-400'
+                  }`}
+                >
+                  <span className="block text-[10px] uppercase">Step {tile.s}</span>
+                  {tile.s}. {tile.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} aria-label="Dismiss error">✕</button>
+          </div>
+        )}
+
+        {step === 1 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Choose Clinical Service</h2>
+            <p className="text-xs text-gray-500 mb-6">Select the type of health care service you need today.</p>
+
+            <div className="flex gap-2 mb-6 flex-wrap">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase transition-all ${
+                    selectedCategory === cat.key
+                      ? 'bg-[#1e3a8a] text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {filteredServices.map((svc) => {
+                const IconComp = svc.icon;
+                const isSelected = selectedService.id === svc.id;
+                return (
+                  <button
+                    type="button"
+                    key={svc.id}
+                    onClick={() => setSelectedService(svc)}
+                    className={`p-5 rounded-2xl border-2 transition-all text-left flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-[#1e3a8a] bg-blue-50/50 shadow-md ring-2 ring-blue-100'
+                        : 'border-gray-200 hover:border-blue-300 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-[#1e3a8a] text-white' : 'bg-blue-100 text-[#1e3a8a]'}`}>
+                          <IconComp className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                          ⏱ {svc.duration}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-gray-900 text-base mb-1">{svc.title}</h3>
+                      <p className="text-xs text-gray-600 leading-relaxed">{svc.desc}</p>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-[#1e3a8a]">
+                        {isSelected ? '✓ Selected' : 'Click to select'}
+                      </span>
+                      {isSelected && <CheckCircle2 className="w-5 h-5 text-[#1e3a8a]" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm flex items-center gap-2"
+              >
+                Continue to Date & Time <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Select Date & Time Slot</h2>
+            <p className="text-xs text-gray-500 mb-6">Choose a date for your visit to view available clinic time slots.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="space-y-4">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                  Appointment Date *
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={bookingDate.toISOString().split('T')[0]}
+                  onChange={(e) => setBookingDate(new Date(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-[#1e3a8a]"
+                />
+                <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-gray-700 space-y-1">
+                  <p className="font-bold text-[#1e3a8a]">Selected Visit Date:</p>
+                  <p className="text-sm font-extrabold text-gray-900">
+                    {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
+                  Available Time Slots *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {TIME_SLOT_LABELS.map((slot) => {
+                    const isBooked = bookedSlots.includes(slot);
+                    const isSelected = bookingTime === slot;
+                    const isPast = isTimeSlotPast(slot, bookingDate);
+                    const isDisabled = isBooked || isPast;
+                    return (
+                      <button
+                        type="button"
+                        key={slot}
+                        disabled={isDisabled}
+                        onClick={() => setBookingTime(slot)}
+                        className={`py-2.5 px-2 text-xs font-bold rounded-xl border transition-all ${
+                          isDisabled
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
+                            : isSelected
+                            ? 'bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-sm ring-2 ring-blue-200'
+                            : 'bg-white text-gray-800 border-gray-200 hover:border-blue-400 hover:bg-blue-50/30'
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm flex items-center gap-2"
+              >
+                Continue to Doctor & Details <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Doctor Preference & Visit Reason</h2>
+            <p className="text-xs text-gray-500 mb-6">Select a specific doctor or leave empty for auto-assignment by clinic staff.</p>
+
+            <div className="space-y-6 mb-8">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                  Doctor Selection (Optional)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDoctorId('')}
+                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all text-left ${
+                      selectedDoctorId === ''
+                        ? 'border-[#1e3a8a] bg-blue-50/50 font-bold'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="text-xs font-bold text-[#1e3a8a]">⚡ Auto-Assign Available Doctor</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Recommended: Staff will assign the best free doctor.</p>
+                  </button>
+                  {doctors.map((doc) => (
+                    <button
+                      type="button"
+                      key={doc.id}
+                      onClick={() => setSelectedDoctorId(doc.id)}
+                      className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between text-left ${
+                        selectedDoctorId === doc.id
+                          ? 'border-[#1e3a8a] bg-blue-50/50 font-bold'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">Dr. {doc.firstName} {doc.lastName}</p>
+                        <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded mt-1 ${
+                          doc.doctorStatus === 'AVAILABLE' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {doc.doctorStatus === 'AVAILABLE' ? '🟢 Free' : '🔴 Busy'}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Reason for Visit *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Headache and fever for 2 days / Routine medical check"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#1e3a8a]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Additional Medical Notes (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Any allergies, previous medications, or specific details for the doctor..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#1e3a8a]"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBooking}
+                disabled={submitting}
+                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                {submitting ? <LoadingSpinner size={16} /> : 'Complete & Confirm Booking ✓'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-xl text-center">
+            {confirmedStatus === 'CONFIRMED' ? (
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                <Check className="w-8 h-8" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+            )}
+            <span
+              className={
+                'px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest ' +
+                (confirmedStatus === 'CONFIRMED'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-amber-100 text-amber-800')
+              }
+            >
+              {confirmedStatus === 'CONFIRMED' ? 'Booking Confirmed' : 'Awaiting Doctor Assignment'}
+            </span>
+            <h2 className="text-2xl font-extrabold text-gray-900 mt-2">
+              {confirmedStatus === 'CONFIRMED'
+                ? 'Appointment Scheduled Successfully!'
+                : 'Appointment Submitted Successfully!'}
+            </h2>
+            <p className="text-xs text-gray-500 max-w-md mx-auto mt-1">
+              {confirmedStatus === 'CONFIRMED'
+                ? 'Your appointment has been registered in the UG Health Services system. Please arrive 10 minutes before your scheduled slot.'
+                : 'Your booking has been received. A clinic receptionist will assign a doctor to your appointment and confirm the schedule shortly.'}
+            </p>
+            <div className="my-6 p-4 bg-gray-50 rounded-2xl border border-gray-200 max-w-sm mx-auto">
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">Booking Reference Number</p>
+              <p className="text-2xl font-extrabold text-[#1e3a8a] tracking-wider mt-1">{confirmedReference}</p>
+              {confirmedId && (
+                <p className="text-[10px] text-gray-400 mt-1">Internal ID: {confirmedId}</p>
+              )}
+            </div>
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 max-w-md mx-auto text-left text-xs space-y-2 mb-8">
+              {[
+                { label: 'Service', value: selectedService.title },
+                { label: 'Date', value: bookingDate.toLocaleDateString('en-GB') },
+                { label: 'Time Slot', value: bookingTime },
+                { label: 'Reason', value: reason },
+              ].map((row) => (
+                <div key={row.label} className="flex justify-between">
+                  <span className="text-gray-500 font-semibold">{row.label}:</span>
+                  <span className="font-bold text-gray-900 truncate max-w-[200px]">{row.value}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
+              >
+                <Printer className="w-4 h-4" /> Print Receipt
+              </button>
+              <Link
+                href="/dashboard"
+                className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 shadow-sm"
+              >
+                Return to Dashboard
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-
-

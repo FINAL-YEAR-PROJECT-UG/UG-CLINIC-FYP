@@ -25,6 +25,7 @@ export default function LoadingSpinner({ size = 80, className = '' }: LoadingSpi
           height={size}
           className="animate-bounce"
           priority
+          style={{ width: 'auto', height: 'auto' }}
         />
       </div>
       <p className="mt-4 text-gray-600 text-sm animate-pulse">Loading...</p>

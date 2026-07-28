@@ -81,24 +81,7 @@ export async function seed(): Promise<void> {
         lastName: "Administrator",
         role: UserRole.ADMIN,
         emailVerified: true,
-      },
-      {
-        email: "doctor@ugclinic-fyp.edu.gh",
-        passwordHash,
-        firstName: "Kwame",
-        lastName: "Mensah",
-        phone: "+233201234567",
-        role: UserRole.DOCTOR,
-        emailVerified: true,
-      },
-      {
-        email: "receptionist@ugclinic-fyp.edu.gh",
-        passwordHash,
-        firstName: "Ama",
-        lastName: "Osei",
-        phone: "+233209876543",
-        role: UserRole.RECEPTIONIST,
-        emailVerified: true,
+        maxSessions: 5,
       },
       {
         studentId: "20240001",
@@ -112,6 +95,11 @@ export async function seed(): Promise<void> {
       },
     ],
   });
+
+  console.log("");
+  console.log("NOTE: Only one Admin account is seeded by default.");
+  console.log("To create additional staff accounts (Doctors, Receptionists, more Admins),");
+  console.log("log into the Admin dashboard or use the POST /api/staff/register endpoint.");
 
   console.log("Creating services...");
   const services = await prisma.$transaction([

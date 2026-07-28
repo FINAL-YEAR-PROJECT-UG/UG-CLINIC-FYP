@@ -12,7 +12,8 @@ body:
   type: json
   content: |-
     {
-      "reason": "No longer needed"
+      "cancellationReason": "No longer needed",
+      "cancellationNote": "Cancelled from Postman"
     }
 scripts:
   - type: afterResponse

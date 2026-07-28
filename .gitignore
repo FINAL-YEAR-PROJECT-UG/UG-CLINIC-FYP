@@ -1,3 +1,81 @@
-README.md
-repo-rejoice-connect-main/
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
 
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Production
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Build artifacts
+*.tgz
+*.tar.gz
+
+# Lock files (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# AI Assistants
+.claude/
+.qodo/
+.cursor/
+.cursorignore
+.ai/
+.copilot/
+.github/copilot/
+.aide/
+.windsurf/
+.devin/
+.cline/

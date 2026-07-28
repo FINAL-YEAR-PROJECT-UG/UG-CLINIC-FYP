@@ -1,0 +1,34 @@
+name: New Environment
+values:
+  - key: baseUrl
+    value: 'http://localhost:3005'
+  - key: accessToken
+    value: ''
+  - key: refreshToken
+    value: ''
+  - key: sessionToken
+    value: ''
+  - key: serviceId
+    value: ''
+  - key: appointmentId
+    value: ''
+  - key: timeSlotId
+    value: ''
+  - key: resourceId
+    value: ''
+  - key: sessionId
+    value: ''
+  - key: studentIdOrUserId
+    value: ''
+  - key: doctorId
+    value: ''
+  - key: appointmentDate
+    value: ''
+  - key: appointmentDateTime
+    value: ''
+  - key: timeSlot
+    value: ''
+  - key: appointmentReason
+    value: ''
+  - key: appointmentNotes
+    value: ''

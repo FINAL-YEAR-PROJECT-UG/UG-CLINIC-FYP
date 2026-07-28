@@ -29,10 +29,7 @@ const registerSchema = z
     firstName: z.string().trim().min(2, 'First name is required'),
     lastName: z.string().trim().min(2, 'Last name is required'),
     otherNames: z.string().trim().optional(),
-    studentId: z
-      .string()
-      .trim()
-      .refine(isValidStudentId, studentIdMessage),
+    studentId: z.string().trim().min(1, 'Student ID is required').refine((val) => isValidStudentId(val), studentIdMessage),
     email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
     phone: z.string().trim().superRefine((value, ctx) => {
       const result = validatePhoneNumber(value);
@@ -50,8 +47,8 @@ const registerSchema = z
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least one special character'),
     confirmPassword: z.string().min(8, 'Please confirm your password'),
-    program: z.string().min(1, 'Please select a program'),
-    otherProgram: z.string().optional(),
+    program: z.string().min(1, 'Program is required'),
+    otherProgram: z.string().trim().optional(),
     acceptPrivacyPolicy: z.literal(true),
   })
   .superRefine((data, ctx) => {
@@ -65,6 +62,7 @@ const registerSchema = z
         });
       }
     }
+
     if (data.password !== data.confirmPassword) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -120,10 +118,13 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
     try {
-      const programValue =
-        data.program === 'other'
-          ? data.otherProgram!.trim()
-          : PROGRAM_LABELS[data.program] ?? data.program;
+      let programValue = undefined;
+      if (data.program) {
+        programValue =
+          data.program === 'other'
+            ? data.otherProgram!.trim()
+            : PROGRAM_LABELS[data.program] ?? data.program;
+      }
 
       const response = await registerWithStore({
         email: data.email,
@@ -179,9 +180,9 @@ export default function RegisterPage() {
 
       {/* Hero */}
       <div className="register-hero">
-        <h1 className="register-hero-title">Join Us</h1>
+        <h1 className="register-hero-title">Student Registration</h1>
         <p className="register-hero-description">
-          Create your account to start booking appointments and managing your health
+          Create your UG student clinic account with your student details to book appointments and manage your health
         </p>
         <div className="register-hero-wave">
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -209,8 +210,8 @@ export default function RegisterPage() {
                     <line x1="22" y1="11" x2="16" y2="11" />
                   </svg>
                 </div>
-                <h2 className="register-card-title">Create your account</h2>
-                <p className="register-card-description">Register with your student details to access clinic services</p>
+                <h2 className="register-card-title">Create Student Account</h2>
+                <p className="register-card-description">University of Ghana students only - register with your student ID and details</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)}>
@@ -221,91 +222,91 @@ export default function RegisterPage() {
                 <div className="register-form-grid">
                   {/* First Name */}
                   <div className="register-input-group">
-                    <label className="register-label">First Name</label>
+                    <label htmlFor="firstName" className="register-label">First Name</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input type="text" placeholder="e.g. Kwame" disabled={isLoading} className={`register-input ${errors.firstName ? 'error' : ''}`} {...register('firstName')} />
+                      <input id="firstName" type="text" placeholder="e.g. Kwame" disabled={isLoading} className={`register-input ${errors.firstName ? 'error' : ''}`} {...register('firstName')} />
                     </div>
-                    {errors.firstName && <p className="register-error-text">{errors.firstName.message}</p>}
+                    {errors.firstName && <p className="register-error-text" role="alert">{errors.firstName.message}</p>}
                   </div>
 
                   {/* Last Name */}
                   <div className="register-input-group">
-                    <label className="register-label">Last Name</label>
+                    <label htmlFor="lastName" className="register-label">Last Name</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input type="text" placeholder="e.g. Mensah" disabled={isLoading} className={`register-input ${errors.lastName ? 'error' : ''}`} {...register('lastName')} />
+                      <input id="lastName" type="text" placeholder="e.g. Mensah" disabled={isLoading} className={`register-input ${errors.lastName ? 'error' : ''}`} {...register('lastName')} />
                     </div>
-                    {errors.lastName && <p className="register-error-text">{errors.lastName.message}</p>}
+                    {errors.lastName && <p className="register-error-text" role="alert">{errors.lastName.message}</p>}
                   </div>
 
                   {/* Other Names */}
                   <div className="register-input-group register-full-width">
-                    <label className="register-label">Other Names (Optional)</label>
+                    <label htmlFor="otherNames" className="register-label">Other Names (Optional)</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input type="text" placeholder="e.g. Kofi" disabled={isLoading} className={`register-input ${errors.otherNames ? 'error' : ''}`} {...register('otherNames')} />
+                      <input id="otherNames" type="text" placeholder="e.g. Kofi" disabled={isLoading} className={`register-input ${errors.otherNames ? 'error' : ''}`} {...register('otherNames')} />
                     </div>
-                    {errors.otherNames && <p className="register-error-text">{errors.otherNames.message}</p>}
+                    {errors.otherNames && <p className="register-error-text" role="alert">{errors.otherNames.message}</p>}
                   </div>
 
                   {/* Student ID */}
                   <div className="register-input-group">
-                    <label className="register-label">Student ID</label>
+                    <label htmlFor="studentId" className="register-label">Student ID</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input type="text" inputMode="numeric" maxLength={8} placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
+                      <input id="studentId" type="text" inputMode="numeric" maxLength={8} placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
                     </div>
-                    {errors.studentId && <p className="register-error-text">{errors.studentId.message}</p>}
+                    {errors.studentId && <p className="register-error-text" role="alert">{errors.studentId.message}</p>}
                   </div>
 
                   {/* Email */}
                   <div className="register-input-group">
-                    <label className="register-label">Email Address</label>
+                    <label htmlFor="email" className="register-label">Email Address</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <rect width="20" height="16" x="2" y="4" rx="2" />
                         <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                       </svg>
-                      <input type="email" placeholder="yourname@email.com" disabled={isLoading} className={`register-input ${errors.email ? 'error' : ''}`} {...register('email')} />
+                      <input id="email" type="email" placeholder="yourname@email.com" disabled={isLoading} className={`register-input ${errors.email ? 'error' : ''}`} {...register('email')} />
                     </div>
-                    {errors.email && <p className="register-error-text">{errors.email.message}</p>}
+                    {errors.email && <p className="register-error-text" role="alert">{errors.email.message}</p>}
                   </div>
 
                   {/* Phone */}
                   <div className="register-input-group">
-                    <label className="register-label">Phone Number</label>
+                    <label htmlFor="phone" className="register-label">Phone Number</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
-                      <input type="tel" placeholder="" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
+                      <input id="phone" type="tel" placeholder="" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
                     </div>
-                    {errors.phone && <p className="register-error-text">{errors.phone.message}</p>}
+                    {errors.phone && <p className="register-error-text" role="alert">{errors.phone.message}</p>}
                   </div>
 
                   {/* Gender */}
                   <div className="register-input-group">
-                    <label className="register-label">Gender</label>
+                    <label htmlFor="gender" className="register-label">Gender</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                         <path d="M2 12h20" />
                       </svg>
-                      <select disabled={isLoading} className={`register-input ${errors.gender ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('gender')}>
+                      <select id="gender" disabled={isLoading} className={`register-input ${errors.gender ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('gender')}>
                         <option value="" disabled>Select your gender</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -315,18 +316,18 @@ export default function RegisterPage() {
                         <path d="m6 9 6 6 6-6" />
                       </svg>
                     </div>
-                    {errors.gender && <p className="register-error-text">{errors.gender.message}</p>}
+                    {errors.gender && <p className="register-error-text" role="alert">{errors.gender.message}</p>}
                   </div>
 
                   {/* Resident Status */}
                   <div className="register-input-group">
-                    <label className="register-label">Residency Status</label>
+                    <label htmlFor="isResident" className="register-label">Residency Status</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                         <polyline points="9 22 9 12 15 12 15 22" />
                       </svg>
-                      <select disabled={isLoading} className={`register-input ${errors.isResident ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('isResident')}>
+                      <select id="isResident" disabled={isLoading} className={`register-input ${errors.isResident ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('isResident')}>
                         <option value="" disabled>Select residency status</option>
                         <option value="resident">Resident</option>
                         <option value="non-resident">Non-Resident</option>
@@ -335,44 +336,44 @@ export default function RegisterPage() {
                         <path d="m6 9 6 6 6-6" />
                       </svg>
                     </div>
-                    {errors.isResident && <p className="register-error-text">{errors.isResident.message}</p>}
+                    {errors.isResident && <p className="register-error-text" role="alert">{errors.isResident.message}</p>}
                   </div>
 
                   {/* Password */}
                   <div className="register-input-group">
-                    <label className="register-label">Password</label>
+                    <label htmlFor="password" className="register-label">Password</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.password ? 'error' : ''}`} {...register('password')} />
+                      <input id="password" type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.password ? 'error' : ''}`} {...register('password')} />
                     </div>
-                    {errors.password && <p className="register-error-text">{errors.password.message}</p>}
+                    {errors.password && <p className="register-error-text" role="alert">{errors.password.message}</p>}
                   </div>
 
                   {/* Confirm Password */}
                   <div className="register-input-group">
-                    <label className="register-label">Confirm Password</label>
+                    <label htmlFor="confirmPassword" className="register-label">Confirm Password</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.confirmPassword ? 'error' : ''}`} {...register('confirmPassword')} />
+                      <input id="confirmPassword" type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.confirmPassword ? 'error' : ''}`} {...register('confirmPassword')} />
                     </div>
-                    {errors.confirmPassword && <p className="register-error-text">{errors.confirmPassword.message}</p>}
+                    {errors.confirmPassword && <p className="register-error-text" role="alert">{errors.confirmPassword.message}</p>}
                   </div>
 
-                  {/* Program */}
+                  {/* Program of Study */}
                   <div className="register-input-group register-full-width">
-                    <label className="register-label">Program of Study</label>
+                    <label htmlFor="program" className="register-label">Program of Study</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
                         <path d="M6 12v5c3 3 9 3 12 0v-5" />
                       </svg>
-                      <select disabled={isLoading} className={`register-input ${errors.program ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('program')}>
+                      <select id="program" disabled={isLoading} className={`register-input ${errors.program ? 'error' : ''}`} style={{ appearance: 'none' }} {...register('program')}>
                         <option value="" disabled>Select your program</option>
                         <option value="cs">Computer Science</option>
                         <option value="engineering">Engineering</option>
@@ -385,19 +386,20 @@ export default function RegisterPage() {
                         <path d="m6 9 6 6 6-6" />
                       </svg>
                     </div>
-                    {errors.program && <p className="register-error-text">{errors.program.message}</p>}
+                    {errors.program && <p className="register-error-text" role="alert">{errors.program.message}</p>}
                   </div>
-                </div>
 
-                {selectedProgram === 'other' && (
+                  {/* Other Program - when "other" is selected */}
+                  {selectedProgram === 'other' && (
                   <div className="register-input-group">
-                    <label className="register-label">Specify your program</label>
+                    <label htmlFor="otherProgram" className="register-label">Specify your program</label>
                     <div className="register-input-wrapper">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M12 20h9" />
                         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                       </svg>
                       <input
+                        id="otherProgram"
                         type="text"
                         placeholder="e.g. Agricultural Engineering"
                         disabled={isLoading}
@@ -405,28 +407,30 @@ export default function RegisterPage() {
                         {...register('otherProgram')}
                       />
                     </div>
-                    {errors.otherProgram && <p className="register-error-text">{errors.otherProgram.message}</p>}
+                    {errors.otherProgram && <p className="register-error-text" role="alert">{errors.otherProgram.message}</p>}
                   </div>
-                )}
+                  )}
+                </div>
 
                 {/* Privacy Policy Acceptance */}
                 <div className="register-input-group">
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 13, color: '#6B7280', cursor: 'pointer', lineHeight: 1.5 }}>
-                    <input type="checkbox" style={{ width: 16, height: 16, marginTop: 2 }} {...register('acceptPrivacyPolicy')} />
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 13, color: '#334155', cursor: 'pointer', lineHeight: 1.5 }}>
+                    <input id="acceptPrivacyPolicy" type="checkbox" style={{ width: 16, height: 16, marginTop: 2 }} {...register('acceptPrivacyPolicy')} />
                     <span>
                       I have read and agree to the{' '}
-                      <Link href="/privacy" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</Link>
+                      <Link href="/privacy" style={{ color: '#0369A1', textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</Link>
                       {' '}and{' '}
-                      <Link href="/terms" style={{ color: '#3B4FD8', textDecoration: 'none', fontWeight: 500 }}>Terms of Service</Link>
+                      <Link href="/terms" style={{ color: '#0369A1', textDecoration: 'none', fontWeight: 500 }}>Terms of Service</Link>
                     </span>
                   </label>
-                  {errors.acceptPrivacyPolicy && <p className="register-error-text">{errors.acceptPrivacyPolicy.message}</p>}
+                  {errors.acceptPrivacyPolicy && <p className="register-error-text" role="alert">{errors.acceptPrivacyPolicy.message}</p>}
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="register-submit-button"
+                  aria-busy={isLoading}
                 >
                   {isLoading ? (
                     <>
@@ -440,9 +444,9 @@ export default function RegisterPage() {
 
               <p className="register-terms-text">
                 By creating an account, you agree to our{' '}
-                <Link href="/privacy">privacy policy</Link>
+                <Link href="/privacy" style={{ color: '#0369A1', textDecoration: 'none', fontWeight: 500 }}>privacy policy</Link>
                 {' '}and{' '}
-                <Link href="/terms">terms of service</Link>.
+                <Link href="/terms" style={{ color: '#0369A1', textDecoration: 'none', fontWeight: 500 }}>terms of service</Link>.
               </p>
             </>
           )}
@@ -450,7 +454,7 @@ export default function RegisterPage() {
 
         {/* Info box */}
         <div className="register-info-box">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B4FD8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-info-box-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0369A1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-info-box-icon">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
           </svg>
           <p className="register-info-box-text">

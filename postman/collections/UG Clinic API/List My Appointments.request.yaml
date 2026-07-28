@@ -5,7 +5,8 @@ method: GET
 url: "{{baseUrl}}/api/appointments"
 order: 7000
 headers:
-  Authorization: Bearer {{accessToken}}
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
 scripts:
   - type: afterResponse
     code: |-

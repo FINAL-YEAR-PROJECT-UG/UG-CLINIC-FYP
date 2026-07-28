@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
+import AuthSyncProvider from "@/components/providers/AuthSyncProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "UG Clinic Portal",
-  description: "University of Ghana Student Clinic Portal - Book appointments and manage your healthcare",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover",
+  description: "University of Ghana Student Clinic Portal - Book Appointments and Manage Your Healthcare",
+  icons: {
+    icon: "/logo.svg",
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -26,9 +37,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NextAuthProvider>
+          <AuthSyncProvider />
+          {children}
+        </NextAuthProvider>
+      </body>
     </html>
   );
 }

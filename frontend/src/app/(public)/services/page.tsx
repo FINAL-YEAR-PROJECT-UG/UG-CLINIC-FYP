@@ -1,10 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
-import { useAuthStore } from '@/stores/authStore';
 import styles from './page.module.css';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -172,16 +170,6 @@ const schedule: ScheduleRow[] = [
 // ── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ServicesPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-
-  const handleBookingClick = () => {
-    if (isAuthenticated) {
-      router.push('/demo-booking');
-    } else {
-      router.push('/login');
-    }
-  };
   return (
     <div className={styles.page}>
       <Header />
@@ -315,7 +303,7 @@ export default function ServicesPage() {
               </div>
             </div>
             <div className={styles.faqAction}>
-              <button onClick={handleBookingClick} className={styles.faqButton}>Book This Service →</button>
+              <Link href="/login" className={styles.faqButton}>Book This Service →</Link>
             </div>
           </div>
         ))}
@@ -368,7 +356,7 @@ export default function ServicesPage() {
         </div>
 
         <div className={styles.scheduleCta}>
-          <button onClick={handleBookingClick} className={styles.scheduleButton}>Book Appointment</button>
+          <Link href="/login" className={styles.scheduleButton}>Book Appointment</Link>
         </div>
       </section>
 

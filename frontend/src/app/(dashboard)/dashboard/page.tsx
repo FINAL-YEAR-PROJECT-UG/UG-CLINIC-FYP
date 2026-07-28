@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/stores/authStore';
 import {
   appointmentApi,
   type ApiAppointment,
-  type StaffDashboardData,
 } from '@/lib/appointmentApi';
-import { getErrorMessage } from '@/lib/utils';
+import { getErrorMessage, getBookingRouteForRole, normalizeRole, isStaffRole } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import {
   Calendar,
@@ -63,147 +63,12 @@ const STATUS_PILL: Record<string, { label: string; className: string }> = {
   RESCHEDULED: { label: 'Rescheduled', className: 'bg-blue-100 text-blue-700' },
 };
 
-function getStaffRoleLabel(role: string) {
-  const normalizedRole = role?.toUpperCase?.() ?? '';
-  switch (normalizedRole) {
-    case 'DOCTOR':
-      return 'Doctor';
-    case 'RECEPTIONIST':
-      return 'Receptionist';
-    case 'ADMIN':
-      return 'Administrator';
-    default:
-      return 'Staff';
-  }
-}
-
-function StaffDashboard({
-  userRole,
-  staffData,
-  loading,
-  error,
-}: {
-  userRole: string;
-  staffData: StaffDashboardData | null;
-  loading: boolean;
-  error: string | null;
-}) {
-  const normalizedUserRole = userRole?.toUpperCase?.() ?? '';
-  const summary = staffData?.summary ?? {
-    total: 0,
-    today: 0,
-    pending: 0,
-    confirmed: 0,
-    completed: 0,
-    cancelled: 0,
-    rescheduled: 0,
-  };
-  const appointments = staffData?.appointments ?? [];
-
-  return (
-    <div className="space-y-8">
-      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-wide text-gray-500">Staff Dashboard</p>
-            <h1 className="text-3xl font-bold text-gray-900 mt-2">{getStaffRoleLabel(userRole)} overview</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Monitor clinic activity, manage appointment flow, and support students from one place.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Today&apos;s appointments</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.today}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Confirmed</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.confirmed}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Pending</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.pending}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Cancelled</p>
-              <p className="mt-3 text-3xl font-semibold text-gray-900">{summary.cancelled}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
-          {error}
-        </div>
-      )}
-
-      <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Upcoming appointments</h2>
-            <p className="text-sm text-gray-500">Latest scheduled visits for your clinic.</p>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="py-16 flex items-center justify-center">
-            <LoadingSpinner size={40} />
-          </div>
-        ) : appointments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 p-10 text-center text-gray-500">
-            No upcoming appointments are available for this dashboard yet.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700">
-              <thead>
-                <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Service</th>
-                  {normalizedUserRole !== 'DOCTOR' && <th className="px-4 py-3">Doctor</th>}
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.map((appointment) => (
-                  <tr key={appointment.id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-4 text-gray-700">{formatShortDate(appointment.date)}</td>
-                    <td className="px-4 py-4 text-gray-700">{appointment.timeSlot}</td>
-                    <td className="px-4 py-4 text-gray-700">
-                      {appointment.user.firstName} {appointment.user.lastName}
-                      <div className="text-xs text-gray-500">{appointment.user.studentId || appointment.user.email}</div>
-                    </td>
-                    <td className="px-4 py-4 text-gray-700">{appointment.service?.name || appointment.reason}</td>
-                    {normalizedUserRole !== 'DOCTOR' && (
-                      <td className="px-4 py-4 text-gray-700">
-                        {appointment.doctor ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}` : 'Unassigned'}
-                      </td>
-                    )}
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex rounded-full text-[11px] font-medium px-2.5 py-1 ${STATUS_PILL[appointment.status]?.className ?? 'bg-gray-100 text-gray-600'}`}>
-                        {STATUS_PILL[appointment.status]?.label ?? appointment.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
 
+  const [guardRedirecting, setGuardRedirecting] = useState(false);
   const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
-  const [staffData, setStaffData] = useState<StaffDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -212,17 +77,41 @@ export default function DashboardPage() {
   const [cancelNote, setCancelNote] = useState<string>('');
   const [cancelError, setCancelError] = useState<string | null>(null);
 
+  // ——— Early synchronous redirect: STAFF → /staff/overview, unauth → /login ———
+  // Run once on mount. Use sync store snapshot + deps-aware effect.
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace('/login');
-    }
-  }, [isAuthenticated, router]);
+    let active = true;
+    const runGuard = async () => {
+      // Allow zustand persist rehydration microtask
+      await Promise.resolve();
+      if (!active) return;
+
+      const snap = useAuthStore.getState();
+      const role = normalizeRole(snap.user?.role ?? user?.role);
+      const auth = snap.isAuthenticated || isAuthenticated;
+
+      if (!auth) {
+        if (!authLoading) {
+          setGuardRedirecting(true);
+          router.replace('/login');
+        }
+        return;
+      }
+
+      if (isStaffRole(role)) {
+        setGuardRedirecting(true);
+        router.replace('/staff/overview');
+        return;
+      }
+    };
+    runGuard();
+    return () => { active = false; };
+  }, [isAuthenticated, user?.role, authLoading, router]);
 
   const loadAppointments = useCallback(async () => {
     try {
       const data = await appointmentApi.getMyAppointments();
       setAppointments(data);
-      setStaffData(null);
       setError(null);
     } catch (err) {
       setError(getErrorMessage(err, 'Could not load your appointments.'));
@@ -231,40 +120,22 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const loadStaffDashboard = useCallback(async () => {
-    try {
-      const data = await appointmentApi.getStaffDashboard();
-      setStaffData(data);
-      setAppointments([]);
-      setError(null);
-    } catch (err) {
-      setStaffData(null);
-      setError(getErrorMessage(err, 'Could not load staff dashboard data.'));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated) return;
+
+    const role = normalizeRole(user?.role);
+    if (isStaffRole(role)) return;
+
     let active = true;
-
-    const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    (async () => {
       if (!active) return;
-      setLoading(true);
-      setError(null);
-      if (user?.role?.toUpperCase() !== 'STUDENT') {
-        await loadStaffDashboard();
-      } else {
-        await loadAppointments();
-      }
-    };
-
-    loadData();
-    return () => {
-      active = false;
-    };
-  }, [isAuthenticated, user?.role, loadAppointments, loadStaffDashboard]);
+      await loadAppointments();
+    })();
+    return () => { active = false; };
+  }, [isAuthenticated, user?.role, loadAppointments, authLoading]);
 
   const openCancelModal = (id: string) => {
     setShowCancelModalId(id);
@@ -274,7 +145,6 @@ export default function DashboardPage() {
   };
 
   const handleCancel = async (id: string) => {
-    // open confirmation modal that requires a reason
     openCancelModal(id);
   };
 
@@ -300,6 +170,14 @@ export default function DashboardPage() {
     }
   };
 
+  const handleBookingNavClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const snap = useAuthStore.getState();
+    const role = normalizeRole(snap.user?.role);
+    const auth = snap.isAuthenticated;
+    router.push(getBookingRouteForRole(role, auth));
+  };
+
   const firstName = user?.firstName || 'Student';
   const lastName = user?.lastName || '';
   const fullName = (firstName && lastName && firstName.toLowerCase() !== lastName.toLowerCase())
@@ -318,29 +196,44 @@ export default function DashboardPage() {
   const upcomingIds = new Set(upcoming.map((a) => a.id));
   const past = appointments.filter((a) => !upcomingIds.has(a.id));
 
+  if (authLoading || guardRedirecting) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner size={60} />
+          <p className="text-sm text-gray-500 font-medium">
+            {guardRedirecting ? 'Redirecting…' : 'Loading dashboard…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const bookingTarget = getBookingRouteForRole(user?.role, isAuthenticated);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Welcome banner */}
-      <header className="bg-gradient-to-r from-blue-900 to-blue-600 text-white">
+      <header className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Welcome back, {firstName} 👋</h1>
+            <h1 className="text-2xl font-bold">Welcome back, {firstName}</h1>
             <p className="text-blue-100 mt-1">
-              {user?.role?.toUpperCase() !== 'STUDENT'
-                ? `Staff dashboard active — ${getStaffRoleLabel(user?.role ?? '')}`
-                : 'Here are your clinic appointments.'}
+              Here are your clinic appointments and health information.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/demo-booking"
-              className="inline-flex items-center justify-center rounded-full bg-white text-blue-800 font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-blue-50 transition-all duration-200 hover:shadow-md hover:scale-105"
+              href={bookingTarget}
+              onClick={handleBookingNavClick}
+              className="inline-flex items-center justify-center rounded-full bg-white text-[#1e3a8a] font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-[#F8FAFC] transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1e3a8a]"
             >
-              {user?.role?.toUpperCase() !== 'STUDENT' ? 'Manage appointments' : 'Book new appointment'}
+              Book new appointment
             </Link>
             <button
               onClick={logout}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-all duration-200 hover:shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+              aria-label="Log out"
             >
               <LogOut className="h-4 w-4" />
               Log out
@@ -350,27 +243,28 @@ export default function DashboardPage() {
       </header>
 
       {showCancelModalId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg bg-white rounded-lg shadow-lg border border-gray-200 text-gray-900">
-            <div className="px-5 py-4 border-b flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Cancel appointment</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+          <div className="w-full max-w-lg bg-white rounded-lg shadow-lg border border-[#E2E8F0] text-[#020617]">
+            <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
+              <h3 id="cancel-modal-title" className="text-lg font-semibold text-[#020617]">Cancel appointment</h3>
               <button
                 onClick={() => setShowCancelModalId(null)}
-                className="text-gray-600 hover:text-gray-800 bg-white rounded-full px-2"
+                className="text-[#334155] hover:text-[#020617] bg-white rounded-full px-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
                 aria-label="Close cancel modal"
               >
                 ×
               </button>
             </div>
-            <div className="p-5 space-y-4 text-gray-800">
-              <p className="text-sm text-gray-600">Please select a reason for cancelling and optionally add more details.</p>
+            <div className="p-5 space-y-4 text-[#020617]">
+              <p className="text-sm text-[#334155]">Please select a reason for cancelling and optionally add more details.</p>
 
               <div>
-                <label className="block text-xs text-gray-700 mb-1">Reason</label>
+                <label htmlFor="cancel-reason" className="block text-xs text-[#020617] mb-1">Reason</label>
                 <select
+                  id="cancel-reason"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  className="w-full border border-gray-200 bg-white text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-[#E2E8F0] bg-white text-[#020617] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
                 >
                   <option value="MISTAKE">Mistake / Wrong booking</option>
                   <option value="NO_LONGER_NEEDED">No longer needed</option>
@@ -380,31 +274,32 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-700 mb-1">Details (optional)</label>
+                <label htmlFor="cancel-note" className="block text-xs text-[#020617] mb-1">Details (optional)</label>
                 <textarea
+                  id="cancel-note"
                   value={cancelNote}
                   onChange={(e) => setCancelNote(e.target.value)}
                   rows={4}
-                  className="w-full border border-gray-200 bg-white text-gray-900 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-[#E2E8F0] bg-white text-[#020617] rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent transition-all"
                   placeholder="Add any additional details about why you're cancelling"
                 />
               </div>
 
               {cancelError && (
-                <div className="text-sm text-red-600">{cancelError}</div>
+                <div className="text-sm text-red-600" role="alert">{cancelError}</div>
               )}
 
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowCancelModalId(null)}
-                  className="px-4 py-2 rounded-md border border-gray-200 bg-white text-gray-700 text-sm hover:bg-gray-50"
+                  className="px-4 py-2 rounded-md border border-[#E2E8F0] bg-white text-[#020617] text-sm hover:bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all"
                 >
                   Close
                 </button>
                 <button
                   onClick={confirmCancel}
                   disabled={cancellingId === showCancelModalId}
-                  className="px-4 py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-60"
+                  className="px-4 py-2 rounded-md bg-[#DC2626] text-white text-sm disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2 transition-all"
                 >
                   {cancellingId === showCancelModalId ? 'Cancelling...' : 'Confirm cancel'}
                 </button>
@@ -417,210 +312,197 @@ export default function DashboardPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-8">
-          {user?.role?.toUpperCase() === 'STUDENT' && error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3" role="alert">
               {error}
             </div>
           )}
 
-          {user?.role?.toUpperCase() !== 'STUDENT' ? (
-            <StaffDashboard userRole={user?.role ?? ''} staffData={staffData} loading={loading} error={error} />
-          ) : (
-            <>
-              {/* Upcoming appointment */}
-              <section>
-                <h2 className="text-lg font-bold text-gray-900 mb-3">Upcoming Appointment</h2>
-                {loading ? (
-                  <div className="bg-white rounded-xl border border-gray-200 p-12 shadow-sm">
-                    <LoadingSpinner size={60} />
+          {/* Upcoming appointment */}
+          <section>
+            <h2 className="text-lg font-bold text-[#020617] mb-3">Upcoming Appointment</h2>
+            {loading ? (
+              <div className="bg-white rounded-xl border border-[#E2E8F0] p-12 shadow-sm">
+                <LoadingSpinner size={60} />
+              </div>
+            ) : nextAppointment ? (
+              <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
+                      STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
+                  </span>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-wide text-[#334155]">Booking Reference</p>
+                    <p className="text-sm font-semibold text-[#0369A1]">{bookingReference(nextAppointment)}</p>
                   </div>
-                ) : nextAppointment ? (
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
-                          STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
-                      </span>
-                      <div className="text-right">
-                        <p className="text-[11px] uppercase tracking-wide text-gray-400">Booking Reference</p>
-                        <p className="text-sm font-semibold text-blue-700">{bookingReference(nextAppointment)}</p>
-                      </div>
-                    </div>
-
-                    <h3 className="text-xl font-bold text-gray-900 mt-4">
-                      {nextAppointment.reason || nextAppointment.service?.name}
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                      <div className="flex items-start gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-gray-500">Date</p>
-                          <p className="text-sm font-medium text-gray-800">{formatLongDate(nextAppointment.date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Clock className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-gray-500">Time</p>
-                          <p className="text-sm font-medium text-gray-800">{nextAppointment.timeSlot}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-gray-500">Location</p>
-                          <p className="text-sm font-medium text-gray-800">{CLINIC_LOCATION}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-4">
-                      <button
-                        onClick={() => handleCancel(nextAppointment.id)}
-                        disabled={cancellingId === nextAppointment.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none"
-                      >
-                        {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                        Cancel appointment
-                      </button>
-                      <Link
-                        href="/demo-booking"
-                        className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-all duration-200 hover:underline"
-                      >
-                        Reschedule
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm text-center">
-                    <p className="text-gray-600">You have no upcoming appointments.</p>
-                    <Link
-                      href="/demo-booking"
-                      className="mt-3 inline-flex items-center justify-center rounded-full bg-blue-700 text-white font-semibold px-5 py-2.5 text-sm hover:bg-blue-800 transition-colors"
-                    >
-                      Book an appointment
-                    </Link>
-                  </div>
-                )}
-              </section>
-
-              {/* Past appointments */}
-              <section>
-                <h2 className="text-lg font-bold text-gray-900 mb-3">Past Appointments</h2>
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
-                        <th className="font-medium px-5 py-3">Date</th>
-                        <th className="font-medium px-5 py-3">Service</th>
-                        <th className="font-medium px-5 py-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loading ? (
-                        <tr>
-                          <td colSpan={3} className="px-5 py-8">
-                            <LoadingSpinner size={40} />
-                          </td>
-                        </tr>
-                      ) : past.length === 0 ? (
-                        <tr>
-                          <td colSpan={3} className="px-5 py-6 text-center text-gray-500">
-                            No past appointments yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        past.map((appt) => {
-                          const pill = STATUS_PILL[appt.status] ?? {
-                            label: appt.status,
-                            className: 'bg-gray-100 text-gray-600',
-                          };
-                          return (
-                            <tr key={appt.id} className="border-b border-gray-50 last:border-0">
-                              <td className="px-5 py-4 text-gray-700">{formatShortDate(appt.date)}</td>
-                              <td className="px-5 py-4 text-gray-700">{appt.reason || appt.service?.name}</td>
-                              <td className="px-5 py-4">
-                                <span className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${pill.className}`}>
-                                  {pill.label}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
                 </div>
-              </section>
-            </>
-          )}
+
+                <h3 className="text-xl font-bold text-[#020617] mt-4">
+                  {nextAppointment.reason || nextAppointment.service?.name}
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#334155]">Date</p>
+                      <p className="text-sm font-medium text-[#020617]">{formatLongDate(nextAppointment.date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#334155]">Time</p>
+                      <p className="text-sm font-medium text-[#020617]">{nextAppointment.timeSlot}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#334155]">Location</p>
+                      <p className="text-sm font-medium text-[#020617]">{CLINIC_LOCATION}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-[#E2E8F0] mt-6 pt-4 flex items-center gap-4">
+                  <button
+                    onClick={() => handleCancel(nextAppointment.id)}
+                    disabled={cancellingId === nextAppointment.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Cancel appointment
+                  </button>
+                  <Link
+                    href={bookingTarget}
+                    onClick={handleBookingNavClick}
+                    className="text-sm font-medium text-[#334155] hover:text-[#020617] transition-all duration-200 hover:underline focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded"
+                  >
+                    Reschedule
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm text-center">
+                <p className="text-[#334155]">You have no upcoming appointments.</p>
+                <Link
+                  href={bookingTarget}
+                  onClick={handleBookingNavClick}
+                  className="mt-3 inline-flex items-center justify-center rounded-full bg-[#0369A1] text-white font-semibold px-5 py-2.5 text-sm hover:bg-[#0F172A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0369A1] focus:ring-offset-2"
+                >
+                  Book an appointment
+                </Link>
+              </div>
+            )}
+          </section>
+
+          {/* Past appointments */}
+          <section>
+            <h2 className="text-lg font-bold text-[#020617] mb-3">Past Appointments</h2>
+            <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wide text-[#334155] border-b border-[#E2E8F0]">
+                    <th className="font-medium px-5 py-3">Date</th>
+                    <th className="font-medium px-5 py-3">Service</th>
+                    <th className="font-medium px-5 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={3} className="px-5 py-8">
+                        <LoadingSpinner size={40} />
+                      </td>
+                    </tr>
+                  ) : past.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-5 py-6 text-center text-[#334155]">
+                        No past appointments yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    past.map((appt) => {
+                      const pill = STATUS_PILL[appt.status] ?? {
+                        label: appt.status,
+                        className: 'bg-gray-100 text-gray-600',
+                      };
+                      return (
+                        <tr key={appt.id} className="border-b border-[#E2E8F0] last:border-0">
+                          <td className="px-5 py-4 text-[#020617]">{formatShortDate(appt.date)}</td>
+                          <td className="px-5 py-4 text-[#020617]">{appt.reason || appt.service?.name}</td>
+                          <td className="px-5 py-4">
+                            <span className={`inline-flex rounded-full text-xs font-medium px-2.5 py-1 ${pill.className}`}>
+                              {pill.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
         {/* Right column */}
         <div className="space-y-6">
           {/* Profile card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div className="flex flex-col items-center text-center pb-5 border-b border-gray-100">
-              <div className="h-16 w-16 rounded-full bg-blue-700 text-white flex items-center justify-center text-lg font-bold">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
+            <div className="flex flex-col items-center text-center pb-5 border-b border-[#E2E8F0]">
+              <div className="h-16 w-16 rounded-full bg-[#1e3a8a] text-white flex items-center justify-center text-lg font-bold">
                 {getInitials(fullName)}
               </div>
-              <h3 className="text-base font-bold text-gray-900 mt-3">{fullName}</h3>
-              <p className="text-xs text-gray-500">
-                {user?.role?.toUpperCase() === 'STUDENT' ? `ID: ${studentId}` : `${getStaffRoleLabel(user?.role ?? '')}`}
-              </p>
+              <h3 className="text-base font-bold text-[#020617] mt-3">{fullName}</h3>
+              <p className="text-xs text-[#334155]">ID: {studentId}</p>
             </div>
- 
+
             <dl className="mt-5 space-y-4 text-sm">
-              {user?.role?.toUpperCase() !== 'STUDENT' && (
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-gray-400">Role</dt>
-                  <dd className="text-gray-800 mt-0.5">{getStaffRoleLabel(user?.role ?? '')}</dd>
-                </div>
-              )}
-              {user?.role?.toUpperCase() === 'STUDENT' && (
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-gray-400">Programme</dt>
-                  <dd className="text-gray-800 mt-0.5">{programme}</dd>
-                </div>
-              )}
               <div>
-                <dt className="text-[11px] uppercase tracking-wide text-gray-400">Email</dt>
-                <dd className="text-gray-800 mt-0.5 break-all">{email}</dd>
+                <dt className="text-[11px] uppercase tracking-wide text-[#334155]">Programme</dt>
+                <dd className="text-[#020617] mt-0.5">{programme}</dd>
               </div>
               <div>
-                <dt className="text-[11px] uppercase tracking-wide text-gray-400">Mobile</dt>
-                <dd className="text-gray-800 mt-0.5">{mobile}</dd>
+                <dt className="text-[11px] uppercase tracking-wide text-[#334155]">Email</dt>
+                <dd className="text-[#020617] mt-0.5 break-all">{email}</dd>
+              </div>
+              <div>
+                <dt className="text-[11px] uppercase tracking-wide text-[#334155]">Mobile</dt>
+                <dd className="text-[#020617] mt-0.5">{mobile}</dd>
               </div>
             </dl>
           </div>
 
           {/* Clinic information card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h3 className="text-base font-bold text-gray-900 mb-4">Clinic Information</h3>
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
+            <h3 className="text-base font-bold text-[#020617] mb-4">Clinic Information</h3>
             <div className="space-y-4 text-sm">
               <div className="flex items-start justify-between gap-4">
-                <span className="text-gray-500">Opening Hours</span>
-                <span className="text-right text-gray-800">
+                <span className="text-[#334155]">Opening Hours</span>
+                <span className="text-right text-[#020617]">
                   Mon – Fri
                   <br />
                   8:00 AM – 5:00 PM
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-gray-500">Emergency</span>
-                <span className="text-gray-800">+233 20 123 4567</span>
+                <span className="text-[#334155]">Emergency</span>
+                <span className="text-[#020617]">+233 20 123 4567</span>
               </div>
             </div>
             <a
               href="https://wa.me/233201234567"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 text-sm transition-colors"
+              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              aria-label="Message us on WhatsApp"
             >
               <MessageCircle className="h-4 w-4" />
               Message us on WhatsApp

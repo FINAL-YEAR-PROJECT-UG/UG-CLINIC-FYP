@@ -1,15 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Phone, Mail, MapPin } from 'lucide-react';
-import logoIcon from '@/Assets/logo.svg';
-
-const getImageSrc = (image: any) => {
-  if (typeof image === 'string') return image;
-  if (image.src) return image.src;
-  return image;
-};
+import UGLogo from './UGLogo';
 
 // Inline social icons
 const FacebookIcon = () => (
@@ -38,21 +31,12 @@ const LinkedInIcon = () => (
 
 export default function Footer() {
   return (
-    <footer className="bg-blue-950 text-white py-16 px-4 sm:px-6 lg:px-8">
+    <footer className="bg-[#1e3a8a] text-white py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <Image
-                src={getImageSrc(logoIcon)}
-                alt="UG Clinic Logo"
-                width={40}
-                height={40}
-                className="rounded-lg bg-white p-1"
-              />
-              <span className="font-bold">Student Clinic</span>
-            </div>
-            <p className="text-blue-200 text-sm leading-relaxed">
+            <UGLogo size="md" showText={true} textColor="text-white" href="/" />
+            <p className="text-blue-200 text-sm leading-relaxed mt-4">
               Providing quality healthcare services to support student wellbeing and academic success.
             </p>
             <div className="flex gap-3 mt-4">
@@ -65,7 +49,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold mb-4 text-white">Quick Links</h3>
             <ul className="space-y-2 text-sm text-blue-200">
-              <li><Link href="/home" className="hover:text-white transition-colors">Home</Link></li>
+              <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
               <li><Link href="/services" className="hover:text-white transition-colors">Services</Link></li>
               <li><Link href="/resources" className="hover:text-white transition-colors">Health Resources</Link></li>
@@ -100,7 +84,7 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-blue-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="border-t border-blue-700 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-blue-300">
             2024 University Student Clinic. All rights reserved.
           </p>

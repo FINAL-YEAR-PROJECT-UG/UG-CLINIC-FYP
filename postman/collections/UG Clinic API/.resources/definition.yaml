@@ -1,14 +1,19 @@
 $kind: collection
 name: UG Clinic API
 variables:
-  baseUrl: http://localhost:3005
-  accessToken: ""
-  refreshToken: ""
-  sessionToken: ""
-  serviceId: ""
-  appointmentId: ""
-  timeSlotId: ""
-  resourceId: ""
-  sessionId: ""
-  studentIdOrUserId: ""
-  doctorId: ""
+  baseUrl: 'http://localhost:3005'
+  accessToken: ''
+  refreshToken: ''
+  sessionToken: ''
+  serviceId: ''
+  appointmentId: ''
+  timeSlotId: ''
+  resourceId: ''
+  sessionId: ''
+  studentIdOrUserId: ''
+  doctorId: ''
+  appointmentDate: ''
+  appointmentDateTime: ''
+  timeSlot: ''
+  appointmentReason: ''
+  appointmentNotes: ''

@@ -214,7 +214,8 @@ export const sendOTP = async (req: Request, res: Response) => {
 
 export const verifyOTP = async (req: Request, res: Response) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, code } = req.body;
+    const otpValue = otp || code;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -230,7 +231,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
-        code: otp,
+        code: otpValue,
         type: 'password_reset',
         usedAt: null,
       },
@@ -261,19 +262,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
       where: { id: otpRecord.id },
       data: {
         attempts: { increment: 1 },
+        usedAt: new Date(),
       },
-    });
-
-    if (otpRecord.attempts + 1 >= 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'Too many incorrect attempts. Please request a new OTP.',
-      });
-    }
-
-    await prisma.oTPCode.update({
-      where: { id: otpRecord.id },
-      data: { usedAt: new Date() },
     });
 
     res.status(200).json({
@@ -291,7 +281,8 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
 export const resetPasswordWithOTP = async (req: Request, res: Response) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp, code, newPassword } = req.body;
+    const otpValue = otp || code;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -307,7 +298,7 @@ export const resetPasswordWithOTP = async (req: Request, res: Response) => {
     const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
-        code: otp,
+        code: otpValue,
         type: 'password_reset',
         usedAt: null,
       },

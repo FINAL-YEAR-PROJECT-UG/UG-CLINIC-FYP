@@ -6,8 +6,6 @@ order: 9000
 headers:
   - key: Authorization
     value: 'Bearer {{accessToken}}'
-  - key: X-Session-Token
-    value: '{{sessionToken}}'
 queryParams:
   - key: query
     value: ''
