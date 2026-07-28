@@ -1,7 +1,6 @@
 "use client";
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import UGLogo from './UGLogo';
@@ -77,12 +76,12 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button
-              asChild
-              className="hidden sm:inline-flex font-inter bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white rounded-xl px-6 py-2.5 transition-all duration-200 ease-out hover:shadow-lg active:scale-[0.97]"
+            <Link
+              href={bookingHref}
+              className="hidden sm:inline-flex font-inter bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white rounded-xl px-6 py-2.5 transition-all duration-200 ease-out hover:shadow-lg active:scale-[0.97] items-center justify-center text-sm font-medium"
             >
-              <Link href={bookingHref}>{bookingCta}</Link>
-            </Button>
+              {bookingCta}
+            </Link>
 
             <button
               type="button"
@@ -119,14 +118,13 @@ export default function Header() {
                   </Link>
                 );
               })}
-              <Button
-                asChild
-                className="mt-2 w-full font-inter bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white rounded-xl px-6 py-2.5 transition-all duration-200 ease-out hover:shadow-lg active:scale-[0.98]"
+              <Link
+                href={bookingHref}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mt-2 w-full font-inter bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white rounded-xl px-6 py-2.5 transition-all duration-200 ease-out hover:shadow-lg active:scale-[0.98] inline-flex items-center justify-center text-sm font-medium"
               >
-                <Link href={bookingHref} onClick={() => setIsMobileMenuOpen(false)}>
-                  {bookingCta}
-                </Link>
-              </Button>
+                {bookingCta}
+              </Link>
             </div>
           </div>
         )}
