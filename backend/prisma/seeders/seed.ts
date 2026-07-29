@@ -56,7 +56,16 @@ function generateTimeSlots(
 
 async function clearExistingData(): Promise<void> {
   await prisma.auditLog.deleteMany();
+  await prisma.securityEvent.deleteMany();
+  await prisma.failedLoginAttempt.deleteMany();
   await prisma.notification.deleteMany();
+  await prisma.oTPCode.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
+  await prisma.backupRecoveryCode.deleteMany();
+  await prisma.securityQuestion.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.newsPost.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.timeSlot.deleteMany();
   await prisma.resource.deleteMany();
@@ -75,12 +84,87 @@ export async function seed(): Promise<void> {
   await prisma.user.createMany({
     data: [
       {
-        email: "admin@ugclinic-fyp.edu.gh",
+        email: "eoteng-kumi@st.ug.edu.gh",
         passwordHash,
         firstName: "System",
         lastName: "Administrator",
+        phone: "+233595591157",
         role: UserRole.ADMIN,
         emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: true,
+        maxSessions: 5,
+      },
+      {
+        email: "receptionist@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Main Clinic",
+        lastName: "Receptionist",
+        phone: "+233201234567",
+        role: UserRole.RECEPTIONIST,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
+        maxSessions: 5,
+      },
+      {
+        email: "dr.gabriel@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Gabriel",
+        lastName: "Mensah",
+        phone: "+23350146635",
+        role: UserRole.DOCTOR,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
+        maxSessions: 5,
+      },
+      {
+        email: "dr.sarah@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Sarah",
+        lastName: "Quaye",
+        phone: "+233244987654",
+        role: UserRole.DOCTOR,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
+        maxSessions: 5,
+      },
+      {
+        email: "dr.emmanuel@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Emmanuel",
+        lastName: "Osei",
+        phone: "+233208765432",
+        role: UserRole.DOCTOR,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
+        maxSessions: 5,
+      },
+      {
+        email: "dr.abena@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Abena",
+        lastName: "Boateng",
+        phone: "+233551239876",
+        role: UserRole.DOCTOR,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
+        maxSessions: 5,
+      },
+      {
+        email: "dr.kwame@st.ug.edu.gh",
+        passwordHash,
+        firstName: "Kwame",
+        lastName: "Adom",
+        phone: "+233277654321",
+        role: UserRole.DOCTOR,
+        emailVerified: true,
+        phoneVerified: true,
+        twoFactorEnabled: false,
         maxSessions: 5,
       },
       {
@@ -97,34 +181,89 @@ export async function seed(): Promise<void> {
   });
 
   console.log("");
-  console.log("NOTE: Only one Admin account is seeded by default.");
-  console.log("To create additional staff accounts (Doctors, Receptionists, more Admins),");
-  console.log("log into the Admin dashboard or use the POST /api/staff/register endpoint.");
+  console.log("NOTE: Admin, Receptionist, Student, and 5 Doctors seeded successfully.");
+  console.log("Only Admin and Receptionist credentials are authorized to log into the Admin/Receptionist portal.");
 
   console.log("Creating services...");
   const services = await prisma.$transaction([
     prisma.service.create({
       data: {
         name: "General Consultation",
-        description: "Routine medical consultation with a clinic physician",
-        duration: 30,
+        description: "Routine medical checkups, physical symptoms, and general health advice.",
+        duration: 20,
         category: "General Medicine",
       },
     }),
     prisma.service.create({
       data: {
-        name: "Dental Checkup",
-        description: "Comprehensive dental examination and oral health assessment",
+        name: "Mental Health & Counseling",
+        description: "Confidential psychological support, stress management, and guidance.",
         duration: 45,
+        category: "Mental Health",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Eye Care Services",
+        description: "Vision screening, eye health assessments, and specialized eye treatment.",
+        duration: 30,
+        category: "Ophthalmology",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Dental Checkup & Oral Health",
+        description: "Oral health examination, teeth cleaning, and dental hygiene advice.",
+        duration: 30,
         category: "Dental",
       },
     }),
     prisma.service.create({
       data: {
-        name: "Eye Examination",
-        description: "Vision screening and basic eye health evaluation",
+        name: "HIV/AIDS Testing & Support",
+        description: "Voluntary testing, pre/post counselling, and confidential care.",
         duration: 30,
-        category: "Ophthalmology",
+        category: "Screening",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Nutrition & Dietetics",
+        description: "Personalized meal planning, BMI consultations, and healthy lifestyle guidance.",
+        duration: 30,
+        category: "Nutrition",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Comprehensive Health Screening",
+        description: "Blood pressure, glucose tests, lab work, and physical evaluation.",
+        duration: 40,
+        category: "Screening",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Vaccinations & Immunizations",
+        description: "Travel vaccines, seasonal flu shots, and booster immunizations.",
+        duration: 15,
+        category: "Preventative",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Family Planning & Reproductive Health",
+        description: "Confidential family planning advice, contraception services, and reproductive health.",
+        duration: 30,
+        category: "Preventative",
+      },
+    }),
+    prisma.service.create({
+      data: {
+        name: "Prescription & Pharmacy Refill",
+        description: "Medication refills and pharmacist consultation for students.",
+        duration: 15,
+        category: "Pharmacy",
       },
     }),
   ]);
@@ -142,4 +281,8 @@ export async function seed(): Promise<void> {
   console.log("Database seeded successfully.");
   console.log(`Default password for all users: ${DEFAULT_PASSWORD}`);
   console.log(`Time slots created for: ${tomorrow.toDateString()}`);
+  console.log("");
+  console.log("Staff MFA: enabled for admin@ugclinic-fyp.edu.gh");
+  console.log("  - With SMTP/Twilio: code is sent by email or SMS");
+  console.log("  - Local dev (no providers): check backend console for [2FA] log line");
 }

@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
-import { getErrorMessage, normalizeRole, isStaffRole } from '@/lib/utils';
+import StaffNav from '@/components/shared/StaffNav';
+import { getErrorMessage, normalizeRole, isStaffRole, canManageClinicOperations, isDoctorRole } from '@/lib/utils';
 import {
   getStaffDashboard,
   getDoctors,
@@ -92,6 +95,13 @@ export default function StaffOverviewPage() {
   const { logout } = useAuth();
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
+
+  // Inactivity timeout hook
+  const { showWarning, timeRemaining, handleStayLoggedIn, handleLogout: handleInactivityLogout } = useInactivityTimeout({
+    warningMinutes: 10,
+    logoutMinutes: 2,
+    enabled: storeIsAuth,
+  });
 
   const initialSnap = useAuthStore.getState();
   const initialUser = initialSnap.user ?? storeUser;
@@ -303,25 +313,7 @@ export default function StaffOverviewPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <nav className="bg-white rounded-xl border border-[#E2E8F0] p-2 mb-8">
-          <div className="flex gap-2 flex-wrap">
-            <Link href="/staff/overview" className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F172A] text-white font-medium text-sm">
-              <Activity className="w-4 h-4" /> Overview & Analytics
-            </Link>
-            <Link href="/staff/appointments" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#020617] hover:bg-[#E8ECF1] font-medium text-sm">
-              <Calendar className="w-4 h-4" /> Appointments & Slots
-            </Link>
-            <Link href="/staff/students" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
-              <Users className="w-4 h-4" /> Student Records
-            </Link>
-            <Link href="/staff/resources" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
-              <FileText className="w-4 h-4" /> Resources
-            </Link>
-            <Link href="/staff/settings" className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm">
-              <Settings className="w-4 h-4" /> Settings
-            </Link>
-          </div>
-        </nav>
+        <StaffNav userRole={userRole} />
 
         {automationMessage && (
           <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
@@ -363,10 +355,10 @@ export default function StaffOverviewPage() {
         <div className="bg-gradient-to-r from-[#0F172A] to-[#0369A1] text-white rounded-2xl p-6 shadow-md mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <p className="text-xs uppercase tracking-widest text-blue-200 font-semibold">UG Clinic Staff Portal</p>
+              <p className="text-xs uppercase tracking-widest text-blue-200 font-semibold">UG Clinic Admin & Receptionist Portal</p>
               <h2 className="text-2xl font-extrabold mt-1">Welcome back, {firstName}!</h2>
               <p className="mt-1 text-sm text-blue-100 max-w-xl">
-                Graphically view appointment trends, manage doctor busy/free availability, and oversee student bookings.
+                Graphically view appointment trends, manage doctor busy/free availability, and assign student appointments to doctors.
               </p>
             </div>
             {userRole === 'DOCTOR' && (
@@ -441,6 +433,7 @@ export default function StaffOverviewPage() {
             </div>
           </div>
 
+          {canManageClinicOperations(userRole) && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -489,6 +482,7 @@ export default function StaffOverviewPage() {
               </Link>
             </div>
           </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
@@ -540,6 +534,14 @@ export default function StaffOverviewPage() {
           )}
         </div>
       </div>
+
+      {/* Inactivity Warning Modal */}
+      <InactivityWarning
+        show={showWarning}
+        timeRemaining={timeRemaining}
+        onStayLoggedIn={handleStayLoggedIn}
+        onLogout={handleInactivityLogout}
+      />
     </div>
   );
 }

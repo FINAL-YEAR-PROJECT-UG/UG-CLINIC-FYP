@@ -22,16 +22,19 @@ function timeSlotToMinutes(timeStr: string): number {
 const SERVICE_ALIAS_TO_NAME: Record<string, string> = {
   general: 'General Consultation',
   mental: 'Mental Health & Counseling',
-  hiv: 'HIV/AIDS Testing & Wellness',
+  'eye-care': 'Eye Care Services',
+  dental: 'Dental Checkup & Oral Health',
+  hiv: 'HIV/AIDS Testing & Support',
   nutrition: 'Nutrition & Dietetics',
   screening: 'Comprehensive Health Screening',
   vaccination: 'Vaccinations & Immunizations',
+  'family-planning': 'Family Planning & Reproductive Health',
   prescription: 'Prescription & Pharmacy Refill',
 };
 
 /**
  * Resolve a service identifier (either DB UUID, alias key, or partial name)
- * to a real Service DB record. Returns null if not found.
+ * to a real Service DB record. Auto-creates active service if missing.
  */
 async function resolveService(idOrAlias: string) {
   if (!idOrAlias) return null;
@@ -40,20 +43,36 @@ async function resolveService(idOrAlias: string) {
   const byId = await prisma.service.findUnique({ where: { id: idOrAlias } });
   if (byId) return byId;
 
-  // 2. Try alias map (frontend sends "general", "mental", etc.)
-  const targetName = SERVICE_ALIAS_TO_NAME[idOrAlias];
-  if (targetName) {
-    const byExactName = await prisma.service.findFirst({
-      where: { name: { equals: targetName, mode: 'insensitive' } },
-    });
-    if (byExactName) return byExactName;
-  }
+  // 2. Try alias map or exact name match
+  const targetName = SERVICE_ALIAS_TO_NAME[idOrAlias] ?? idOrAlias;
+  const byExactName = await prisma.service.findFirst({
+    where: { name: { equals: targetName, mode: 'insensitive' } },
+  });
+  if (byExactName) return byExactName;
 
-  // 3. Try case-insensitive contains match as last resort
+  // 3. Try case-insensitive contains match
   const byFuzzy = await prisma.service.findFirst({
     where: { name: { contains: String(idOrAlias), mode: 'insensitive' } },
   });
-  return byFuzzy ?? null;
+  if (byFuzzy) return byFuzzy;
+
+  // 4. Fallback: Auto-create active service to ensure appointment booking never fails
+  try {
+    const fallbackName = SERVICE_ALIAS_TO_NAME[idOrAlias] || idOrAlias;
+    const created = await prisma.service.create({
+      data: {
+        name: fallbackName,
+        description: `${fallbackName} service for UG clinic students`,
+        duration: 30,
+        category: 'General Medicine',
+        isActive: true,
+      },
+    });
+    return created;
+  } catch (err) {
+    console.error('Failed to auto-create service:', err);
+    return null;
+  }
 }
 
 /**

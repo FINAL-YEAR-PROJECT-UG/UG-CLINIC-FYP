@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import AuthSyncProvider from "@/components/providers/AuthSyncProvider";
+import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +44,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <NextAuthProvider>
           <AuthSyncProvider />
-          {children}
+          <SessionTimeoutProvider>
+            {children}
+          </SessionTimeoutProvider>
         </NextAuthProvider>
       </body>
     </html>

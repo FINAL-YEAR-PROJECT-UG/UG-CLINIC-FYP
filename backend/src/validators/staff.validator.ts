@@ -117,6 +117,24 @@ export const validate2FA = [
   },
 ];
 
+export const validateResend2FA = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid staff email address')
+    .normalizeEmail(),
+  (req: any, res: any, next: any) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+    next();
+  },
+];
+
 export const validateToggle2FA = [
   body('enabled')
     .isBoolean()

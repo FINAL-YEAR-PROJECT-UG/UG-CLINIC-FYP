@@ -24,11 +24,10 @@ export default function AuthSyncProvider() {
       setLoading(false);
     } else if (status === "unauthenticated") {
       const snap = useAuthStore.getState();
-      const keepStaffSession =
+      const keepSession =
         snap.isAuthenticated &&
-        snap.user &&
-        isStaffRole(snap.user.role);
-      if (!keepStaffSession) {
+        !!snap.user;
+      if (!keepSession) {
         clearAuth();
       }
       setLoading(false);

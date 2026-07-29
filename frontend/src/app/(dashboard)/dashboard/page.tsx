@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
+import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import {
   appointmentApi,
   type ApiAppointment,
@@ -66,6 +68,13 @@ const STATUS_PILL: Record<string, { label: string; className: string }> = {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
+
+  // Inactivity timeout hook
+  const { showWarning, timeRemaining, handleStayLoggedIn, handleLogout: handleInactivityLogout } = useInactivityTimeout({
+    warningMinutes: 10,
+    logoutMinutes: 2,
+    enabled: isAuthenticated,
+  });
 
   const [guardRedirecting, setGuardRedirecting] = useState(false);
   const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
@@ -223,13 +232,6 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href={bookingTarget}
-              onClick={handleBookingNavClick}
-              className="inline-flex items-center justify-center rounded-full bg-white text-[#1e3a8a] font-semibold px-5 py-2.5 text-sm shadow-sm hover:bg-[#F8FAFC] transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1e3a8a]"
-            >
-              Book new appointment
-            </Link>
             <button
               onClick={logout}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0F172A]"
@@ -510,6 +512,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Inactivity Warning Modal */}
+      <InactivityWarning
+        show={showWarning}
+        timeRemaining={timeRemaining}
+        onStayLoggedIn={handleStayLoggedIn}
+        onLogout={handleInactivityLogout}
+      />
     </div>
   );
 }

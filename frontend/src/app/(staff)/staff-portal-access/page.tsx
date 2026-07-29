@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { Loader2, ShieldAlert, Lock, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { staffApi } from '@/lib/staffApi';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import UGLogo from '@/components/shared/UGLogo';
@@ -45,7 +44,7 @@ export default function StaffPortalAccessPage() {
   } = useForm<StaffLoginFormData>({
     resolver: zodResolver(staffLoginSchema),
     defaultValues: {
-      email: 'admin@ugclinic-fyp.edu.gh',
+      email: 'emmanueloteng.k@gmail.com',
       password: 'Password123!',
     },
   });
@@ -64,20 +63,28 @@ export default function StaffPortalAccessPage() {
         const require2FA = require2FAVal ?? response.data.requires2FA ?? false;
 
         if (require2FA) {
+          const otpEmail = response.data.data?.email ?? data.email.trim();
+          sessionStorage.setItem('otpEmail', otpEmail);
+          const devCode = response.data.data?.devCode;
+          if (devCode) {
+            sessionStorage.setItem('staffOtpDevCode', devCode);
+          } else {
+            sessionStorage.removeItem('staffOtpDevCode');
+          }
           setMfaRequired(true);
-          router.push(`/verify-otp?email=${encodeURIComponent(data.email)}&role=staff`);
+          router.push(`/verify-otp?email=${encodeURIComponent(otpEmail)}&role=staff`);
           return;
         }
 
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
-        if (user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(normalizedUserRole)) {
+        if (user && ['RECEPTIONIST', 'ADMIN'].includes(normalizedUserRole)) {
           setAuth(user, {
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
           });
           router.push('/staff/overview');
         } else {
-          setError('Access denied: Staff/Admin administrative clearance required.');
+          setError('Access denied: Only Receptionist and Admin credentials are authorized to sign in.');
         }
       } else {
         setError(response.data.message || 'Staff authentication failed.');
@@ -118,9 +125,9 @@ export default function StaffPortalAccessPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-2">
               <ShieldAlert className="w-3.5 h-3.5" /> Restricted Access
             </span>
-            <h1 className="text-2xl font-extrabold text-white">Staff & Admin Portal</h1>
+            <h1 className="text-2xl font-extrabold text-white">Admin & Receptionist Portal</h1>
             <p className="text-xs text-slate-400 mt-1">
-              Secured authentication portal for doctors, receptionists, and clinic administrators.
+              Secured administrative portal for receptionists and clinic staff to manage student appointments and doctor assignments.
             </p>
           </div>
 

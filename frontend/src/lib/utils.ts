@@ -48,12 +48,44 @@ export function isStudentRole(role?: string | null): boolean {
   return normalizeRole(role) === 'STUDENT';
 }
 
+export function isDoctorRole(role?: string | null): boolean {
+  return normalizeRole(role) === 'DOCTOR';
+}
+
+export function isAdminRole(role?: string | null): boolean {
+  return normalizeRole(role) === 'ADMIN';
+}
+
+export function isReceptionistRole(role?: string | null): boolean {
+  return normalizeRole(role) === 'RECEPTIONIST';
+}
+
+/** Admin and receptionist clinic-management privileges (not doctors). */
+export function canManageClinicOperations(role?: string | null): boolean {
+  const r = normalizeRole(role);
+  return r === 'ADMIN' || r === 'RECEPTIONIST';
+}
+
+export function canAccessStudentRecords(role?: string | null): boolean {
+  return canManageClinicOperations(role);
+}
+
+export function canManageResources(role?: string | null): boolean {
+  return canManageClinicOperations(role);
+}
+
+export function getStaffPortalLabel(role?: string | null): string {
+  if (isDoctorRole(role)) return 'DOCTOR PORTAL';
+  if (isAdminRole(role)) return 'ADMINISTRATOR PORTAL';
+  if (isReceptionistRole(role)) return 'RECEPTIONIST PORTAL';
+  return 'STAFF PORTAL';
+}
+
 export function getBookingRouteForRole(role?: string | null, isAuth?: boolean): string {
   if (!isAuth) return '/login';
   const normRole = normalizeRole(role);
   if (isStaffRole(normRole)) return '/staff/appointments';
-  if (normRole === 'STUDENT') return '/demo-booking';
-  return '/login';
+  return '/demo-booking';
 }
 
 export function getBookingEntryRoute(info: AuthRoleInfo): string {

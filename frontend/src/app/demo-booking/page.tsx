@@ -44,17 +44,21 @@ interface ServiceOption {
 const SERVICES: ServiceOption[] = [
   { id: 'general', category: 'consultation', title: 'General Consultation', desc: 'Routine medical checkups, physical symptoms, and general health advice.', icon: Stethoscope, duration: '20 mins' },
   { id: 'mental', category: 'specialist', title: 'Mental Health & Counseling', desc: 'Confidential psychological support, stress management, and guidance.', icon: Brain, duration: '45 mins' },
-  { id: 'hiv', category: 'screening', title: 'HIV/AIDS Testing & Wellness', desc: 'Voluntary testing, pre/post counselling, and confidential care.', icon: Ribbon, duration: '30 mins' },
+  { id: 'eye-care', category: 'specialist', title: 'Eye Care Services', desc: 'Vision screening, eye health assessments, and specialized eye treatment.', icon: Eye, duration: '30 mins' },
+  { id: 'dental', category: 'specialist', title: 'Dental Checkup & Oral Health', desc: 'Oral health examination, teeth cleaning, and dental hygiene advice.', icon: Stethoscope, duration: '30 mins' },
+  { id: 'hiv', category: 'screening', title: 'HIV/AIDS Testing & Support', desc: 'Voluntary testing, pre/post counselling, and confidential care.', icon: Ribbon, duration: '30 mins' },
   { id: 'nutrition', category: 'specialist', title: 'Nutrition & Dietetics', desc: 'Personalized meal planning, BMI consultations, and healthy lifestyle guidance.', icon: Leaf, duration: '30 mins' },
   { id: 'screening', category: 'screening', title: 'Comprehensive Health Screening', desc: 'Blood pressure, glucose tests, lab work, and physical evaluation.', icon: Zap, duration: '40 mins' },
   { id: 'vaccination', category: 'preventative', title: 'Vaccinations & Immunizations', desc: 'Travel vaccines, seasonal flu shots, and booster immunizations.', icon: Syringe, duration: '15 mins' },
+  { id: 'family-planning', category: 'preventative', title: 'Family Planning & Reproductive Health', desc: 'Confidential family planning advice, contraception services, and reproductive health.', icon: Ribbon, duration: '30 mins' },
   { id: 'prescription', category: 'pharmacy', title: 'Prescription & Pharmacy Refill', desc: 'Medication refills and pharmacist consultation for students.', icon: Pill, duration: '15 mins' },
 ];
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'General Medicine': Stethoscope,
-  'Dental': Syringe,
+  'Dental': Stethoscope,
   'Ophthalmology': Eye,
+  'Eye Care': Eye,
   'consultation': Stethoscope,
   'specialist': Brain,
   'screening': Ribbon,
@@ -72,9 +76,10 @@ const TIME_SLOT_LABELS = [
 const CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'All Services' },
   { key: 'consultation', label: 'Consultation' },
-  { key: 'specialist', label: 'Specialist' },
-  { key: 'screening', label: 'Screening' },
+  { key: 'specialist', label: 'Specialist Care' },
+  { key: 'screening', label: 'Screening & Lab' },
   { key: 'preventative', label: 'Preventative' },
+  { key: 'pharmacy', label: 'Pharmacy' },
 ];
 
 const getTimeSlotDate = (timeStr: string, baseDate: Date) => {

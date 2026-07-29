@@ -28,7 +28,11 @@ export default function Header() {
 
   const navLinks = useMemo(() => NAV_LINKS, []);
 
-  const bookingHref = isStaff ? '/staff/appointments' : '/login';
+  const bookingHref = !isAuthenticated
+    ? '/login'
+    : isStaff
+    ? '/staff/appointments'
+    : '/demo-booking';
   const bookingCta = isStaff ? 'Manage Appointments' : 'Book Appointment';
   const homeHref = '/';
 

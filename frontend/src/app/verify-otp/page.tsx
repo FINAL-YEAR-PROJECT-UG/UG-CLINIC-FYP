@@ -18,8 +18,11 @@ export default function VerifyOtpPage() {
   const [roleParam, setRoleParam] = useState('');
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [devCodeHint, setDevCodeHint] = useState<string | null>(null);
+  const [deliveryHint, setDeliveryHint] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(600);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -29,9 +32,15 @@ export default function VerifyOtpPage() {
     const emailFromQuery = params.get('email');
     const roleFromQuery = params.get('role');
     const storedEmail = sessionStorage.getItem('otpEmail');
+    const resolvedEmail = emailFromQuery || storedEmail || '';
 
-    setEmail(emailFromQuery || storedEmail || 'your registered account');
+    setEmail(resolvedEmail || 'your registered account');
     setRoleParam(roleFromQuery || '');
+
+    const storedDevCode = sessionStorage.getItem('staffOtpDevCode');
+    if (storedDevCode && roleFromQuery === 'staff') {
+      setDevCodeHint(storedDevCode);
+    }
   }, []);
 
   useEffect(() => {
@@ -67,6 +76,43 @@ export default function VerifyOtpPage() {
     inputsRef.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
   };
 
+  const handleResend = async () => {
+    if (roleParam !== 'staff' || !email || email === 'your registered account') {
+      setError('Cannot resend code without a staff email. Return to sign in.');
+      return;
+    }
+    try {
+      setResending(true);
+      setError('');
+      const response = await api.post('/staff/resend-2fa', { email });
+      if (response.data.success) {
+        setSecondsLeft(600);
+        setSuccessMsg('A new verification code has been sent.');
+        const devCode = response.data.data?.devCode;
+        if (devCode) {
+          sessionStorage.setItem('staffOtpDevCode', devCode);
+          setDevCodeHint(devCode);
+        }
+        const masked = response.data.data?.maskedDestination;
+        if (masked) {
+          setDeliveryHint(`Sent to ${masked}`);
+        }
+      }
+    } catch (err: unknown) {
+      const message =
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
+          'string'
+          ? (err as { response: { data: { message: string } } }).response.data.message
+          : 'Could not resend verification code.';
+      setError(message);
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const codeStr = digits.join('');
@@ -77,7 +123,7 @@ export default function VerifyOtpPage() {
     try {
       setVerifying(true);
       setError('');
-      
+
       let response;
       if (roleParam === 'staff') {
         response = await api.post('/staff/verify-2fa', {
@@ -92,11 +138,15 @@ export default function VerifyOtpPage() {
       }
 
       if (response.data.success) {
-        setSuccessMsg('2FA Verification successful!');
+        setSuccessMsg('2FA verification successful!');
         const data = response.data.data;
         if (data?.tokens?.accessToken && data?.user) {
-          setAuth(data.user, data.tokens.accessToken);
+          setAuth(data.user, {
+            accessToken: data.tokens.accessToken,
+            refreshToken: data.tokens.refreshToken ?? '',
+          });
         }
+        sessionStorage.removeItem('staffOtpDevCode');
 
         setTimeout(() => {
           if (roleParam === 'staff' || ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(data?.user?.role)) {
@@ -108,8 +158,16 @@ export default function VerifyOtpPage() {
       } else {
         setError(response.data.message || 'Verification failed. Please check the code.');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid or expired OTP verification code.');
+    } catch (err: unknown) {
+      const message =
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
+          'string'
+          ? (err as { response: { data: { message: string } } }).response.data.message
+          : 'Invalid or expired OTP verification code.';
+      setError(message);
     } finally {
       setVerifying(false);
     }
@@ -120,7 +178,6 @@ export default function VerifyOtpPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Universal Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-3.5 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <UGLogo size="md" href="/" />
@@ -133,7 +190,6 @@ export default function VerifyOtpPage() {
         </div>
       </header>
 
-      {/* Hero Banner */}
       <section className="bg-gradient-to-r from-[#1e3a8a] via-blue-900 to-indigo-900 text-white py-12 px-4 text-center">
         <div className="max-w-md mx-auto">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full text-xs font-semibold text-blue-200 mb-2">
@@ -141,12 +197,15 @@ export default function VerifyOtpPage() {
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Verify Security Code</h1>
           <p className="text-xs sm:text-sm text-blue-100/90 mt-1">
-            Enter the 6-digit MFA security code sent to <strong className="text-white">{email}</strong>.
+            Enter the 6-digit MFA security code sent to{' '}
+            <strong className="text-white">{email}</strong>.
           </p>
+          {deliveryHint && (
+            <p className="text-xs text-blue-200 mt-2">{deliveryHint}</p>
+          )}
         </div>
       </section>
 
-      {/* Form Container */}
       <main className="flex-1 max-w-md w-full mx-auto px-4 -mt-6 relative z-20 pb-12">
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
           <div className="flex justify-center mb-4">
@@ -154,6 +213,13 @@ export default function VerifyOtpPage() {
               <Mail className="h-6 w-6" />
             </div>
           </div>
+
+          {devCodeHint && roleParam === 'staff' && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+              <strong>Development:</strong> Your verification code is{' '}
+              <span className="font-mono font-bold tracking-widest">{devCodeHint}</span>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700">
@@ -172,7 +238,9 @@ export default function VerifyOtpPage() {
               {digits.map((digit, i) => (
                 <input
                   key={i}
-                  ref={(el) => { inputsRef.current[i] = el; }}
+                  ref={(el) => {
+                    inputsRef.current[i] = el;
+                  }}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}
@@ -199,8 +267,23 @@ export default function VerifyOtpPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-xs text-gray-500">
-            Code expires in <span className="font-mono font-bold text-[#1e3a8a]">{minutes}:{seconds}</span>
+          <div className="mt-6 text-center text-xs text-gray-500 space-y-2">
+            <p>
+              Code expires in{' '}
+              <span className="font-mono font-bold text-[#1e3a8a]">
+                {minutes}:{seconds}
+              </span>
+            </p>
+            {roleParam === 'staff' && (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending || secondsLeft <= 0}
+                className="text-[#1e3a8a] font-semibold hover:underline disabled:opacity-50"
+              >
+                {resending ? 'Sending new code…' : 'Resend verification code'}
+              </button>
+            )}
           </div>
         </div>
       </main>

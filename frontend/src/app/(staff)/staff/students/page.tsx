@@ -1,15 +1,17 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import UGLogo from '@/components/shared/UGLogo';
-import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getErrorMessage } from '@/lib/utils';
+import { canAccessStudentRecords, getErrorMessage } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { getAllStudents, getStudentHistory, updateStudentStatus, type StaffStudent } from '@/lib/staffApi';
 import { Search, Users, Mail, Phone, GraduationCap, ChevronLeft, ChevronRight, Eye, Calendar, Clock, X, CheckCircle2, UserX } from 'lucide-react';
 
 export default function StaffStudentsPage() {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [students, setStudents] = useState<StaffStudent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +26,20 @@ export default function StaffStudentsPage() {
   const studentsPerPage = 10;
 
   useEffect(() => {
+    if (user && !canAccessStudentRecords(user.role)) {
+      router.replace('/staff/overview');
+    }
+  }, [user, router]);
+
+  useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
+    if (user && !canAccessStudentRecords(user.role)) {
+      return;
+    }
     fetchStudents();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const fetchStudents = async () => {
     try {
@@ -87,7 +98,11 @@ export default function StaffStudentsPage() {
     return null;
   }
 
-  if (user && !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+  if (user && !canAccessStudentRecords(user.role)) {
+    return null;
+  }
+
+  if (user && !['RECEPTIONIST', 'ADMIN'].includes(user.role)) {
     return null;
   }
 

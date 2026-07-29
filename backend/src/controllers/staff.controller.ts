@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateTokenPair, verifyAccessToken, TokenPayload } from '../utils/jwt';
-import { sendOTPSMS } from '../services/sms.service';
+import { issueStaffLoginOtp } from '../services/otp.service';
 import crypto from 'crypto';
 
 const SESSION_TIMEOUT_MINUTES = Number(process.env.SESSION_TIMEOUT_MINUTES) || 30;
@@ -31,11 +31,6 @@ export const staffRegister = async (req: Request, res: Response) => {
     }
 
     const passwordHash = await hashPassword(password);
-    const smsConfigured = Boolean(
-      process.env.TWILIO_ACCOUNT_SID &&
-      process.env.TWILIO_AUTH_TOKEN &&
-      process.env.TWILIO_PHONE_NUMBER
-    );
 
     const user = await prisma.user.create({
       data: {
@@ -45,7 +40,8 @@ export const staffRegister = async (req: Request, res: Response) => {
         lastName,
         phone,
         role,
-        twoFactorEnabled: smsConfigured,
+        twoFactorEnabled: true,
+        phoneVerified: Boolean(phone),
         maxSessions: MAX_CONCURRENT_SESSIONS,
       },
     });
@@ -96,10 +92,10 @@ export const staffLogin = async (req: Request, res: Response) => {
       });
     }
 
-    if (!['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+    if (!['RECEPTIONIST', 'ADMIN'].includes(user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. This endpoint is for staff members only',
+        message: 'Access denied. Only Receptionist and Admin credentials are authorized to sign in.',
       });
     }
 
@@ -134,43 +130,39 @@ export const staffLogin = async (req: Request, res: Response) => {
       });
     }
 
-    const smsConfigured = Boolean(
-      process.env.TWILIO_ACCOUNT_SID &&
-      process.env.TWILIO_AUTH_TOKEN &&
-      process.env.TWILIO_PHONE_NUMBER
-    );
-
-    if (user.twoFactorEnabled && !user.phoneVerified && smsConfigured) {
-      return res.status(400).json({
-        success: false,
-        message: 'Your phone number must be verified for two-factor authentication',
-      });
-    }
-
-    if (user.twoFactorEnabled && smsConfigured) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      await prisma.oTPCode.create({
-        data: {
-          code: otp,
-          userId: user.id,
-          phone: user.phone || '',
-          type: 'login_2fa',
-          expiresAt,
-        },
-      });
-
-      await sendOTPSMS(user.phone || '', otp);
-
-      return res.status(200).json({
-        success: true,
-        message: 'A verification code has been sent to your phone',
-        requires2FA: true,
-        data: {
+    if (user.twoFactorEnabled) {
+      try {
+        const delivery = await issueStaffLoginOtp({
+          id: user.id,
           email: user.email,
-        },
-      });
+          phone: user.phone,
+        });
+
+        return res.status(200).json({
+          success: true,
+          message:
+            delivery.channel === 'sms'
+              ? `A verification code has been sent to ${delivery.maskedDestination}`
+              : delivery.channel === 'email'
+                ? `A verification code has been sent to ${delivery.maskedDestination}`
+                : 'Enter the verification code shown below (development mode)',
+          requires2FA: true,
+          data: {
+            email: user.email,
+            deliveryChannel: delivery.channel,
+            maskedDestination: delivery.maskedDestination,
+            ...(delivery.devCode ? { devCode: delivery.devCode } : {}),
+          },
+        });
+      } catch (deliveryError: any) {
+        console.error('Staff 2FA delivery error:', deliveryError);
+        return res.status(503).json({
+          success: false,
+          message:
+            deliveryError?.message ||
+            'Could not send verification code. Please contact an administrator.',
+        });
+      }
     }
 
     const tokens = await createSession(user, ipAddress, userAgent);
@@ -214,13 +206,24 @@ export const staffLogin = async (req: Request, res: Response) => {
 export const verify2FA = async (req: Request, res: Response) => {
   try {
     const { email, otp, token, code, ipAddress, userAgent } = req.body;
-    const otpValue = otp || token || code;
+    const otpValue = String(otp || token || code || '').trim();
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    if (!email || !otpValue) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and verification code are required',
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: { equals: cleanEmail, mode: 'insensitive' },
+      },
     });
 
-    if (!user) {
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
       return res.status(404).json({
         success: false,
         message: 'Staff account not found',
@@ -230,23 +233,41 @@ export const verify2FA = async (req: Request, res: Response) => {
     const otpRecord = await prisma.oTPCode.findFirst({
       where: {
         userId: user.id,
-        code: otpValue,
         type: 'login_2fa',
         usedAt: null,
       },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!otpRecord) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired verification code',
+        message: 'No active verification code. Please sign in again.',
       });
     }
 
     if (otpRecord.expiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Verification code has expired',
+        message: 'Verification code has expired. Please sign in again.',
+      });
+    }
+
+    if (otpRecord.attempts >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many failed attempts. Please sign in again.',
+      });
+    }
+
+    if (otpRecord.code !== otpValue) {
+      await prisma.oTPCode.update({
+        where: { id: otpRecord.id },
+        data: { attempts: { increment: 1 } },
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid verification code',
       });
     }
 
@@ -267,8 +288,15 @@ export const verify2FA = async (req: Request, res: Response) => {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
+          studentId: user.studentId,
+          phone: user.phone,
+          program: user.program,
+          isActive: user.isActive,
         },
-        tokens,
+        tokens: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
       },
     });
   } catch (error) {
@@ -276,6 +304,61 @@ export const verify2FA = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'An error occurred during 2FA verification',
+    });
+  }
+};
+
+export const resendStaff2FA = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: { equals: cleanEmail, mode: 'insensitive' },
+      },
+    });
+
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff account not found',
+      });
+    }
+
+    if (!user.twoFactorEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: 'Two-factor authentication is not enabled for this account',
+      });
+    }
+
+    const delivery = await issueStaffLoginOtp({
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'A new verification code has been sent',
+      data: {
+        deliveryChannel: delivery.channel,
+        maskedDestination: delivery.maskedDestination,
+        ...(delivery.devCode ? { devCode: delivery.devCode } : {}),
+      },
+    });
+  } catch (error) {
+    console.error('Resend staff 2FA error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Could not resend verification code',
     });
   }
 };

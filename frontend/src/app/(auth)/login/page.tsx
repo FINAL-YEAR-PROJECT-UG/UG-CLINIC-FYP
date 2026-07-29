@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Loader2, ShieldCheck, ArrowRight, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
+import api from '@/lib/api';
 import UGLogo from '@/components/shared/UGLogo';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -21,7 +21,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, update: updateSession } = useSession();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,40 +38,39 @@ function LoginFormContent() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: 'student@st.ug.edu.gh',
+      password: 'Password123!',
+    },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
     try {
-      const result = await signIn('credentials', {
-        username: data.username,
+      const response = await api.post('/auth/login', {
+        username: data.username.trim(),
         password: data.password,
-        redirect: false,
       });
 
-      if (result?.error) {
-        setError('Login failed. Please verify your credentials.');
+      if (response.data.success) {
+        const { user, tokens } = response.data.data;
+        const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
+
+        if (user && normalizedUserRole === 'STUDENT') {
+          setAuth(user, {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+          });
+          router.replace('/dashboard');
+        } else {
+          setError('Access denied. This login is for students only.');
+        }
       } else {
-        setTimeout(async () => {
-          const refreshed = await updateSession();
-          const user = (refreshed?.user ?? session?.user) as any;
-          const role = user?.role?.toUpperCase?.();
-          if (['ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(role)) {
-            if (refreshed?.accessToken && user) {
-              setAuth(user, {
-                accessToken: refreshed.accessToken as string,
-                refreshToken: refreshed.refreshToken as string,
-              });
-            }
-            router.replace('/staff/overview');
-            return;
-          }
-          router.push('/dashboard');
-        }, 600);
+        setError(response.data.message || 'Login failed. Please verify your credentials.');
       }
-    } catch {
-      setError('An error occurred during login. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }

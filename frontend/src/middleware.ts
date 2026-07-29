@@ -40,10 +40,8 @@ export async function middleware(req: NextRequest) {
     });
 
     if (!token) {
-      // Not authenticated - redirect to login with return URL
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('next', pathname);
-      return NextResponse.redirect(loginUrl);
+      // Allow request to proceed to client-side route guard (which uses Zustand auth store)
+      return NextResponse.next();
     }
 
     // Check if user has appropriate role for the route
