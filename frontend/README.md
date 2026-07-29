@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UG Clinic Frontend
+
+A modern, responsive web application for the University of Ghana Clinic Management System. Built with Next.js 14, TypeScript, and Tailwind CSS.
+
+## Features
+
+### Student Portal
+- **Appointment Booking**: Book clinic appointments with real-time availability
+- **Dashboard**: View upcoming appointments, cancel bookings, and manage health records
+- **Health Resources**: Access clinic guides and medical information
+- **Secure Authentication**: Direct API-based login with JWT tokens
+
+### Staff Portal
+- **Role-Based Access**: Separate portals for Admin, Doctors, and Receptionists
+- **Dashboard Analytics**: View appointment trends, doctor availability, and clinic statistics
+- **Appointment Management**: Assign doctors, manage time slots, and handle bookings
+- **Student Records**: View and manage student information (Admin/Receptionist only)
+- **2FA Support**: Two-factor authentication for enhanced security
+
+### Security Features
+- **Session Timeout**: Automatic logout after 10 minutes of inactivity with warning popup
+- **Role-Based Access Control**: Strict permission separation between user roles
+- **JWT Authentication**: Secure token-based authentication with refresh tokens
+- **Route Guards**: Protected routes with middleware-based access control
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+ installed
+- Backend server running on `http://localhost:3005`
 
+### Installation
+
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up environment variables:
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3005/api
+NEXTAUTH_SECRET=your-secret-key
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+## Development Credentials
 
-To learn more about Next.js, take a look at the following resources:
+### Student Login
+- **Email**: `student@st.ug.edu.gh`
+- **Password**: `Password123!`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Staff Login
+- **Email**: `emmanueloteng.k@gmail.com` (Admin)
+- **Password**: `Password123!`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+frontend/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── (auth)/            # Authentication pages
+│   │   ├── (dashboard)/      # Student dashboard
+│   │   ├── (public)/         # Public pages
+│   │   ├── (staff)/          # Staff portal
+│   │   └── api/              # API routes
+│   ├── components/           # Reusable components
+│   │   ├── shared/          # Shared UI components
+│   │   └── providers/       # Context providers
+│   ├── hooks/               # Custom React hooks
+│   ├── lib/                 # Utility functions and API clients
+│   ├── stores/              # Zustand state management
+│   └── types/               # TypeScript type definitions
+└── public/                  # Static assets
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Key Technologies
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **Zustand**: Lightweight state management
+- **React Hook Form**: Form validation with Zod
+- **Axios**: HTTP client for API calls
+- **Lucide React**: Icon library
+
+## Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+```
+
+## Recent Updates
+
+### Security Enhancements
+- Implemented session timeout with inactivity detection (10 minutes warning, 2 minutes logout)
+- Added role-based access control for staff portal features
+- Doctors cannot access admin-only features (student records, automation tools)
+
+### Authentication Improvements
+- Migrated from NextAuth to direct API calls for student login
+- Pre-filled development credentials for easier testing
+- Enhanced error handling and user feedback
+
+### Navigation Fixes
+- Eliminated navigation flashes on authentication state changes
+- Simplified routing logic for unauthenticated users
+- Fixed student login routing to dashboard instead of booking screen
+
+### Code Quality
+- Updated `.gitignore` files for cleaner repository
+- Removed unused dependencies and files
+- Improved component organization and reusability
+
+## Deployment
+
+The easiest way to deploy is using [Vercel](https://vercel.com/new):
+
+1. Push your code to GitHub
+2. Import project in Vercel
+3. Configure environment variables
+4. Deploy
+
+For other platforms, build the project:
+```bash
+npm run build
+```
+
+The output will be in the `.next` directory.
+
+## Support
+
+For issues or questions, please contact the development team.
