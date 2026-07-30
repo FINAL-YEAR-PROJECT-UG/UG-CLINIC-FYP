@@ -79,3 +79,6 @@ Thumbs.db
 .windsurf/
 .devin/
 .cline/
+
+# Clinic images
+clinic images/
