@@ -887,5 +887,39 @@ export const autoConfirmPending = async (req: Request, res: Response) => {
   }
 };
 
+export const batchUpdateDoctorStatuses = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user || !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+    }
+
+    const { status, doctorIds } = req.body || {};
+    if (!status || !['AVAILABLE', 'BUSY', 'ON_LEAVE'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid doctor status. Must be AVAILABLE, BUSY, or ON_LEAVE' });
+    }
+
+    const where: any = { role: 'DOCTOR', isActive: true };
+    if (Array.isArray(doctorIds) && doctorIds.length > 0) {
+      where.id = { in: doctorIds };
+    }
+
+    const updated = await prisma.user.updateMany({
+      where,
+      data: { doctorStatus: status as any },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Batch status update complete: Updated ${updated.count} doctor(s) to ${status}.`,
+      data: { updatedCount: updated.count, status },
+    });
+  } catch (error) {
+    console.error('Batch update doctor statuses error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred during batch doctor status update' });
+  }
+};
+
+
 
 

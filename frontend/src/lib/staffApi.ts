@@ -77,7 +77,37 @@ export interface StaffResource {
   fileType: string;
   fileUrl: string;
   fileSize?: number;
+  tags?: string[];
+  isPublic?: boolean;
+  status?: 'APPROVED' | 'PENDING_REVIEW' | 'REJECTED' | 'FLAGGED';
+  securityScanStatus?: 'CLEAN' | 'SUSPICIOUS' | 'MALICIOUS';
+  securityScanDetails?: string;
+  authorName?: string;
+  authorEmail?: string;
   createdAt: string;
+  uploader?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+export interface SecurityScanResponse {
+  status: 'CLEAN' | 'SUSPICIOUS' | 'MALICIOUS';
+  riskScore: number;
+  threatsDetected: string[];
+  scanDetails: string;
+  scannedAt: string;
+}
+
+export interface PublicResourceSubmissionPayload {
+  title: string;
+  description?: string;
+  category?: string;
+  fileUrl?: string;
+  authorName?: string;
+  authorEmail?: string;
 }
 
 export interface DailyTrend {
@@ -149,8 +179,53 @@ export const staffApi = {
     await api.patch(`/appointments/timeslot/${slotId}`, { isAvailable });
   },
 
-  getAllStaffResources: async (): Promise<{ resources: StaffResource[] }> => {
-    const response = await api.get<{ success: boolean; data: { resources: StaffResource[] } }>('/resources');
+  updateTimeSlotCapacity: async (slotId: string, maxBookings: number, isAvailable?: boolean): Promise<void> => {
+    const payload: any = { maxBookings };
+    if (typeof isAvailable === 'boolean') payload.isAvailable = isAvailable;
+    await api.patch(`/appointments/timeslot/${slotId}`, payload);
+  },
+
+  batchUpdateTimeSlots: async (data: {
+    date: string;
+    action: string;
+    maxBookings?: number;
+    sessionFilter?: string;
+  }): Promise<{ updatedCount: number; message: string; timeSlots: StaffTimeSlot[] }> => {
+    const response = await api.patch<{
+      success: boolean;
+      message: string;
+      data: { timeSlots: StaffTimeSlot[]; updatedCount: number };
+    }>('/appointments/timeslots/batch', data);
+    return {
+      updatedCount: response.data.data.updatedCount,
+      message: response.data.message,
+      timeSlots: response.data.data.timeSlots,
+    };
+  },
+
+  batchUpdateDoctorStatuses: async (
+    status: 'AVAILABLE' | 'BUSY' | 'ON_LEAVE',
+    doctorIds?: string[],
+  ): Promise<{ updatedCount: number; message: string }> => {
+    const response = await api.patch<{
+      success: boolean;
+      message: string;
+      data: { updatedCount: number; status: string };
+    }>('/staff/doctors/batch-status', { status, doctorIds });
+    return { updatedCount: response.data.data.updatedCount, message: response.data.message };
+  },
+
+  getAllStaffResources: async (params?: {
+    status?: string;
+    category?: string;
+    search?: string;
+  }): Promise<{ resources: StaffResource[] }> => {
+    const qs = new URLSearchParams();
+    if (params?.status && params.status !== 'all') qs.set('status', params.status);
+    if (params?.category && params.category !== 'all') qs.set('category', params.category);
+    if (params?.search) qs.set('search', params.search);
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    const response = await api.get<{ success: boolean; data: { resources: StaffResource[] } }>(`/resources/staff${query}`);
     return response.data.data;
   },
 
@@ -161,9 +236,35 @@ export const staffApi = {
     fileType: string;
     fileUrl: string;
     fileSize?: number;
+    isPublic?: boolean;
     tags?: string[];
-  }): Promise<StaffResource> => {
-    const response = await api.post<{ success: boolean; data: { resource: StaffResource } }>('/resources', data);
+  }): Promise<{ resource: StaffResource; scanResult?: SecurityScanResponse }> => {
+    const response = await api.post<{ success: boolean; data: { resource: StaffResource; scanResult?: SecurityScanResponse } }>('/resources', { ...data, fileSize: data.fileSize ?? 1024 * 100 });
+    return response.data.data;
+  },
+
+  updateResourceDetails: async (
+    resourceId: string,
+    data: {
+      title?: string;
+      description?: string;
+      category?: string;
+      fileUrl?: string;
+      fileType?: string;
+      isPublic?: boolean;
+      status?: string;
+      tags?: string[];
+    },
+  ): Promise<StaffResource> => {
+    const response = await api.patch<{ success: boolean; data: { resource: StaffResource } }>(`/resources/${resourceId}`, data);
+    return response.data.data.resource;
+  },
+
+  reviewResourceSubmission: async (
+    resourceId: string,
+    action: 'APPROVE' | 'REJECT' | 'FLAG',
+  ): Promise<StaffResource> => {
+    const response = await api.patch<{ success: boolean; data: { resource: StaffResource } }>(`/resources/${resourceId}/review`, { action });
     return response.data.data.resource;
   },
 
@@ -207,8 +308,13 @@ export const getDoctors = staffApi.getDoctors;
 export const updateDoctorStatus = staffApi.updateDoctorStatus;
 export const getTimeSlots = staffApi.getTimeSlots;
 export const updateTimeSlotStatus = staffApi.updateTimeSlotStatus;
+export const updateTimeSlotCapacity = staffApi.updateTimeSlotCapacity;
+export const batchUpdateTimeSlots = staffApi.batchUpdateTimeSlots;
+export const batchUpdateDoctorStatuses = staffApi.batchUpdateDoctorStatuses;
 export const getAllStaffResources = staffApi.getAllStaffResources;
 export const uploadResource = staffApi.uploadResource;
+export const updateResourceDetails = staffApi.updateResourceDetails;
+export const reviewResourceSubmission = staffApi.reviewResourceSubmission;
 export const deleteResource = staffApi.deleteResource;
 export const updateAppointmentStatus = staffApi.updateAppointmentStatus;
 export const staffCancelAppointment = staffApi.staffCancelAppointment;
@@ -216,4 +322,27 @@ export const assignDoctorToAppointment = staffApi.assignDoctorToAppointment;
 export const rescheduleAppointment = staffApi.rescheduleAppointment;
 export const autoAssignDoctors = staffApi.autoAssignDoctors;
 export const autoConfirmPending = staffApi.autoConfirmPending;
+
+// Public (unauthenticated) submission of articles for staff review
+import axios from 'axios';
+const publicApi = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api' });
+
+export const submitPublicResource = async (payload: PublicResourceSubmissionPayload): Promise<{
+  success: boolean;
+  message: string;
+  scanResult?: SecurityScanResponse;
+}> => {
+  const response = await publicApi.post<{
+    success: boolean;
+    message: string;
+    data: { resource: StaffResource; scanResult?: SecurityScanResponse };
+  }>('/resources/submit-public', payload);
+  return {
+    success: response.data.success,
+    message: response.data.message,
+    scanResult: response.data.data?.scanResult,
+  };
+};
+
+
 

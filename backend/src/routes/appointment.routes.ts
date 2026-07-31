@@ -13,6 +13,7 @@ import {
   updateAppointmentStatus,
   updateTimeSlot,
   getTimeSlots,
+  batchUpdateTimeSlots,
 } from '../controllers/appointment.controller';
 
 const router = Router();
@@ -23,6 +24,11 @@ router.get('/staff/dashboard', authenticate, getStaffDashboard);
 router.get('/timeslots', authenticate, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, getTimeSlots);
+
+router.patch('/timeslots/batch', authenticate, (req, res, next) => {
+  (req as any).user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
+}, batchUpdateTimeSlots);
+
 
 // Staff management endpoints
 router.get('/staff/all', authenticate, (req, res, next) => {

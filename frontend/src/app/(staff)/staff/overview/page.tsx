@@ -15,6 +15,7 @@ import {
   getStaffDashboard,
   getDoctors,
   updateDoctorStatus,
+  batchUpdateDoctorStatuses,
   autoAssignDoctors,
   autoConfirmPending,
   type StaffDoctor,
@@ -32,6 +33,11 @@ import {
   UserCheck,
   Stethoscope,
   TrendingUp,
+  Bot,
+  Sparkles,
+  Wand2,
+  ShieldAlert,
+  Zap,
 } from 'lucide-react';
 
 interface DailyTrend {
@@ -243,6 +249,86 @@ export default function StaffOverviewPage() {
     }
   };
 
+  // Autonomous Overview Agent State & Handlers
+  const [agentPrompt, setAgentPrompt] = useState('');
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentLog, setAgentLog] = useState<Array<{ role: 'user' | 'agent'; text: string; time: string }>>([
+    {
+      role: 'agent',
+      text: 'Greetings! I am UG-OverviewAgent. I track doctor availability and workload analytics. Ask me to auto-assign pending visits, manage doctor statuses, or balance patient queues.',
+      time: 'Just now',
+    },
+  ]);
+
+  const handleBatchDoctorStatus = async (status: 'AVAILABLE' | 'BUSY' | 'ON_LEAVE', doctorIds?: string[]) => {
+    try {
+      setStatusUpdating(true);
+      const res = await batchUpdateDoctorStatuses(status, doctorIds);
+      setAutomationMessage(`✨ ${res.message}`);
+      await fetchDoctorsList();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to batch update doctor statuses'));
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleRunOverviewAgentCommand = async (inputQuery?: string) => {
+    const query = (inputQuery || agentPrompt).trim();
+    if (!query) return;
+    setAgentPrompt('');
+    setAgentRunning(true);
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setAgentLog((prev) => [...prev, { role: 'user', text: query, time: nowTime }]);
+
+    try {
+      const lower = query.toLowerCase();
+      let actionTaken = '';
+
+      if (lower.includes('assign') || lower.includes('balance') || lower.includes('workload')) {
+        const res = await autoAssignDoctors();
+        actionTaken = res.message;
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+      } else if (lower.includes('confirm') || lower.includes('pending')) {
+        const res = await autoConfirmPending();
+        actionTaken = res.message;
+        await fetchStaffOverview();
+      } else if (lower.includes('all available') || lower.includes('activate roster') || lower.includes('free doctors')) {
+        const res = await batchUpdateDoctorStatuses('AVAILABLE');
+        actionTaken = res.message;
+        await fetchDoctorsList();
+      } else if (lower.includes('busy') || lower.includes('emergency') || lower.includes('lock')) {
+        const res = await batchUpdateDoctorStatuses('BUSY');
+        actionTaken = res.message;
+        await fetchDoctorsList();
+      } else {
+        const res = await autoAssignDoctors();
+        actionTaken = `Analyzed workload: ${res.message}`;
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+      }
+
+      setAgentLog((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          text: `🤖 Autonomous Action Complete: ${actionTaken}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } catch (err) {
+      setAgentLog((prev) => [
+        ...prev,
+        {
+          role: 'agent',
+          text: `⚠️ Agent execution error: ${getErrorMessage(err, 'Failed to process command')}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } finally {
+      setAgentRunning(false);
+    }
+  };
+
   // ——— Loading shell ———
   if (!guardResolved) {
     return (
@@ -329,26 +415,92 @@ export default function StaffOverviewPage() {
         )}
 
         {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST') && (
-          <div className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white rounded-2xl p-5 shadow-sm mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-[#1e3a8a]">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
-                ⚡ Lightweight Operations Automation
-              </span>
-              <h3 className="text-base font-bold text-white mt-0.5">Automated Clinic Operations & Workload Balancer</h3>
-              <p className="text-xs text-blue-100 max-w-xl">
-                Automatically assign available doctors to unassigned student visits or batch-confirm pending bookings with 1-click.
-              </p>
+          <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl mb-8 border border-blue-500/30 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
+                  <Bot className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-white">UG-OverviewAgent</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                      Doctor Workload & Operations AI
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-200 mt-0.5">
+                    Live Analytics: {doctors.filter((d) => d.doctorStatus === 'AVAILABLE').length}/{doctors.length} Doctor(s) Available • Workload Index: {((summary.pendingAppointments + summary.confirmedAppointments) / Math.max(1, doctors.filter((d) => d.doctorStatus === 'AVAILABLE').length)).toFixed(1)} apts/doc
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => void handleRunOverviewAgentCommand('Auto assign available doctors')}
+                  disabled={agentRunning || autoLoading}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Auto-Assign Doctors
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRunOverviewAgentCommand('Batch confirm pending bookings')}
+                  disabled={agentRunning || autoLoading}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Batch Auto-Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleBatchDoctorStatus('AVAILABLE')}
+                  disabled={statusUpdating}
+                  className="px-3 py-2 bg-emerald-500/20 border border-emerald-400/30 hover:bg-emerald-500/30 text-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+                >
+                  🟢 Set All AVAILABLE
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={handleAutoAssign} disabled={autoLoading}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5">
-                ⚡ Auto-Assign Available Doctors
-              </button>
-              <button onClick={handleAutoConfirm} disabled={autoLoading}
-                className="px-4 py-2 bg-[#0369A1] hover:bg-[#0F172A] text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5">
-                ⚡ Batch Auto-Confirm Pending
-              </button>
+
+            <div className="bg-slate-950/70 rounded-xl p-3 border border-slate-800 max-h-28 overflow-y-auto space-y-1.5 text-xs">
+              {agentLog.slice(-3).map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-start gap-2 ${
+                    item.role === 'agent' ? 'text-blue-200' : 'text-amber-200 font-semibold'
+                  }`}
+                >
+                  <span className="text-[10px] text-slate-500 shrink-0">{item.time}</span>
+                  <span>{item.text}</span>
+                </div>
+              ))}
             </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleRunOverviewAgentCommand();
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Ask UG-OverviewAgent (e.g. 'auto-assign doctors', 'set all doctors to AVAILABLE', 'confirm pending visits')..."
+                value={agentPrompt}
+                onChange={(e) => setAgentPrompt(e.target.value)}
+                className="flex-1 bg-slate-950/80 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+              <button
+                type="submit"
+                disabled={agentRunning || !agentPrompt.trim()}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>{agentRunning ? 'Running...' : 'Execute'}</span>
+              </button>
+            </form>
           </div>
         )}
 
@@ -436,13 +588,31 @@ export default function StaffOverviewPage() {
           {canManageClinicOperations(userRole) && (
           <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h3 className="text-lg font-bold text-[#020617] flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-emerald-600" /> Doctor Status & Availability
+                  <UserCheck className="w-5 h-5 text-emerald-600" /> Doctor Roster & Status
                 </h3>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchDoctorStatus('AVAILABLE')}
+                    disabled={statusUpdating}
+                    className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-200 transition-colors"
+                  >
+                    All Free
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchDoctorStatus('BUSY')}
+                    disabled={statusUpdating}
+                    className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold rounded-lg border border-amber-200 transition-colors"
+                  >
+                    All Busy
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-[#334155] mb-4">
-                Staff can view whether doctors are free or busy for student assignment.
+                Manage doctor availability status. Changing status auto-syncs booking slot capacity.
               </p>
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {doctors.length === 0 ? (

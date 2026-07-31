@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
+import { submitPublicResource } from '@/lib/staffApi';
 import {
   Search,
   FileText,
@@ -21,8 +22,10 @@ import {
   UploadCloud,
   Mail,
   CheckCircle2,
+  AlertTriangle,
   Loader2,
   Plus,
+  ShieldAlert,
 } from 'lucide-react';
 
 type ResKind = 'article' | 'guide' | 'video';
@@ -147,6 +150,17 @@ export default function ResourcesPageClient() {
   const [subscribed, setSubscribed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitScanStatus, setSubmitScanStatus] = useState<'CLEAN' | 'SUSPICIOUS' | 'MALICIOUS' | null>(null);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+
+  // Submission form fields
+  const [subForm, setSubForm] = useState({
+    authorName: '',
+    authorEmail: '',
+    title: '',
+    category: 'Physical Health',
+    description: '',
+  });
 
   const filtered = useMemo(() => {
     return resources.filter((r) => {
@@ -160,13 +174,30 @@ export default function ResourcesPageClient() {
 
   const shown = filtered.slice(0, visible);
 
-  const handleSubmitArticle = (e: React.FormEvent) => {
+  const handleSubmitArticle = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setTimeout(() => {
+    if (!subForm.title.trim() || !subForm.authorName.trim() || !subForm.authorEmail.trim() || !subForm.description.trim()) return;
+    try {
+      setSubmitting(true);
+      setSubmitScanStatus(null);
+      setSubmitMessage(null);
+      const result = await submitPublicResource({
+        title: subForm.title.trim(),
+        description: subForm.description.trim(),
+        category: subForm.category,
+        authorName: subForm.authorName.trim(),
+        authorEmail: subForm.authorEmail.trim(),
+      });
+      setSubmitScanStatus(result.scanResult?.status ?? 'CLEAN');
+      setSubmitMessage(result.message);
+      if (result.scanResult?.status !== 'MALICIOUS') {
+        setSubmitted(true);
+      }
+    } catch {
+      setSubmitMessage('Submission failed. Please try again.');
+    } finally {
       setSubmitting(false);
-      setSubmitted(true);
-    }, 1200);
+    }
   };
 
   return (
@@ -365,33 +396,79 @@ export default function ResourcesPageClient() {
             {submitted ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="h-14 w-14 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Submitted for Review</h3>
-                <p className="text-gray-600">Thank you! Our team will review your article and get back to you.</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Submitted for Review!</h3>
+                <p className="text-gray-600 mb-2">{submitMessage ?? 'Thank you! Our team will review your article and get back to you shortly.'}</p>
+                {submitScanStatus && (
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+                    submitScanStatus === 'CLEAN' ? 'bg-emerald-100 text-emerald-700' :
+                    submitScanStatus === 'SUSPICIOUS' ? 'bg-amber-100 text-amber-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {submitScanStatus === 'CLEAN' ? <><CheckCircle2 className="h-3.5 w-3.5" /> Security scan passed</> :
+                     submitScanStatus === 'SUSPICIOUS' ? <><AlertTriangle className="h-3.5 w-3.5" /> Flagged for manual review</> :
+                     <><ShieldAlert className="h-3.5 w-3.5" /> Security threat detected</>}
+                  </span>
+                )}
               </div>
             ) : (
               <form onSubmit={handleSubmitArticle} className="space-y-4">
-                <h3 className="font-bold text-gray-900 mb-2">Submit Your Article</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input required placeholder="Full name" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
-                  <input required type="email" placeholder="Email address" className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
+                <div className="flex items-center gap-2 mb-1">
+                  <ShieldCheck className="h-5 w-5 text-green-600" />
+                  <h3 className="font-bold text-gray-900">Submit Your Article</h3>
                 </div>
-                <input required placeholder="Article title" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all" />
-                <select className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all cursor-pointer">
+                <p className="text-xs text-gray-500">Your submission is automatically scanned for security before reaching clinic staff.</p>
+                {submitMessage && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0" /> {submitMessage}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input
+                    required
+                    placeholder="Full name"
+                    value={subForm.authorName}
+                    onChange={(e) => setSubForm((f) => ({ ...f, authorName: e.target.value }))}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all"
+                  />
+                  <input
+                    required
+                    type="email"
+                    placeholder="Email address"
+                    value={subForm.authorEmail}
+                    onChange={(e) => setSubForm((f) => ({ ...f, authorEmail: e.target.value }))}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all"
+                  />
+                </div>
+                <input
+                  required
+                  placeholder="Article title"
+                  value={subForm.title}
+                  onChange={(e) => setSubForm((f) => ({ ...f, title: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all"
+                />
+                <select
+                  value={subForm.category}
+                  onChange={(e) => setSubForm((f) => ({ ...f, category: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all cursor-pointer"
+                >
                   {CATEGORIES.filter((c) => c !== 'All').map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
-                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg py-8 text-sm text-gray-500 cursor-pointer hover:border-[#3b82f6] hover:bg-blue-50 transition-all">
-                  <UploadCloud className="h-7 w-7" />
-                  Drag and drop your article file, or click to browse
-                  <input type="file" className="hidden" />
-                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Paste or write your article content here..."
+                  value={subForm.description}
+                  onChange={(e) => setSubForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all resize-none"
+                />
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:hover:shadow-none disabled:hover:scale-100"
+                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</> : <>Submit for Review <Plus className="h-4 w-4" /></>}
+                  {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Scanning & Submitting...</> : <>Submit for Review <Plus className="h-4 w-4" /></>}
                 </button>
               </form>
             )}

@@ -16,6 +16,8 @@ import {
   staffCancelAppointment,
   updateAppointmentStatus,
   updateTimeSlotStatus,
+  updateTimeSlotCapacity,
+  batchUpdateTimeSlots,
   type StaffAppointment,
   type StaffDoctor,
   type StaffTimeSlot,
@@ -24,6 +26,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  Bot,
   Calendar,
   CalendarClock,
   CheckCircle2,
@@ -34,14 +37,20 @@ import {
   Layers3,
   Lock,
   LogOut,
+  Minus,
+  Plus,
+  RefreshCw,
   Search,
   Settings,
+  ShieldAlert,
   Sparkles,
   Stethoscope,
   Unlock,
   UserCheck,
   Users,
+  Wand2,
   X,
+  Zap,
 } from "lucide-react";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
@@ -144,6 +153,167 @@ export default function StaffAppointmentsPage() {
     useState<StaffAppointment | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+
+  // Autonomous Slot Agent state
+  const [agentPrompt, setAgentPrompt] = useState("");
+  const [agentRunning, setAgentRunning] = useState(false);
+  const [agentMessage, setAgentMessage] = useState<string | null>(null);
+  const [agentLog, setAgentLog] = useState<
+    Array<{ role: "user" | "agent"; text: string; time: string }>
+  >([
+    {
+      role: "agent",
+      text: "Hello! I am UG-SlotAgent. I monitor doctor availability and optimize slot capacity. Ask me to sync capacity with doctors, expand peak slots, or trigger emergency lockdowns.",
+      time: "Just now",
+    },
+  ]);
+
+  const handleAdjustSlotCapacity = async (
+    slotId: string,
+    currentMax: number,
+    delta: number,
+  ) => {
+    try {
+      const targetMax = Math.max(1, currentMax + delta);
+      setBusyAction(slotId);
+      await updateTimeSlotCapacity(slotId, targetMax);
+      await fetchTimeSlots(selectedSlotDate);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to adjust slot capacity"));
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleBatchSlotAction = async (
+    action: string,
+    maxBookings?: number,
+    sessionFilter?: string,
+  ) => {
+    try {
+      setSlotsLoading(true);
+      const res = await batchUpdateTimeSlots({
+        date: selectedSlotDate,
+        action,
+        maxBookings,
+        sessionFilter,
+      });
+      setTimeSlots(res.timeSlots);
+      setAgentMessage(`✨ ${res.message}`);
+    } catch (err) {
+      setError(getErrorMessage(err, "Batch slot operation failed"));
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
+  const handleRunSlotAgentCommand = async (inputQuery?: string) => {
+    const query = (inputQuery || agentPrompt).trim();
+    if (!query) return;
+    setAgentPrompt("");
+    setAgentRunning(true);
+    const nowTime = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    setAgentLog((prev) => [
+      ...prev,
+      { role: "user", text: query, time: nowTime },
+    ]);
+
+    try {
+      const availableDocsCount = doctors.filter(
+        (d) => d.doctorStatus === "AVAILABLE",
+      ).length;
+      let actionTaken = "";
+
+      const lower = query.toLowerCase();
+      if (lower.includes("sync") || lower.includes("doctor")) {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "SYNC_DOCTORS",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Synced all slot capacities to match the ${availableDocsCount} currently AVAILABLE doctor(s).`;
+      } else if (
+        lower.includes("emergency") ||
+        lower.includes("lockdown") ||
+        lower.includes("shrink") ||
+        lower.includes("busy")
+      ) {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "LOCK_AFTERNOON",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Emergency protocol executed: Blocked afternoon slots to preserve doctor capacity.`;
+      } else if (
+        lower.includes("expand") ||
+        lower.includes("morning") ||
+        lower.includes("boost") ||
+        lower.includes("increase")
+      ) {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "EXPAND",
+          sessionFilter: "MORNING",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Expanded capacity for all Morning slots (+1 booking capacity per slot window).`;
+      } else if (
+        lower.includes("reset") ||
+        lower.includes("default") ||
+        lower.includes("1")
+      ) {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "RESET",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Reset all slot capacities to baseline (1 appointment per slot).`;
+      } else if (lower.includes("unlock") || lower.includes("open")) {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "UNLOCK_ALL",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Re-opened all non-full booking slots for ${selectedSlotDate}.`;
+      } else {
+        const res = await batchUpdateTimeSlots({
+          date: selectedSlotDate,
+          action: "SYNC_DOCTORS",
+        });
+        setTimeSlots(res.timeSlots);
+        actionTaken = `Analyzed request and auto-aligned slot capacity with active doctor count (${availableDocsCount} doctor(s) available).`;
+      }
+
+      setAgentLog((prev) => [
+        ...prev,
+        {
+          role: "agent",
+          text: `🤖 Autonomous Action Complete: ${actionTaken}`,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+    } catch (err) {
+      setAgentLog((prev) => [
+        ...prev,
+        {
+          role: "agent",
+          text: `⚠️ Agent execution error: ${getErrorMessage(err, "Could not adjust slots")}`,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+    } finally {
+      setAgentRunning(false);
+    }
+  };
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelNote, setCancelNote] = useState("");
@@ -461,6 +631,10 @@ export default function StaffAppointmentsPage() {
     )
     .slice(0, 4);
   const roleLabel = getStaffRoleLabel(userRole);
+  const isSlotDateWeekend = (() => {
+    const d = new Date(selectedSlotDate + "T00:00:00").getDay();
+    return d === 0 || d === 6;
+  })();
 
   if (!guardResolved) {
     return (
@@ -1109,16 +1283,21 @@ export default function StaffAppointmentsPage() {
           </section>
         ) : (
           <section className="space-y-6">
-            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-sm">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-sm space-y-4">
               <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-950">
-                    Slot availability manager
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-slate-950">
+                      Slot availability manager
+                    </h2>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      {doctors.filter((d) => d.doctorStatus === "AVAILABLE").length} Doctor(s) Available
+                    </span>
+                  </div>
                   <p className="text-sm text-slate-500 mt-1">
-                    Open or block booking windows for{" "}
-                    {formatDate(selectedSlotDate)} without leaving the admin
-                    portal.
+                    Dynamically expand slot capacities when doctors are free or scale down during emergencies for{" "}
+                    {formatDate(selectedSlotDate)}.
                   </p>
                 </div>
 
@@ -1136,6 +1315,54 @@ export default function StaffAppointmentsPage() {
                       className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#1D4ED8] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Quick Batch Capacity Controls */}
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+                    Quick Capacity Controls:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchSlotAction("SYNC_DOCTORS")}
+                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200 transition-colors flex items-center gap-1.5"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    Sync with Doctors ({doctors.filter((d) => d.doctorStatus === "AVAILABLE").length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchSlotAction("EXPAND")}
+                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 transition-colors flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Expand All (+1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchSlotAction("REDUCE")}
+                    className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 transition-colors flex items-center gap-1.5"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                    Scale Down (-1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchSlotAction("LOCK_AFTERNOON")}
+                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg border border-rose-200 transition-colors flex items-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    Lock Afternoon
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleBatchSlotAction("RESET")}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    Reset Baseline (1)
+                  </button>
                 </div>
               </div>
 
@@ -1189,6 +1416,105 @@ export default function StaffAppointmentsPage() {
               </div>
             </div>
 
+            {/* Embedded UG-SlotAgent Autonomous Assistant */}
+            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-indigo-500/30 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-md">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                      UG-SlotAgent
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                        Autonomous Capacity Assistant
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      Auto-evaluates slot capacity against active doctor roster ({doctors.filter((d) => d.doctorStatus === "AVAILABLE").length} doc(s) available)
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Active Agent Monitoring
+                </span>
+              </div>
+
+              {agentMessage && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs font-semibold flex items-center justify-between">
+                  <span>{agentMessage}</span>
+                  <button type="button" onClick={() => setAgentMessage(null)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+              )}
+
+              <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 max-h-32 overflow-y-auto space-y-2 text-xs">
+                {agentLog.slice(-3).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-2 ${
+                      item.role === "agent" ? "text-blue-200" : "text-amber-200 font-semibold"
+                    }`}
+                  >
+                    <span className="text-[10px] text-slate-500 shrink-0">{item.time}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-400 text-[11px] font-semibold">Quick Agent Prompts:</span>
+                <button
+                  type="button"
+                  onClick={() => void handleRunSlotAgentCommand("Sync slot capacity with available doctor count")}
+                  disabled={agentRunning}
+                  className="px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 rounded-lg border border-indigo-500/30 transition-colors text-[11px] font-semibold"
+                >
+                  ⚡ Sync with {doctors.filter((d) => d.doctorStatus === "AVAILABLE").length} Available Docs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRunSlotAgentCommand("Expand morning slots for high student demand")}
+                  disabled={agentRunning}
+                  className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg border border-blue-500/30 transition-colors text-[11px] font-semibold"
+                >
+                  📈 Expand Peak Morning Slots
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRunSlotAgentCommand("Emergency lockdown afternoon slots due to emergency")}
+                  disabled={agentRunning}
+                  className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg border border-rose-500/30 transition-colors text-[11px] font-semibold"
+                >
+                  🚨 Emergency Lockdown Afternoon
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleRunSlotAgentCommand();
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  placeholder="Ask UG-SlotAgent (e.g. 'set capacity to 3', 'lock afternoon slots', 'sync with doctors')..."
+                  value={agentPrompt}
+                  onChange={(e) => setAgentPrompt(e.target.value)}
+                  className="flex-1 bg-slate-950/80 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  disabled={agentRunning || !agentPrompt.trim()}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>{agentRunning ? "Executing..." : "Execute"}</span>
+                </button>
+              </form>
+            </div>
+
             {slotsLoading ? (
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-16 shadow-sm flex justify-center">
                 <LoadingSpinner size={42} />
@@ -1199,12 +1525,23 @@ export default function StaffAppointmentsPage() {
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="mt-4 text-lg font-bold text-slate-950">
-                  No slots generated for this day
+                  {isSlotDateWeekend ? "Clinic is closed on weekends" : "No slots generated for this day"}
                 </h3>
                 <p className="mt-2 text-sm text-slate-500">
-                  Time slots appear when services are active or bookings have
-                  been initialized for the selected date.
+                  {isSlotDateWeekend
+                    ? "The UG Clinic only operates Monday \u2013 Friday. Please select a weekday to manage booking slots."
+                    : "Time slots will be auto-generated when you reload. If they still don\u2019t appear, ensure at least one service is active in the system."}
                 </p>
+                {!isSlotDateWeekend && (
+                  <button
+                    type="button"
+                    onClick={() => void fetchTimeSlots(selectedSlotDate)}
+                    className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1D4ED8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1D4ED8]/90 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Generate slots for this day
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -1223,40 +1560,62 @@ export default function StaffAppointmentsPage() {
                   return (
                     <article
                       key={slot.id}
-                      className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-sm"
+                      className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-sm flex flex-col justify-between"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                            Service slot
-                          </p>
-                          <h3 className="mt-2 text-lg font-bold text-slate-950">
-                            {formatTimeLabel(slot.startTime)} -{" "}
-                            {formatTimeLabel(slot.endTime)}
-                          </h3>
-                        </div>
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                            slot.isAvailable
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-rose-50 text-rose-700 border border-rose-200"
-                          }`}
-                        >
-                          {slot.isAvailable ? "Open to booking" : "Blocked"}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {slot.service?.name || "General service"}
-                        </p>
-                        <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                          <span className="text-slate-500">Bookings</span>
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                              Service slot
+                            </p>
+                            <h3 className="mt-2 text-lg font-bold text-slate-950">
+                              {formatTimeLabel(slot.startTime)} -{" "}
+                              {formatTimeLabel(slot.endTime)}
+                            </h3>
+                          </div>
                           <span
-                            className={`rounded-full px-2.5 py-1 font-semibold ${occupancyTone}`}
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                              slot.isAvailable
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border border-rose-200"
+                            }`}
                           >
-                            {slot.currentBookings} / {slot.maxBookings}
+                            {slot.isAvailable ? "Open to booking" : "Blocked"}
                           </span>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {slot.service?.name || "General service"}
+                          </p>
+                          <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                            <span className="text-slate-500 text-xs font-semibold">Bookings Capacity</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => void handleAdjustSlotCapacity(slot.id, slot.maxBookings, -1)}
+                                disabled={busyAction === slot.id || slot.maxBookings <= 1}
+                                title="Reduce max capacity (-1)"
+                                className="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center text-slate-700 transition-colors shadow-2xs"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${occupancyTone}`}
+                              >
+                                {slot.currentBookings} / {slot.maxBookings}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => void handleAdjustSlotCapacity(slot.id, slot.maxBookings, 1)}
+                                disabled={busyAction === slot.id}
+                                title="Expand max capacity (+1)"
+                                className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 disabled:opacity-30 flex items-center justify-center font-bold transition-colors shadow-2xs"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
 

@@ -22,6 +22,31 @@ function timeSlotToMinutes(timeStr: string): number {
   return hours * 60 + minutes;
 }
 
+// General Appointments Schedule (Mon-Fri: Morning 8:30 AM - 12:00 PM, Afternoon 1:30 PM - 4:00 PM)
+const GENERAL_MORNING_SLOTS = [
+  '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
+  '10:30 AM', '11:00 AM', '11:30 AM',
+];
+const GENERAL_AFTERNOON_SLOTS = [
+  '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM',
+  '03:30 PM',
+];
+const ALL_GENERAL_SLOTS = [...GENERAL_MORNING_SLOTS, ...GENERAL_AFTERNOON_SLOTS];
+
+function isWeekend(date: Date): boolean {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+
+function isValidScheduleTimeSlot(timeSlot: string): boolean {
+  const minutes = timeSlotToMinutes(timeSlot);
+  // Morning Session: 8:30 AM (510 min) to 11:30 AM (690 min start time)
+  const isMorning = minutes >= 510 && minutes <= 690;
+  // Afternoon Session: 1:30 PM (810 min) to 3:30 PM (930 min start time)
+  const isAfternoon = minutes >= 810 && minutes <= 930;
+  return isMorning || isAfternoon;
+}
+
 // Mapping of frontend-friendly alias IDs to service names for resolution
 const SERVICE_ALIAS_TO_NAME: Record<string, string> = {
   general: 'General Consultation',
@@ -154,23 +179,21 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
 
     let bookedSlots = appointments.map((a) => a.timeSlot);
 
-    const today = new Date();
-    const isToday =
-      today.getFullYear() === appointmentDate.getFullYear() &&
-      today.getMonth() === appointmentDate.getMonth() &&
-      today.getDate() === appointmentDate.getDate();
+    // If date is a weekend, all general appointment slots are unavailable
+    if (isWeekend(appointmentDate)) {
+      bookedSlots = [...ALL_GENERAL_SLOTS];
+    } else {
+      const today = new Date();
+      const isToday =
+        today.getFullYear() === appointmentDate.getFullYear() &&
+        today.getMonth() === appointmentDate.getMonth() &&
+        today.getDate() === appointmentDate.getDate();
 
-    if (isToday) {
-      const currentMinutes = today.getHours() * 60 + today.getMinutes();
-      const allPossibleSlots = [
-        '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
-        '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM',
-        '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM',
-        '03:30 PM', '04:00 PM',
-      ];
-
-      const pastSlots = allPossibleSlots.filter((slot) => timeSlotToMinutes(slot) < currentMinutes);
-      bookedSlots = [...new Set([...bookedSlots, ...pastSlots])];
+      if (isToday) {
+        const currentMinutes = today.getHours() * 60 + today.getMinutes();
+        const pastSlots = ALL_GENERAL_SLOTS.filter((slot) => timeSlotToMinutes(slot) < currentMinutes);
+        bookedSlots = [...new Set([...bookedSlots, ...pastSlots])];
+      }
     }
 
     res.status(200).json({ success: true, data: { bookedSlots } });
@@ -237,6 +260,22 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
     const todayStart = startOfDay(new Date());
     if (startOfDay(appointmentDate) < todayStart) {
       return res.status(400).json({ success: false, message: 'Cannot book an appointment in the past' });
+    }
+
+    // Validate general appointment operating schedule (Mon-Fri only)
+    if (isWeekend(appointmentDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services only.',
+      });
+    }
+
+    // Validate operating session time slot hours (Morning 8:30 AM - 12:00 PM | Afternoon 1:30 PM - 4:00 PM)
+    if (!isValidScheduleTimeSlot(timeSlot)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected time slot is outside general appointment operating hours (Mon-Fri: 8:30 AM - 12:00 PM & 1:30 PM - 4:00 PM).',
+      });
     }
 
     // Prevent past-time slot if it's today
@@ -695,6 +734,22 @@ export const rescheduleAppointment = async (req: AuthRequest, res: Response) => 
       return res.status(400).json({ success: false, message: 'Cannot reschedule to a past date' });
     }
 
+    // Validate general appointment operating schedule (Mon-Fri only)
+    if (isWeekend(appointmentDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services only.',
+      });
+    }
+
+    // Validate operating session time slot hours
+    if (!isValidScheduleTimeSlot(timeSlot)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected time slot is outside general appointment operating hours (Mon-Fri: 8:30 AM - 12:00 PM & 1:30 PM - 4:00 PM).',
+      });
+    }
+
     const isToday =
       todayStart.getTime() === startOfDay(appointmentDate).getTime();
     if (isToday) {
@@ -913,22 +968,92 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
     const { serviceId, date } = req.query as any;
 
     const where: any = {};
+
     if (serviceId) {
-      const resolved = await resolveService(serviceId);
-      where.serviceId = resolved ? resolved.id : String(serviceId);
+      const resolvedService = await resolveService(serviceId);
+      where.serviceId = resolvedService ? resolvedService.id : String(serviceId);
     }
+
+    let targetDate: Date | null = null;
     if (date) {
       const d = new Date(String(date));
       if (!Number.isNaN(d.getTime())) {
+        targetDate = d;
         where.date = { gte: startOfDay(d), lte: endOfDay(d) };
       }
     }
 
-    const timeSlots = await prisma.timeSlot.findMany({
+    let timeSlots = await prisma.timeSlot.findMany({
       where,
       orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
       include: { service: { select: { id: true, name: true, category: true } } },
     });
+
+    // Auto-initialize general schedule slots if none exist for this weekday date
+    if (timeSlots.length === 0 && targetDate && !isWeekend(targetDate)) {
+      // Get all active services to seed slots for
+      const services = await prisma.service.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, category: true, duration: true },
+      });
+
+      if (services.length > 0) {
+        // General schedule: Morning 08:30–12:00, Afternoon 13:30–16:00 (in minutes)
+        const sessions = [
+          { start: 8 * 60 + 30, end: 12 * 60 },
+          { start: 13 * 60 + 30, end: 16 * 60 },
+        ];
+
+        const formatTimePad = (totalMinutes: number) => {
+          const h = Math.floor(totalMinutes / 60);
+          const m = totalMinutes % 60;
+          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        };
+
+        const slotsToCreate: {
+          serviceId: string;
+          date: Date;
+          startTime: string;
+          endTime: string;
+          isAvailable: boolean;
+          maxBookings: number;
+          currentBookings: number;
+        }[] = [];
+
+        const slotDay = startOfDay(targetDate);
+
+        for (const service of services) {
+          const durationMinutes = service.duration > 0 ? service.duration : 30;
+          for (const session of sessions) {
+            let current = session.start;
+            while (current + durationMinutes <= session.end) {
+              slotsToCreate.push({
+                serviceId: service.id,
+                date: slotDay,
+                startTime: formatTimePad(current),
+                endTime: formatTimePad(current + durationMinutes),
+                isAvailable: true,
+                maxBookings: 1,
+                currentBookings: 0,
+              });
+              current += durationMinutes;
+            }
+          }
+        }
+
+        if (slotsToCreate.length > 0) {
+          // Use createMany with skipDuplicates to safely handle any race conditions
+          await prisma.timeSlot.createMany({ data: slotsToCreate, skipDuplicates: true });
+
+          // Re-fetch newly created slots
+          timeSlots = await prisma.timeSlot.findMany({
+            where,
+            orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+            include: { service: { select: { id: true, name: true, category: true } } },
+          });
+        }
+      }
+    }
 
     res.status(200).json({ success: true, data: { timeSlots } });
   } catch (error) {
@@ -936,3 +1061,106 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, message: 'An error occurred while fetching time slots' });
   }
 };
+
+export const batchUpdateTimeSlots = async (req: AuthRequest, res: Response) => {
+  try {
+    const { date, action, maxBookings, sessionFilter } = req.body || {};
+
+    const targetDate = date ? new Date(String(date)) : new Date();
+    if (Number.isNaN(targetDate.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid date provided' });
+    }
+
+    const dayStart = startOfDay(targetDate);
+    const dayEnd = endOfDay(targetDate);
+
+    // Existing slots for this day
+    const existingSlots = await prisma.timeSlot.findMany({
+      where: { date: { gte: dayStart, lte: dayEnd } },
+    });
+
+    if (existingSlots.length === 0) {
+      return res.status(404).json({ success: false, message: 'No slots found for the specified date.' });
+    }
+
+    let targetDoctorCount = 1;
+    if (action === 'SYNC_DOCTORS') {
+      const availableDocs = await prisma.user.count({
+        where: { role: 'DOCTOR', isActive: true, doctorStatus: 'AVAILABLE' },
+      });
+      targetDoctorCount = Math.max(1, availableDocs);
+    }
+
+    let updatedCount = 0;
+    for (const slot of existingSlots) {
+      const minutes = timeSlotToMinutes(slot.startTime);
+      const isMorning = minutes >= 510 && minutes < 720;
+      const isAfternoon = minutes >= 720;
+
+      if (sessionFilter === 'MORNING' && !isMorning) continue;
+      if (sessionFilter === 'AFTERNOON' && !isAfternoon) continue;
+
+      let newMax = slot.maxBookings;
+      let newAvailable = slot.isAvailable;
+
+      switch (action) {
+        case 'SYNC_DOCTORS':
+          newMax = targetDoctorCount;
+          newAvailable = slot.currentBookings < newMax;
+          break;
+        case 'EXPAND':
+          newMax = typeof maxBookings === 'number' ? Math.max(1, maxBookings) : slot.maxBookings + 1;
+          newAvailable = slot.currentBookings < newMax;
+          break;
+        case 'REDUCE':
+          newMax = Math.max(1, slot.maxBookings - 1);
+          newAvailable = slot.currentBookings < newMax;
+          break;
+        case 'RESET':
+          newMax = 1;
+          newAvailable = slot.currentBookings < newMax;
+          break;
+        case 'SET_CAPACITY':
+          if (typeof maxBookings === 'number') {
+            newMax = Math.max(1, maxBookings);
+            newAvailable = slot.currentBookings < newMax;
+          }
+          break;
+        case 'LOCK_AFTERNOON':
+          if (isAfternoon) newAvailable = false;
+          break;
+        case 'LOCK_ALL':
+          newAvailable = false;
+          break;
+        case 'UNLOCK_ALL':
+          newAvailable = slot.currentBookings < slot.maxBookings;
+          break;
+        default:
+          break;
+      }
+
+      await prisma.timeSlot.update({
+        where: { id: slot.id },
+        data: { maxBookings: newMax, isAvailable: newAvailable },
+      });
+      updatedCount++;
+    }
+
+    const refreshedSlots = await prisma.timeSlot.findMany({
+      where: { date: { gte: dayStart, lte: dayEnd } },
+      orderBy: [{ startTime: 'asc' }],
+      include: { service: { select: { id: true, name: true, category: true } } },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Batch update completed successfully (${updatedCount} slots updated).`,
+      data: { timeSlots: refreshedSlots, updatedCount },
+    });
+  } catch (error) {
+    console.error('Batch update timeslots error:', error);
+    res.status(500).json({ success: false, message: 'An error occurred during batch timeslot update' });
+  }
+};
+
+

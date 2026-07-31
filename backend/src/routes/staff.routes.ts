@@ -12,6 +12,7 @@ import {
   getStudentHistory,
   autoAssignDoctors,
   autoConfirmPending,
+  batchUpdateDoctorStatuses,
 } from '../controllers/staff.controller';
 import {
   validateStaffRegister,
@@ -37,9 +38,11 @@ router.patch('/students/:id', authenticate, authorize('RECEPTIONIST', 'ADMIN'), 
 // Doctor management & availability status (staff-only)
 router.get('/doctors', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), listDoctors);
 router.patch('/doctors/status', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), updateDoctorStatus);
+router.patch('/doctors/batch-status', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), batchUpdateDoctorStatuses);
 
 // Staff operations automation (staff-only)
 router.post('/auto-assign-doctors', authenticate, authorize('RECEPTIONIST', 'ADMIN'), autoAssignDoctors);
 router.post('/auto-confirm-pending', authenticate, authorize('RECEPTIONIST', 'ADMIN'), autoConfirmPending);
+
 
 export default router;

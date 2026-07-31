@@ -82,3 +82,5 @@ Thumbs.db
 
 # Clinic images
 clinic images/
+backend/.env.example
+.gitignore

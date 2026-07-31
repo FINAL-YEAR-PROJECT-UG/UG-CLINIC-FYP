@@ -30,6 +30,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Eye,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ServiceOption {
@@ -43,10 +45,10 @@ interface ServiceOption {
 
 const SERVICES: ServiceOption[] = [
   { id: 'general', category: 'consultation', title: 'General Consultation', desc: 'Routine medical checkups, physical symptoms, and general health advice.', icon: Stethoscope, duration: '20 mins' },
-  { id: 'mental', category: 'specialist', title: 'Mental Health & Counseling', desc: 'Confidential psychological support, stress management, and guidance.', icon: Brain, duration: '45 mins' },
-  { id: 'eye-care', category: 'specialist', title: 'Eye Care Services', desc: 'Vision screening, eye health assessments, and specialized eye treatment.', icon: Eye, duration: '30 mins' },
-  { id: 'dental', category: 'specialist', title: 'Dental Checkup & Oral Health', desc: 'Oral health examination, teeth cleaning, and dental hygiene advice.', icon: Stethoscope, duration: '30 mins' },
-  { id: 'hiv', category: 'screening', title: 'HIV/AIDS Testing & Support', desc: 'Voluntary testing, pre/post counselling, and confidential care.', icon: Ribbon, duration: '30 mins' },
+  { id: 'mental', category: 'specialist', title: 'Mental Health & Counseling', desc: 'Confidential mental health support, stress management, and therapy.', icon: Brain, duration: '45 mins' },
+  { id: 'eye-care', category: 'specialist', title: 'Eye Care & Vision Services', desc: 'Comprehensive vision tests, eye strain assessment, and prescription guidance.', icon: Eye, duration: '30 mins' },
+  { id: 'dental', category: 'specialist', title: 'Dental Checkup & Oral Health', desc: 'Teeth cleaning, cavity checks, and oral hygiene consultations.', icon: Stethoscope, duration: '30 mins' },
+  { id: 'hiv', category: 'screening', title: 'HIV/AIDS Testing & Support', desc: 'Voluntary testing, pre/post-test counseling, and ongoing support services.', icon: Ribbon, duration: '20 mins' },
   { id: 'nutrition', category: 'specialist', title: 'Nutrition & Dietetics', desc: 'Personalized meal planning, BMI consultations, and healthy lifestyle guidance.', icon: Leaf, duration: '30 mins' },
   { id: 'screening', category: 'screening', title: 'Comprehensive Health Screening', desc: 'Blood pressure, glucose tests, lab work, and physical evaluation.', icon: Zap, duration: '40 mins' },
   { id: 'vaccination', category: 'preventative', title: 'Vaccinations & Immunizations', desc: 'Travel vaccines, seasonal flu shots, and booster immunizations.', icon: Syringe, duration: '15 mins' },
@@ -66,12 +68,17 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'pharmacy': Pill,
 };
 
-const TIME_SLOT_LABELS = [
+const MORNING_SLOTS = [
   '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
-  '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM',
-  '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM',
-  '03:30 PM', '04:00 PM',
+  '10:30 AM', '11:00 AM', '11:30 AM',
 ];
+
+const AFTERNOON_SLOTS = [
+  '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM',
+  '03:30 PM',
+];
+
+const TIME_SLOT_LABELS = [...MORNING_SLOTS, ...AFTERNOON_SLOTS];
 
 const CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'all', label: 'All Services' },
@@ -94,6 +101,11 @@ const getTimeSlotDate = (timeStr: string, baseDate: Date) => {
   return date;
 };
 
+const isWeekend = (date: Date) => {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+};
+
 const isTimeSlotPast = (timeStr: string, selectedDate: Date) => {
   const today = new Date();
   const isSameDay = today.getFullYear() === selectedDate.getFullYear()
@@ -103,9 +115,12 @@ const isTimeSlotPast = (timeStr: string, selectedDate: Date) => {
   return getTimeSlotDate(timeStr, selectedDate) < new Date();
 };
 
-const findNextAvailableSlot = (selectedDate: Date, booked: string[]) => TIME_SLOT_LABELS.find(
-  (slot) => !isTimeSlotPast(slot, selectedDate) && !booked.includes(slot)
-);
+const findNextAvailableSlot = (selectedDate: Date, booked: string[]) => {
+  if (isWeekend(selectedDate)) return '';
+  return TIME_SLOT_LABELS.find(
+    (slot) => !isTimeSlotPast(slot, selectedDate) && !booked.includes(slot)
+  );
+};
 
 export default function StudentBookingPage() {
   const router = useRouter();
@@ -450,6 +465,29 @@ export default function StudentBookingPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-2">Select Date & Time Slot</h2>
             <p className="text-xs text-gray-500 mb-6">Choose a date for your visit to view available clinic time slots.</p>
 
+            {/* General Schedule Banner */}
+            <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-start gap-3 shadow-xs">
+              <Clock className="w-5 h-5 text-[#1e3a8a] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-slate-900 text-sm">General Appointments Schedule</p>
+                <p><span className="font-semibold text-slate-800">Operating Days:</span> Monday to Friday</p>
+                <div className="flex flex-wrap gap-4 text-slate-700 pt-0.5">
+                  <span><strong className="text-[#1e3a8a]">Morning Session:</strong> 8:30 AM – 12:00 PM</span>
+                  <span><strong className="text-[#1e3a8a]">Afternoon Session:</strong> 1:30 PM – 4:00 PM</span>
+                </div>
+                <p className="text-[11px] text-amber-800 font-semibold pt-1">
+                  NB: Weekend & Public Holidays — Emergency Services Only.
+                </p>
+              </div>
+            </div>
+
+            {isWeekend(bookingDate) && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services. Please choose a weekday.</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               <div className="space-y-4">
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
@@ -474,31 +512,77 @@ export default function StudentBookingPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
                   Available Time Slots *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {TIME_SLOT_LABELS.map((slot) => {
-                    const isBooked = bookedSlots.includes(slot);
-                    const isSelected = bookingTime === slot;
-                    const isPast = isTimeSlotPast(slot, bookingDate);
-                    const isDisabled = isBooked || isPast;
-                    return (
-                      <button
-                        type="button"
-                        key={slot}
-                        disabled={isDisabled}
-                        onClick={() => setBookingTime(slot)}
-                        className={`py-2.5 px-2 text-xs font-bold rounded-xl border transition-all ${
-                          isDisabled
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
-                            : isSelected
-                            ? 'bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-sm ring-2 ring-blue-200'
-                            : 'bg-white text-gray-800 border-gray-200 hover:border-blue-400 hover:bg-blue-50/30'
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
+
+                {isWeekend(bookingDate) ? (
+                  <div className="p-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500 space-y-1">
+                    <p className="font-bold text-gray-700">No general appointment slots on weekends.</p>
+                    <p>General clinic consultations run Monday to Friday.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase text-[#1e3a8a] mb-2 tracking-wide">
+                        Morning Session (8:30 AM – 12:00 PM)
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {MORNING_SLOTS.map((slot) => {
+                          const isBooked = bookedSlots.includes(slot);
+                          const isSelected = bookingTime === slot;
+                          const isPast = isTimeSlotPast(slot, bookingDate);
+                          const isDisabled = isBooked || isPast;
+                          return (
+                            <button
+                              type="button"
+                              key={slot}
+                              disabled={isDisabled}
+                              onClick={() => setBookingTime(slot)}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
+                                  : isSelected
+                                  ? 'bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-sm ring-2 ring-blue-200'
+                                  : 'bg-white text-gray-800 border-gray-200 hover:border-blue-400 hover:bg-blue-50/30'
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase text-[#1e3a8a] mb-2 tracking-wide">
+                        Afternoon Session (1:30 PM – 4:00 PM)
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {AFTERNOON_SLOTS.map((slot) => {
+                          const isBooked = bookedSlots.includes(slot);
+                          const isSelected = bookingTime === slot;
+                          const isPast = isTimeSlotPast(slot, bookingDate);
+                          const isDisabled = isBooked || isPast;
+                          return (
+                            <button
+                              type="button"
+                              key={slot}
+                              disabled={isDisabled}
+                              onClick={() => setBookingTime(slot)}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
+                                  : isSelected
+                                  ? 'bg-[#1e3a8a] text-white border-[#1e3a8a] shadow-sm ring-2 ring-blue-200'
+                                  : 'bg-white text-gray-800 border-gray-200 hover:border-blue-400 hover:bg-blue-50/30'
+                              }`}
+                            >
+                              {slot}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -512,8 +596,19 @@ export default function StudentBookingPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setStep(3)}
-                className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm flex items-center gap-2"
+                disabled={isWeekend(bookingDate)}
+                onClick={() => {
+                  if (isWeekend(bookingDate)) {
+                    setError('General appointments cannot be booked on weekends. Please select a weekday (Monday to Friday).');
+                    return;
+                  }
+                  setStep(3);
+                }}
+                className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-2 ${
+                  isWeekend(bookingDate)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-[#1e3a8a] text-white hover:bg-blue-900'
+                }`}
               >
                 Continue to Doctor & Details <ArrowRight className="w-4 h-4" />
               </button>

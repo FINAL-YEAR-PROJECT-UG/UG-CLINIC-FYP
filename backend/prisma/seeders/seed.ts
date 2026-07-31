@@ -30,25 +30,35 @@ function formatTime(totalMinutes: number): string {
 function generateTimeSlots(
   serviceId: string,
   date: Date,
-  durationMinutes: number,
-  startHour = 8,
-  endHour = 17
+  durationMinutes: number
 ) {
-  const slots = [];
-  let currentMinutes = startHour * 60;
-  const endMinutes = endHour * 60;
+  // General Schedule: Mon-Fri (Weekends & Public Holidays: Emergency Only)
+  const day = date.getDay();
+  if (day === 0 || day === 6) return [];
 
-  while (currentMinutes + durationMinutes <= endMinutes) {
-    slots.push({
-      serviceId,
-      date,
-      startTime: formatTime(currentMinutes),
-      endTime: formatTime(currentMinutes + durationMinutes),
-      isAvailable: true,
-      maxBookings: 1,
-      currentBookings: 0,
-    });
-    currentMinutes += durationMinutes;
+  const slots = [];
+  // Sessions:
+  // Morning Session: 08:30 AM (510 min) to 12:00 PM (720 min)
+  // Afternoon Session: 01:30 PM (810 min) to 04:00 PM (960 min)
+  const sessions = [
+    { start: 8 * 60 + 30, end: 12 * 60 },
+    { start: 13 * 60 + 30, end: 16 * 60 },
+  ];
+
+  for (const session of sessions) {
+    let currentMinutes = session.start;
+    while (currentMinutes + durationMinutes <= session.end) {
+      slots.push({
+        serviceId,
+        date,
+        startTime: formatTime(currentMinutes),
+        endTime: formatTime(currentMinutes + durationMinutes),
+        isAvailable: true,
+        maxBookings: 1,
+        currentBookings: 0,
+      });
+      currentMinutes += durationMinutes;
+    }
   }
 
   return slots;
