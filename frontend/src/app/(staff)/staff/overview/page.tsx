@@ -10,7 +10,7 @@ import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
 import StaffNav from '@/components/shared/StaffNav';
-import { getErrorMessage, normalizeRole, isStaffRole, canManageClinicOperations, isDoctorRole } from '@/lib/utils';
+import { getErrorMessage, normalizeRole, isStaffRole, canManageClinicOperations, isDoctorRole, formatTimeLabel } from '@/lib/utils';
 import {
   getStaffDashboard,
   getDoctors,
@@ -515,7 +515,7 @@ export default function StaffOverviewPage() {
                   {recentAppointments.map((apt) => (
                     <tr key={apt.id} className="border-b border-[#E2E8F0] last:border-0 hover:bg-[#F8FAFC]">
                       <td className="px-4 py-4">{formatShortDate(apt.date)}</td>
-                      <td className="px-4 py-4">{apt.timeSlot}</td>
+                      <td className="px-4 py-4">{formatTimeLabel(apt.timeSlot)}</td>
                       <td className="px-4 py-4">
                         {apt.user.firstName} {apt.user.lastName}
                         <div className="text-xs text-[#334155]">{apt.user.studentId || apt.user.email}</div>

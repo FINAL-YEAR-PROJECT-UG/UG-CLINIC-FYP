@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import UGLogo from '@/components/shared/UGLogo';
 import { useAuth } from '@/hooks/useAuth';
-import { canAccessStudentRecords, getErrorMessage } from '@/lib/utils';
+import { canAccessStudentRecords, getErrorMessage, formatTimeLabel } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { getAllStudents, getStudentHistory, updateStudentStatus, type StaffStudent } from '@/lib/staffApi';
 import { Search, Users, Mail, Phone, GraduationCap, ChevronLeft, ChevronRight, Eye, Calendar, Clock, X, CheckCircle2, UserX } from 'lucide-react';
@@ -340,7 +340,7 @@ export default function StaffStudentsPage() {
 
                           <div className="text-right">
                             <p className="font-semibold text-gray-900">{new Date(apt.date).toLocaleDateString('en-GB')}</p>
-                            <p className="text-gray-500">{apt.timeSlot}</p>
+                            <p className="text-gray-500">{formatTimeLabel(apt.timeSlot)}</p>
                             <span className="inline-block mt-1 px-2 py-0.5 text-[9px] font-bold rounded bg-gray-100 text-gray-700 uppercase">
                               {apt.status}
                             </span>

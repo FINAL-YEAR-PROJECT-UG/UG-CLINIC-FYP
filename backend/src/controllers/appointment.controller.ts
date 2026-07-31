@@ -4,10 +4,14 @@ import { AuthRequest } from '../middleware/auth';
 
 // Helper to convert time slot string to minutes since midnight
 function timeSlotToMinutes(timeStr: string): number {
-  const [timePart, ampm] = timeStr.split(' ');
-  const [hoursStr, minutesStr] = timePart.split(':');
-  let hours = parseInt(hoursStr, 10);
-  const minutes = parseInt(minutesStr, 10);
+  if (!timeStr) return 0;
+  const trimmed = String(timeStr).trim();
+  const ampmMatch = trimmed.match(/(am|pm)/i);
+  const ampm = ampmMatch ? ampmMatch[1].toUpperCase() : null;
+  const timeOnly = trimmed.replace(/(am|pm)/i, '').trim();
+  const [hoursStr, minutesStr] = timeOnly.split(':');
+  let hours = parseInt(hoursStr, 10) || 0;
+  const minutes = parseInt(minutesStr, 10) || 0;
 
   if (ampm === 'PM' && hours !== 12) {
     hours += 12;

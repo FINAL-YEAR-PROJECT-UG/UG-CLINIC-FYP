@@ -114,3 +114,56 @@ export function navigateToHome(router: AppRouterInstance, info: AuthRoleInfo): v
   const target = getHomeRouteForRole(info.role, info.isAuthenticated);
   router.push(target);
 }
+
+export function formatTimeLabel(time?: string | null): string {
+  if (!time) return '';
+  const trimmed = time.trim();
+  const ampmMatch = trimmed.match(/(am|pm)/i);
+
+  if (ampmMatch) {
+    const ampm = ampmMatch[1].toUpperCase();
+    const timeOnly = trimmed.replace(/(am|pm)/i, '').trim();
+    const [hoursStr, minutesStr] = timeOnly.split(':');
+    let hours = parseInt(hoursStr, 10);
+    const minutes = minutesStr || '00';
+    if (isNaN(hours)) return time;
+    const displayHour = hours % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  }
+
+  const [hoursStr, minutesStr] = trimmed.split(':');
+  let hours = parseInt(hoursStr, 10);
+  if (isNaN(hours)) return time;
+  const minutes = minutesStr || '00';
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  return `${displayHour}:${minutes} ${suffix}`;
+}
+
+export function parseTimeToMinutes(timeStr?: string | null): number {
+  if (!timeStr) return 0;
+  const trimmed = timeStr.trim();
+  const ampmMatch = trimmed.match(/(am|pm)/i);
+  const ampm = ampmMatch ? ampmMatch[1].toUpperCase() : null;
+  const timeOnly = trimmed.replace(/(am|pm)/i, '').trim();
+  const [hoursStr, minutesStr] = timeOnly.split(':');
+  let hours = parseInt(hoursStr, 10) || 0;
+  const minutes = parseInt(minutesStr, 10) || 0;
+
+  if (ampm === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (ampm === 'AM' && hours === 12) {
+    hours = 0;
+  }
+
+  return hours * 60 + minutes;
+}
+
+export function getAppointmentTimestamp(dateIso: string, timeSlot: string): number {
+  const d = new Date(dateIso);
+  if (isNaN(d.getTime())) return 0;
+  const minutes = parseTimeToMinutes(timeSlot);
+  const dateBase = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return dateBase + minutes * 60 * 1000;
+}
+

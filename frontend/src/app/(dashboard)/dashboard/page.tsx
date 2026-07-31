@@ -11,7 +11,7 @@ import {
   appointmentApi,
   type ApiAppointment,
 } from '@/lib/appointmentApi';
-import { getErrorMessage, getBookingRouteForRole, normalizeRole, isStaffRole } from '@/lib/utils';
+import { getErrorMessage, getBookingRouteForRole, normalizeRole, isStaffRole, formatTimeLabel } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import {
   Calendar,
@@ -35,19 +35,25 @@ function getInitials(name: string): string {
 }
 
 function formatLongDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  const date = new Date(iso);
+  // Use UTC to avoid timezone conversion issues
+  return date.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
 function formatShortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
+  const date = new Date(iso);
+  // Use UTC to avoid timezone conversion issues
+  return date.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
@@ -360,7 +366,7 @@ export default function DashboardPage() {
                     <Clock className="h-4 w-4 text-[#334155] mt-0.5" />
                     <div>
                       <p className="text-xs text-[#334155]">Time</p>
-                      <p className="text-sm font-medium text-[#020617]">{nextAppointment.timeSlot}</p>
+                      <p className="text-sm font-medium text-[#020617]">{formatTimeLabel(nextAppointment.timeSlot)}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">

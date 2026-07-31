@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import UGLogo from "@/components/shared/UGLogo";
-import { getErrorMessage, normalizeRole, isStaffRole } from "@/lib/utils";
+import { getErrorMessage, normalizeRole, isStaffRole, formatTimeLabel, getAppointmentTimestamp } from "@/lib/utils";
 import {
   assignDoctorToAppointment,
   getAllStaffAppointments,
@@ -85,27 +85,16 @@ function getStaffRoleLabel(role: string) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  const date = new Date(iso);
+  // Use UTC to avoid timezone conversion issues
+  return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
 
-function formatTimeLabel(time: string): string {
-  const normalized = time.length >= 5 ? time.slice(0, 5) : time;
-  const [hours, minutes] = normalized.split(":");
-
-  if (typeof hours === "undefined" || typeof minutes === "undefined") {
-    return time;
-  }
-
-  const numericHour = Number(hours);
-  const suffix = numericHour >= 12 ? "PM" : "AM";
-  const displayHour = numericHour % 12 || 12;
-
-  return `${displayHour}:${minutes} ${suffix}`;
-}
 
 function isSameDay(iso: string, date: Date) {
   return new Date(iso).toDateString() === date.toDateString();
@@ -126,22 +115,11 @@ export default function StaffAppointmentsPage() {
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
 
-  const initialSnap = useAuthStore.getState();
-  const initialUser = initialSnap.user ?? storeUser ?? user;
-  const initialIsAuth =
-    initialSnap.isAuthenticated || storeIsAuth || isAuthenticated;
-  const initialRole = normalizeRole(initialUser?.role);
-  const initialIsStaff = initialIsAuth && isStaffRole(initialRole);
-
-  const [guardResolved, setGuardResolved] = useState(() => initialIsStaff);
+  const [guardResolved, setGuardResolved] = useState(false);
   const [guardRedirecting, setGuardRedirecting] = useState(false);
-  const [userRole, setUserRole] = useState<string>(() => initialRole);
-  const [firstName, setFirstName] = useState<string>(
-    () => initialUser?.firstName || "Staff",
-  );
-  const [lastName, setLastName] = useState<string>(
-    () => initialUser?.lastName || "",
-  );
+  const [userRole, setUserRole] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("Staff");
+  const [lastName, setLastName] = useState<string>("");
 
   const [activeTab, setActiveTab] = useState<"appointments" | "timeslots">(
     "appointments",
@@ -437,9 +415,9 @@ export default function StaffAppointmentsPage() {
 
   const sortedAppointments = useMemo(() => {
     return [...appointments].sort((a, b) => {
-      const left = new Date(`${a.date}T${a.timeSlot}`);
-      const right = new Date(`${b.date}T${b.timeSlot}`);
-      return left.getTime() - right.getTime();
+      const left = getAppointmentTimestamp(a.date, a.timeSlot);
+      const right = getAppointmentTimestamp(b.date, b.timeSlot);
+      return left - right;
     });
   }, [appointments]);
 
@@ -486,13 +464,15 @@ export default function StaffAppointmentsPage() {
 
   if (!guardResolved) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <UGLogo size="md" />
-          <LoadingSpinner size={48} />
-          <p className="text-sm text-slate-500 font-medium">
-            {guardRedirecting ? "Redirecting..." : "Verifying staff access..."}
-          </p>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-4">
+            <UGLogo size="md" />
+            <LoadingSpinner size={48} />
+            <p className="text-sm text-slate-500 font-medium">
+              {guardRedirecting ? "Redirecting..." : "Verifying staff access..."}
+            </p>
+          </div>
         </div>
       </div>
     );
