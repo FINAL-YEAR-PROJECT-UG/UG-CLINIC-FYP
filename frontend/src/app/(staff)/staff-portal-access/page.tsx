@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, ShieldAlert, Lock, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Loader2, ShieldAlert, Lock, ArrowLeft, KeyRound, CheckCircle2 } from '@/components/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -147,7 +147,8 @@ export default function StaffPortalAccessPage() {
                 autoComplete="email"
                 placeholder="staff@ug.edu.gh"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                 {...register('email')}
               />
               {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
@@ -162,7 +163,8 @@ export default function StaffPortalAccessPage() {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
                 {...register('password')}
               />
               {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}

@@ -37,7 +37,7 @@ import {
   RefreshCw,
   BookOpen,
   Users,
-} from 'lucide-react';
+} from '@/components/icons';
 
 const STATUS_TABS = [
   { id: 'all', label: 'All Resources', icon: BookOpen },

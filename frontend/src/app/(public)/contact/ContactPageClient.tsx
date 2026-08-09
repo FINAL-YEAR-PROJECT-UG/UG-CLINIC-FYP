@@ -22,40 +22,17 @@ import {
   Ribbon,
   Pill,
   Smile,
-} from 'lucide-react';
+  ArrowRight,
+  ShieldCheck,
+  Building2,
+} from '@/components/icons';
 
 const CLINIC_ADDRESS = 'University of Ghana, Legon — Student Clinic Block, Accra, Ghana';
-
-type IconProps = { className?: string };
-
-const FacebookIcon = ({ className }: IconProps) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
-const TwitterIcon = ({ className }: IconProps) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const InstagramIcon = ({ className }: IconProps) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-  </svg>
-);
-
-const LinkedInIcon = ({ className }: IconProps) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-  </svg>
-);
 
 const ways = [
   {
     icon: MapPin,
-    accent: '#14B8A6',
+    badgeColor: 'bg-teal-50 text-teal-700 border-teal-100',
     title: 'Visit Us',
     lines: ['Student Clinic Block', 'University of Ghana, Legon'],
     cta: 'Get Directions',
@@ -63,7 +40,7 @@ const ways = [
   },
   {
     icon: Phone,
-    accent: '#EF4444',
+    badgeColor: 'bg-[#1e3a8a]/10 text-[#1e3a8a] border-blue-100',
     title: 'Call Us',
     lines: ['General: +233 30 250 0000', 'Emergency: +233 20 123 4567'],
     cta: 'Call Now',
@@ -71,7 +48,7 @@ const ways = [
   },
   {
     icon: Mail,
-    accent: '#1E3A8A',
+    badgeColor: 'bg-sky-50 text-sky-700 border-sky-100',
     title: 'Email Us',
     lines: ['clinic@ug.edu.gh', 'Response within 24 hours'],
     cta: 'Send Email',
@@ -79,7 +56,7 @@ const ways = [
   },
   {
     icon: AlertTriangle,
-    accent: '#F59E0B',
+    badgeColor: 'bg-amber-50 text-amber-700 border-amber-100',
     title: 'Emergency',
     lines: ['24/7 hotline', 'For urgent medical help'],
     cta: 'Call Emergency',
@@ -97,60 +74,60 @@ const hours = [
   { day: 'Sunday', time: 'Closed', status: 'closed' },
 ];
 
-const statusColor: Record<string, string> = {
-  open: 'bg-green-500',
-  limited: 'bg-amber-500',
-  closed: 'bg-red-500',
+const statusBadge: Record<string, { dot: string; text: string; label: string }> = {
+  open: { dot: 'bg-emerald-500', text: 'text-emerald-700 bg-emerald-50 border-emerald-200', label: 'Open' },
+  limited: { dot: 'bg-amber-500', text: 'text-amber-700 bg-amber-50 border-amber-200', label: 'Limited' },
+  closed: { dot: 'bg-rose-500', text: 'text-rose-700 bg-rose-50 border-rose-200', label: 'Closed' },
 };
 
 const departments = [
   {
     icon: Stethoscope,
-    accent: '#14B8A6',
     name: 'General Medicine',
-    lines: ['Block A, Ground Floor', '+233 30 250 0001', 'general@ug.edu.gh', 'Mon–Fri'],
-    cta: 'Email Department',
-    href: 'mailto:general@ug.edu.gh',
+    location: 'Block A, Ground Floor',
+    phone: '+233 30 250 0001',
+    email: 'general@ug.edu.gh',
+    hours: 'Mon–Fri',
   },
   {
     icon: Brain,
-    accent: '#8B5CF6',
     name: 'Mental Health & Counselling',
-    lines: ['Counselling Wing', '+233 30 250 0002', 'wellbeing@ug.edu.gh', 'By appointment'],
-    cta: 'Email Department',
-    href: 'mailto:wellbeing@ug.edu.gh',
+    location: 'Counselling Wing',
+    phone: '+233 30 250 0002',
+    email: 'wellbeing@ug.edu.gh',
+    hours: 'By appointment',
   },
   {
     icon: Ribbon,
-    accent: '#EF4444',
     name: 'Sexual Health',
-    lines: ['Block B, Room 4', '+233 30 250 0003', 'sexualhealth@ug.edu.gh', 'Mon–Fri'],
-    cta: 'Email Department',
-    href: 'mailto:sexualhealth@ug.edu.gh',
+    location: 'Block B, Room 4',
+    phone: '+233 30 250 0003',
+    email: 'sexualhealth@ug.edu.gh',
+    hours: 'Mon–Fri',
   },
   {
     icon: HeartPulse,
-    accent: '#22C55E',
     name: 'Student Wellness',
-    lines: ['Wellness Centre', '+233 30 250 0004', 'wellness@ug.edu.gh', 'Mon–Fri'],
-    cta: 'Email Department',
-    href: 'mailto:wellness@ug.edu.gh',
+    location: 'Wellness Centre',
+    phone: '+233 30 250 0004',
+    email: 'wellness@ug.edu.gh',
+    hours: 'Mon–Fri',
   },
   {
     icon: Pill,
-    accent: '#1E3A8A',
     name: 'Pharmacy',
-    lines: ['Block A, Room 2', '+233 30 250 0005', 'pharmacy@ug.edu.gh', 'Mon–Sat'],
-    cta: 'Email Department',
-    href: 'mailto:pharmacy@ug.edu.gh',
+    location: 'Block A, Room 2',
+    phone: '+233 30 250 0005',
+    email: 'pharmacy@ug.edu.gh',
+    hours: 'Mon–Sat',
   },
   {
     icon: Smile,
-    accent: '#F59E0B',
     name: 'Dental Services',
-    lines: ['Main UG Hospital', '+233 30 250 0006', 'dental@ug.edu.gh', 'Mon–Fri'],
-    cta: 'Email Department',
-    href: 'mailto:dental@ug.edu.gh',
+    location: 'Main UG Hospital',
+    phone: '+233 30 250 0006',
+    email: 'dental@ug.edu.gh',
+    hours: 'Mon–Fri',
   },
 ];
 
@@ -158,14 +135,6 @@ const faqs = [
   {
     q: 'How quickly will I get a response?',
     a: 'We aim to respond to all enquiries within 24 hours on working days. For urgent medical concerns, please call our emergency hotline instead of using the contact form.',
-  },
-  {
-    q: 'Do I need an appointment to visit the clinic?',
-    a: 'Walk-ins are welcome for general consultations, but booking an appointment online reduces your waiting time significantly.',
-  },
-  {
-    q: 'Are clinic services free for students?',
-    a: 'Yes. Most services are free for registered University of Ghana students. Some specialist services may require a referral to the Main UG Hospital.',
   },
   {
     q: 'Is my information kept confidential?',
@@ -179,13 +148,6 @@ const faqs = [
     q: 'What should I do in an emergency?',
     a: 'Call our 24/7 emergency hotline on +233 20 123 4567 or go directly to the Student Clinic. Do not wait for an email response.',
   },
-];
-
-const socials = [
-  { icon: FacebookIcon, name: 'Facebook', handle: '@UGStudentClinic', href: '#' },
-  { icon: TwitterIcon, name: 'Twitter', handle: '@UGClinic', href: '#' },
-  { icon: InstagramIcon, name: 'Instagram', handle: '@ug.clinic', href: '#' },
-  { icon: LinkedInIcon, name: 'LinkedIn', handle: 'UG Student Clinic', href: '#' },
 ];
 
 export default function ContactPageClient() {
@@ -225,82 +187,102 @@ export default function ContactPageClient() {
   };
 
   const inputClass =
-    'w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none';
+    'w-full px-3.5 py-2.5 border-[1.5px] border-[#DDE3EE] bg-white text-[#0B1221] rounded-xl text-sm hover:border-[#94A3B8] focus:outline-none focus:border-[#0369A1] focus:ring-[3px] focus:ring-[#0369A1]/15 transition-all duration-200 placeholder:text-[#9CA8BA]';
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Contact Us</h1>
-          <p className="text-blue-100 max-w-2xl mx-auto text-lg">
-            Have a question or need help? Reach out to the UG Student Clinic team — we&apos;re here for you.
+      <section className="relative bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] text-white py-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-4xl mx-auto text-center z-10 animate-[fadeIn_300ms_ease_both]">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200 backdrop-blur-md mb-4">
+            <Building2 className="w-3.5 h-3.5 text-blue-300" />
+            UG Student Health Center
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
+            Contact & Support
+          </h1>
+          <p className="text-blue-100/90 max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
+            Have a question or need assistance? Reach out to the UG Student Clinic team — we&apos;re here to help you stay healthy.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href="tel:+233302500000" className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
-              <Phone className="h-4 w-4" /> Call Now
+            <a
+              href="tel:+233302500000"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md text-white transition-all duration-200"
+            >
+              <Phone className="h-4 w-4" /> Call General
             </a>
-            <a href="mailto:clinic@ug.edu.gh" className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
+            <a
+              href="mailto:clinic@ug.edu.gh"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md text-white transition-all duration-200"
+            >
               <Mail className="h-4 w-4" /> Email Us
             </a>
-            <a href="#contact-form" className="inline-flex items-center gap-2 bg-white text-[#1e3a8a] hover:bg-gray-100 px-5 py-2.5 rounded-md text-sm font-semibold transition-colors">
-              <Send className="h-4 w-4" /> Send a Message
+            <a
+              href="#contact-form"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs bg-white text-[#0F172A] shadow-md hover:bg-blue-50 transition-all duration-200"
+            >
+              <Send className="h-4 w-4" /> Send Message
             </a>
           </div>
         </div>
       </section>
 
-      {/* Emergency banner */}
-      <div className="bg-red-50 border-b border-red-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="flex items-center gap-2 text-red-700 text-sm font-medium">
-            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-            For medical emergencies, call <strong>+233 20 123 4567</strong> or visit the clinic immediately.
+      {/* Emergency Banner */}
+      <div className="bg-rose-500/10 border-b border-rose-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-rose-900 text-xs sm:text-sm font-semibold">
+            <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span>For urgent medical emergencies, call our 24/7 hotline <strong>+233 20 123 4567</strong> or visit the clinic immediately.</span>
           </p>
-          <a href="tel:+233201234567" className="text-sm font-semibold text-red-700 border border-red-300 rounded-full px-4 py-1.5 hover:bg-red-100 transition-colors">
-            Call 24/7
+          <a
+            href="tel:+233201234567"
+            className="shrink-0 text-xs font-extrabold text-white bg-rose-600 hover:bg-rose-700 rounded-lg px-4 py-2 shadow-xs transition-colors"
+          >
+            Call Emergency Hotline
           </a>
         </div>
       </div>
 
-      {/* Ways to get in touch */}
+      {/* Main Grid: Ways to Get in Touch */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-10">
-          <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Get in Touch</p>
-          <h2 className="text-3xl font-bold text-blue-900">Ways to Get in Touch</h2>
-          <div className="mt-3 h-1 w-12 bg-[#1e3a8a] rounded-full mx-auto" />
+        <div className="text-center mb-12">
+          <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3">
+            Reach Out
+          </span>
+          <h2 className="text-3xl font-extrabold text-[#0B1221]">Ways to Get in Touch</h2>
+          <p className="text-sm text-[#6B7A8D] mt-2 max-w-lg mx-auto">Choose the method that works best for your health query.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {ways.map((w) => {
             const Icon = w.icon;
             return (
               <div
                 key={w.title}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center flex flex-col"
-                style={{ borderTop: `4px solid ${w.accent}` }}
+                className="bg-white rounded-2xl border border-[#DDE3EE] p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
               >
-                <div
-                  className="inline-flex items-center justify-center h-12 w-12 rounded-full mb-4 mx-auto"
-                  style={{ backgroundColor: `${w.accent}1A`, color: w.accent }}
-                >
-                  <Icon className="h-6 w-6" />
+                <div>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 border ${w.badgeColor}`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{w.title}</h3>
+                  <div className="space-y-1 mb-5">
+                    {w.lines.map((line) => (
+                      <p key={line} className="text-xs text-[#6B7A8D] font-medium leading-relaxed">{line}</p>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{w.title}</h3>
-                <div className="flex-1">
-                  {w.lines.map((line) => (
-                    <p key={line} className="text-gray-600 text-sm">{line}</p>
-                  ))}
-                </div>
+
                 <a
                   href={w.href}
                   target={w.href.startsWith('http') ? '_blank' : undefined}
                   rel="noreferrer"
-                  className="mt-4 inline-block text-sm font-semibold rounded-full border px-4 py-2 transition-colors"
-                  style={{ color: w.accent, borderColor: w.accent }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold border border-[#DDE3EE] text-[#4B5A6E] hover:text-[#0F172A] hover:bg-[#F5F7FB] transition-all duration-200"
                 >
-                  {w.cta}
+                  {w.cta} <ArrowRight className="w-3.5 h-3.5" />
                 </a>
               </div>
             );
@@ -308,81 +290,116 @@ export default function ContactPageClient() {
         </div>
       </section>
 
-      {/* Location + hours */}
-      <section className="bg-gray-50 py-16">
+      {/* Location & Hours Grid */}
+      <section className="bg-white py-16 border-y border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Map / directions */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col">
-            <div className="relative h-56 bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center">
-              <MapPin className="h-12 w-12 text-[#1e3a8a]" />
-              <span className="absolute bottom-3 left-3 text-xs font-medium text-blue-900 bg-white/80 rounded px-2 py-1">
-                University of Ghana, Legon
-              </span>
+          {/* Directions / Map Card */}
+          <div className="bg-[#F5F7FB] rounded-2xl border border-[#DDE3EE] overflow-hidden flex flex-col justify-between p-6">
+            <div>
+              <div className="h-44 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-xl flex flex-col items-center justify-center p-6 text-white text-center relative overflow-hidden mb-6">
+                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-2 backdrop-blur-md">
+                  <MapPin className="h-6 w-6 text-blue-300" />
+                </div>
+                <h3 className="font-extrabold text-lg">University of Ghana Student Clinic</h3>
+                <p className="text-xs text-blue-200 mt-1">Legon Campus, Accra, Ghana</p>
+              </div>
+
+              <div className="space-y-3 mb-6 text-xs text-[#4B5A6E]">
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#0369A1] shrink-0 mt-0.5" />
+                  <span>Student Clinic Block, Main University Road, Legon Campus</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Phone className="w-4 h-4 text-[#0369A1] shrink-0 mt-0.5" />
+                  <span>+233 30 250 0000 / +233 20 123 4567</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Mail className="w-4 h-4 text-[#0369A1] shrink-0 mt-0.5" />
+                  <span>clinic@ug.edu.gh</span>
+                </div>
+              </div>
             </div>
-            <div className="p-6 flex flex-wrap gap-3">
+
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-[#E2E8F0]">
               <a
                 href="https://www.google.com/maps/search/?api=1&query=University+of+Ghana+Legon+Hospital"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2.5 rounded-md transition-colors"
+                className="inline-flex items-center gap-2 bg-[#0F172A] hover:bg-[#1e3a8a] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition-colors"
               >
-                <Navigation className="h-4 w-4" /> Get Directions
+                <Navigation className="h-4 w-4" /> Get Google Directions
               </a>
               <button
                 onClick={copyAddress}
-                className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-semibold px-4 py-2.5 rounded-md hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 border border-[#DDE3EE] text-[#4B5A6E] hover:bg-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors"
               >
-                <Copy className="h-4 w-4" /> {copied ? 'Copied!' : 'Copy Address'}
+                <Copy className="h-4 w-4" /> {copied ? 'Address Copied!' : 'Copy Address'}
               </button>
             </div>
           </div>
 
-          {/* Clinic info + hours */}
-          <div>
-            <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Our Location</p>
-            <h2 className="text-2xl font-bold text-blue-900 mb-1">University of Ghana Student Clinic</h2>
-            <div className="h-1 w-12 bg-blue-700 rounded-full mb-5" />
-            <ul className="space-y-2 text-gray-700 text-sm mb-6">
-              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 text-teal-600 mt-0.5" /> Student Clinic Block, Legon Campus</li>
-              <li className="flex items-start gap-2"><Phone className="h-4 w-4 text-teal-600 mt-0.5" /> +233 30 250 0000</li>
-              <li className="flex items-start gap-2"><Mail className="h-4 w-4 text-teal-600 mt-0.5" /> clinic@ug.edu.gh</li>
-            </ul>
-
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-[#1e3a8a]" /> Operating Hours
-            </h3>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              {hours.map((h) => (
-                <div key={h.day} className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 last:border-0 text-sm">
-                  <span className="text-gray-700">{h.day}</span>
-                  <span className="flex items-center gap-2 text-gray-900 font-medium">
-                    {h.time}
-                    <span className={`h-2 w-2 rounded-full ${statusColor[h.status]}`} />
-                  </span>
+          {/* Operating Hours Card */}
+          <div className="bg-[#F5F7FB] rounded-2xl border border-[#DDE3EE] p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-xl flex items-center justify-center text-white shrink-0">
+                  <Clock className="w-5 h-5" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="font-extrabold text-[#0B1221] text-base">Operating Hours</h3>
+                  <p className="text-xs text-[#6B7A8D]">Standard clinic schedule for walk-ins and appointments</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-[#DDE3EE] overflow-hidden divide-y divide-[#EEF1F8]">
+                {hours.map((h) => {
+                  const badge = statusBadge[h.status];
+                  return (
+                    <div key={h.day} className="flex items-center justify-between px-4 py-3 text-xs">
+                      <span className="font-bold text-[#0B1221]">{h.day}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-[#4B5A6E]">{h.time}</span>
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${badge.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                          {badge.label}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
+            <p className="text-[11px] text-[#9CA8BA] mt-4 text-center">
+              Emergency medical hotline operates 24 hours a day, 7 days a week.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Contact form */}
+      {/* Contact Form Section */}
       <section id="contact-form" className="py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Send a Message</p>
-            <h2 className="text-3xl font-bold text-blue-900">We&apos;d Love to Hear From You</h2>
-            <p className="text-gray-600 mt-2">Fill out the form and our team will get back to you.</p>
+            <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3">
+              Message Us
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#0B1221]">Send a Message to the Clinic</h2>
+            <p className="text-sm text-[#6B7A8D] mt-2">Complete the form below and our administrative team will respond within 24 hours.</p>
           </div>
 
           {submitted ? (
-            <div className="bg-white rounded-xl border border-green-200 p-10 text-center shadow-sm">
-              <CheckCircle2 className="h-14 w-14 text-green-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Message Sent</h3>
-              <p className="text-gray-600 mb-6">Thank you for reaching out. Our team will respond within 24 hours.</p>
+            <div className="bg-white rounded-2xl border border-emerald-200 p-10 text-center shadow-md animate-[scaleIn_200ms_ease]">
+              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-extrabold text-[#0B1221] mb-2">Message Delivered</h3>
+              <p className="text-sm text-[#6B7A8D] mb-6 max-w-md mx-auto">
+                Thank you for reaching out. A representative from the UG Student Clinic will reply to your email within 24 hours.
+              </p>
               <button
                 onClick={() => setSubmitted(false)}
-                className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white font-semibold px-6 py-2.5 rounded-md transition-colors"
+                className="px-6 py-2.5 rounded-xl font-bold text-xs text-white bg-[#0F172A] hover:bg-[#1e3a8a] transition-all shadow-sm"
               >
                 Send Another Message
               </button>
@@ -390,52 +407,64 @@ export default function ContactPageClient() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="bg-white rounded-xl border border-gray-200 p-8 space-y-5 shadow-sm"
-              style={{ borderTop: '4px solid #14B8A6' }}
+              className="bg-white rounded-2xl border border-[#DDE3EE] p-8 space-y-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
-                  <input required value={form.name} onChange={set('name')} placeholder="Your name" className={inputClass} />
+                  <label className="block text-xs font-bold text-[#0B1221] mb-1.5">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input required value={form.name} onChange={set('name')} placeholder="e.g. Kwame Mensah" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                  <label className="block text-xs font-bold text-[#0B1221] mb-1.5">Student ID (optional)</label>
                   <input value={form.studentId} onChange={set('studentId')} placeholder="e.g. 10987654" className={inputClass} />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address <span className="text-red-500">*</span></label>
-                  <input required type="email" value={form.email} onChange={set('email')} placeholder="you@st.ug.edu.gh" className={inputClass} />
+                  <label className="block text-xs font-bold text-[#0B1221] mb-1.5">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input required type="email" value={form.email} onChange={set('email')} placeholder="student@st.ug.edu.gh" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone (optional)</label>
-                  <input value={form.phone} onChange={set('phone')} placeholder="+233 ..." className={inputClass} />
+                  <label className="block text-xs font-bold text-[#0B1221] mb-1.5">Phone Number (optional)</label>
+                  <input value={form.phone} onChange={set('phone')} placeholder="e.g. 0241234567" className={inputClass} />
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject <span className="text-red-500">*</span></label>
-                <input required value={form.subject} onChange={set('subject')} placeholder="How can we help?" className={inputClass} />
+                <label className="block text-xs font-bold text-[#0B1221] mb-1.5">
+                  Subject <span className="text-red-500">*</span>
+                </label>
+                <input required value={form.subject} onChange={set('subject')} placeholder="How can we assist you?" className={inputClass} />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Your Message <span className="text-red-500">*</span></label>
-                <textarea required value={form.message} onChange={set('message')} placeholder="Write your message..." rows={5} className={`${inputClass} resize-y`} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Send to Department</label>
+                <label className="block text-xs font-bold text-[#0B1221] mb-1.5">Department Target</label>
                 <select value={form.department} onChange={set('department')} className={inputClass}>
                   {departments.map((d) => (
                     <option key={d.name} value={d.name}>{d.name}</option>
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0B1221] mb-1.5">
+                  Your Message <span className="text-red-500">*</span>
+                </label>
+                <textarea required value={form.message} onChange={set('message')} placeholder="Type your detailed message here..." rows={5} className={`${inputClass} resize-y`} />
+              </div>
+
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] shadow-[0_4px_14px_rgba(15,23,42,0.28)] hover:shadow-[0_8px_24px_rgba(30,58,138,0.36)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Submitting Message…</>
                 ) : (
                   <>Send Message <Send className="h-4 w-4" /></>
                 )}
@@ -445,44 +474,44 @@ export default function ContactPageClient() {
         </div>
       </section>
 
-      {/* Departments */}
-      <section className="bg-gray-50 py-16">
+      {/* Departments Grid Section */}
+      <section className="bg-white py-16 border-t border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">Departments</p>
-            <h2 className="text-3xl font-bold text-[#1e3a8a]">Contact a Specific Department</h2>
-            <p className="text-gray-600 mt-2">Reach the right team directly.</p>
+          <div className="text-center mb-12">
+            <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3">
+              Departments
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#0B1221]">Contact a Specific Department</h2>
+            <p className="text-sm text-[#6B7A8D] mt-2 max-w-lg mx-auto">Direct contacts for specialized clinic units.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {departments.map((d) => {
               const Icon = d.icon;
               return (
                 <div
                   key={d.name}
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 flex flex-col"
-                  style={{ borderTop: `4px solid ${d.accent}` }}
+                  className="bg-[#F5F7FB] border border-[#DDE3EE] rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#94A3B8] transition-all duration-300 flex flex-col justify-between"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className="inline-flex items-center justify-center h-10 w-10 rounded-lg"
-                      style={{ backgroundColor: `${d.accent}1A`, color: d.accent }}
-                    >
-                      <Icon className="h-5 w-5" />
+                  <div>
+                    <div className="w-10 h-10 bg-white border border-[#DDE3EE] rounded-xl flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
+                      <Icon className="w-5 h-5" />
                     </div>
-                    <h3 className="font-bold text-gray-900">{d.name}</h3>
+                    <h3 className="font-extrabold text-[#0B1221] text-base mb-1">{d.name}</h3>
+                    <p className="text-xs text-[#6B7A8D] font-medium mb-4">{d.location}</p>
+
+                    <div className="space-y-1.5 text-xs text-[#4B5A6E] mb-5">
+                      <p className="flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-[#0369A1]" /> {d.phone}</p>
+                      <p className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-[#0369A1]" /> {d.email}</p>
+                      <p className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-[#0369A1]" /> {d.hours}</p>
+                    </div>
                   </div>
-                  <ul className="space-y-2 text-sm text-gray-600 flex-1">
-                    <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-gray-400" /> {d.lines[0]}</li>
-                    <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-gray-400" /> {d.lines[1]}</li>
-                    <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-gray-400" /> {d.lines[2]}</li>
-                    <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-gray-400" /> {d.lines[3]}</li>
-                  </ul>
+
                   <a
-                    href={d.href}
-                    className="mt-5 inline-block text-center text-sm font-semibold rounded-full border px-4 py-2 transition-colors"
-                    style={{ color: d.accent, borderColor: d.accent }}
+                    href={`mailto:${d.email}`}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-white border border-[#DDE3EE] text-[#0F172A] hover:bg-blue-50 hover:border-blue-200 transition-all"
                   >
-                    {d.cta}
+                    Email Unit <ArrowRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               );
@@ -491,53 +520,38 @@ export default function ContactPageClient() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <p className="text-xs font-bold tracking-widest text-teal-600 uppercase mb-2">FAQ</p>
-            <h2 className="text-3xl font-bold text-[#1e3a8a]">Frequently Asked Questions</h2>
-            <p className="text-gray-600 mt-2">Quick answers to common questions.</p>
+      {/* FAQs */}
+      <section className="py-16 bg-[#F5F7FB]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-white text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-sm mb-3">
+              FAQ
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#0B1221]">Frequently Asked Questions</h2>
+            <p className="text-sm text-[#6B7A8D] mt-2">Quick answers to common questions about clinic contacts.</p>
           </div>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => {
-              const open = openFaq === i;
-              return (
-                <div key={faq.q} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setOpenFaq(open ? null : i)}
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-medium text-gray-900 hover:bg-gray-50 transition-colors"
-                  >
-                    {faq.q}
-                    <ChevronDown className={`h-5 w-5 text-blue-700 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-                  </button>
-                  {open && <div className="px-5 pb-5 text-sm text-gray-600">{faq.a}</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
-      {/* Connect online */}
-      <section className="bg-[#1e3a8a] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <p className="text-xs font-bold tracking-widest text-blue-300 uppercase mb-2">Stay Connected</p>
-          <h2 className="text-3xl font-bold mb-3">Connect With Us Online</h2>
-          <p className="text-blue-200 mb-10 max-w-xl mx-auto">Follow the UG Student Clinic for health tips and updates.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {socials.map((s) => {
-              const Icon = s.icon;
+          <div className="space-y-3">
+            {faqs.map((faq, idx) => {
+              const open = openFaq === idx;
               return (
-                <a
-                  key={s.name}
-                  href={s.href}
-                  className="bg-[#1e3a8a]/80 hover:bg-[#1e3a8a] rounded-xl p-6 flex flex-col items-center gap-2 transition-colors"
+                <div
+                  key={faq.q}
+                  className="bg-white border border-[#DDE3EE] rounded-2xl overflow-hidden shadow-xs transition-all"
                 >
-                  <Icon className="h-7 w-7 text-blue-200" />
-                  <span className="font-semibold">{s.name}</span>
-                  <span className="text-xs text-blue-300">{s.handle}</span>
-                </a>
+                  <button
+                    onClick={() => setOpenFaq(open ? null : idx)}
+                    className="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-[#0B1221] hover:text-[#0369A1] transition-colors"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7A8D] transition-transform duration-200 ${open ? 'rotate-180 text-[#0369A1]' : ''}`} />
+                  </button>
+                  {open && (
+                    <div className="px-5 pb-5 text-xs text-[#4B5A6E] leading-relaxed border-t border-gray-100 pt-3 animate-[slideDown_150ms_ease]">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

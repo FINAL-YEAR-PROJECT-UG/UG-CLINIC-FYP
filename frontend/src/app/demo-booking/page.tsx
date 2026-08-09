@@ -32,7 +32,7 @@ import {
   Eye,
   Clock,
   AlertCircle,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface ServiceOption {
   id: string;
@@ -356,26 +356,42 @@ export default function StudentBookingPage() {
       </div>
 
       <div className="max-w-4xl w-full mx-auto px-4 py-8 flex-1">
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-8 shadow-xs">
-          <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        {/* Wizard Progress Bar */}
+        <div className="bg-white rounded-2xl border border-[#DDE3EE] p-4 mb-8 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
             {[
-              { s: 1, label: 'Select Service' },
+              { s: 1, label: 'Service' },
               { s: 2, label: 'Date & Time' },
               { s: 3, label: 'Doctor & Reason' },
               { s: 4, label: 'Confirmation' },
-            ].map((tile) => {
+            ].map((tile, i) => {
               const active = step === tile.s;
               const done = step > tile.s;
               return (
-                <div
-                  key={tile.s}
-                  className={`p-2.5 rounded-xl transition-all ${
-                    active ? 'bg-blue-50 text-[#1e3a8a] font-bold border border-blue-200' :
-                    done ? 'text-emerald-700 font-semibold' : 'text-gray-400'
-                  }`}
-                >
-                  <span className="block text-[10px] uppercase">Step {tile.s}</span>
-                  {tile.s}. {tile.label}
+                <div key={tile.s} className="flex items-center gap-2 flex-1">
+                  <div
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl w-full transition-all duration-200 ${
+                      active
+                        ? 'bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white shadow-md font-bold'
+                        : done
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold'
+                        : 'bg-[#F5F7FB] text-[#6B7A8D] font-medium border border-transparent'
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 font-extrabold ${
+                        active
+                          ? 'bg-white text-[#1e3a8a]'
+                          : done
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-[#DDE3EE] text-[#6B7A8D]'
+                      }`}
+                    >
+                      {done ? '✓' : tile.s}
+                    </div>
+                    <span className="text-xs truncate hidden sm:inline">{tile.label}</span>
+                  </div>
+                  {i < 3 && <div className="hidden md:block w-4 h-0.5 bg-[#E2E8F0] shrink-0" />}
                 </div>
               );
             })}

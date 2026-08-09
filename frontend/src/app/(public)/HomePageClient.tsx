@@ -16,7 +16,8 @@ import {
   Apple,
   ChevronRight,
   CheckCircle2,
-} from 'lucide-react';
+  ArrowRight,
+} from '@/components/icons';
 import integrityIcon from '@/Assets/integrity.svg';
 import respectIcon from '@/Assets/respect.svg';
 import excellenceIcon from '@/Assets/excellence.svg';
@@ -26,161 +27,126 @@ import healthFluIcon from '@/Assets/health-flu.png';
 import healthWellnessIcon from '@/Assets/health-wellness.svg';
 import welcomeIcon from '@/Assets/welcome.png';
 import { getImageSrc } from '@/lib/assets';
+
 export default function HomePageClient() {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const services = [
-    {
-      icon: Stethoscope,
-      title: 'General Consultation',
-      description: 'Routine check-ups, illness diagnosis, and treatment for common health concerns',
-    },
-    {
-      icon: Brain,
-      title: 'Mental Health Support',
-      description: 'Counseling, stress management, and mental wellness resources',
-    },
-    {
-      icon: HeartPulse,
-      title: 'Sexual Health Services',
-      description: 'Confidential testing, contraception advice, and reproductive health care',
-    },
-    {
-      icon: Syringe,
-      title: 'Vaccinations',
-      description: 'Flu shots, travel vaccines, and immunization programs',
-    },
-    {
-      icon: Pill,
-      title: 'Prescriptions',
-      description: 'Medication management and prescription refills',
-    },
-    {
-      icon: Apple,
-      title: 'Nutrition Counseling',
-      description: 'Dietary advice and nutrition planning for healthy living',
-    },
+    { icon: Stethoscope, title: 'General Consultation', description: 'Routine check-ups, illness diagnosis, and treatment for common health concerns', color: 'from-[#0F172A] to-[#1e3a8a]' },
+    { icon: Brain, title: 'Mental Health Support', description: 'Counseling, stress management, and mental wellness resources', color: 'from-[#4F46E5] to-[#7C3AED]' },
+    { icon: HeartPulse, title: 'Sexual Health Services', description: 'Confidential testing, contraception advice, and reproductive health care', color: 'from-[#DB2777] to-[#9D174D]' },
+    { icon: Syringe, title: 'Vaccinations', description: 'Flu shots, travel vaccines, and immunization programs', color: 'from-[#059669] to-[#047857]' },
+    { icon: Pill, title: 'Prescriptions', description: 'Medication management and prescription refills', color: 'from-[#0369A1] to-[#0EA5E9]' },
+    { icon: Apple, title: 'Nutrition Counseling', description: 'Dietary advice and nutrition planning for healthy living', color: 'from-[#D97706] to-[#B45309]' },
   ];
 
   const coreValues = [
-    {
-      title: 'Integrity',
-      description: 'We maintain the highest ethical standards in all our healthcare practices and patient interactions.',
-      image: integrityIcon,
-    },
-    {
-      title: 'Respect',
-      description: 'Every patient is treated with dignity, compassion, and understanding in a safe environment.',
-      image: respectIcon,
-    },
-    {
-      title: 'Excellence',
-      description: 'We strive for the highest quality care through continuous improvement and professional development.',
-      image: excellenceIcon,
-    },
-    {
-      title: 'Commitment',
-      description: 'Dedicated to serving our student community with accessible and comprehensive healthcare.',
-      image: commitmentIcon,
-    },
+    { title: 'Integrity', description: 'We maintain the highest ethical standards in all our healthcare practices and patient interactions.', image: integrityIcon },
+    { title: 'Respect', description: 'Every patient is treated with dignity, compassion, and understanding in a safe environment.', image: respectIcon },
+    { title: 'Excellence', description: 'We strive for the highest quality care through continuous improvement and professional development.', image: excellenceIcon },
+    { title: 'Commitment', description: 'Dedicated to serving our student community with accessible and comprehensive healthcare.', image: commitmentIcon },
   ];
 
   const healthUpdates = [
-    {
-      id: 1,
-      tag: 'Awareness',
-      tagColor: 'bg-red-50 text-red-600',
-      title: 'HIV/AIDS Awareness Month',
-      description: 'Free testing available. Learn about prevention and support resources.',
-      action: 'Learn More',
-      href: '/services',
-      image: healthHivIcon,
-      bgColor: 'bg-teal-600',
-      fallbackIcon: HeartPulse,
-    },
-    {
-      id: 2,
-      tag: 'Vaccination',
-      tagColor: 'bg-blue-50 text-blue-600',
-      title: 'Flu Vaccination Drive',
-      description: 'Protect yourself this season. Book your flu shot appointment today.',
-      action: 'Book Now',
-      href: '/login',
-      image: healthFluIcon,
-      bgColor: 'bg-orange-100',
-      fallbackIcon: Syringe,
-    },
-    {
-      id: 3,
-      tag: 'Wellness',
-      tagColor: 'bg-green-50 text-green-600',
-      title: 'Healthy Lifestyle Tips',
-      description: 'Simple strategies to maintain physical and mental wellbeing during exams.',
-      action: 'Read More',
-      href: '/resources',
-      image: healthWellnessIcon,
-      bgColor: 'bg-yellow-50',
-      fallbackIcon: Apple,
-    },
+    { id: 1, tag: 'Awareness', tagColor: 'bg-red-50 text-red-600 border-red-100', title: 'HIV/AIDS Awareness Month', description: 'Free testing available. Learn about prevention and support resources.', action: 'Learn More', href: '/services', image: healthHivIcon, bgColor: 'bg-teal-600', fallbackIcon: HeartPulse },
+    { id: 2, tag: 'Vaccination', tagColor: 'bg-blue-50 text-blue-700 border-blue-100', title: 'Flu Vaccination Drive', description: 'Protect yourself this season. Book your flu shot appointment today.', action: 'Book Now', href: '/login', image: healthFluIcon, bgColor: 'bg-orange-100', fallbackIcon: Syringe },
+    { id: 3, tag: 'Wellness', tagColor: 'bg-emerald-50 text-emerald-700 border-emerald-100', title: 'Healthy Lifestyle Tips', description: 'Simple strategies to maintain physical and mental wellbeing during exams.', action: 'Read More', href: '/resources', image: healthWellnessIcon, bgColor: 'bg-yellow-50', fallbackIcon: Apple },
   ];
 
-  const handleImageError = (key: string) => {
-    setImageErrors((prev) => ({ ...prev, [key]: true }));
-  };
+  const handleImageError = (key: string) => setImageErrors((prev) => ({ ...prev, [key]: true }));
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Header />
 
-      {/* Hero Section - Centered, No Image */}
-      <section className="relative bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            University of Ghana, Legon<br />Student Clinic
+      {/* ── Hero ── */}
+      <section className="relative bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] py-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-400/10 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl pointer-events-none" />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+
+        <div className="relative max-w-4xl mx-auto text-center">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mb-6 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200 backdrop-blur-md animate-[fadeIn_400ms_ease_both]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            University of Ghana Student Clinic
+          </span>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-[1.08] tracking-tight animate-[slideDown_360ms_cubic-bezier(0.4,0,0.2,1)_both]">
+            Your Health.<br className="hidden sm:block" />{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Our Priority.</span>
           </h1>
-          <p className="text-lg text-blue-100 mb-10 max-w-2xl mx-auto">
-            Accessible, quality healthcare for every student. Your health and wellbeing are our priority.
+          <p className="text-lg text-blue-100/90 mb-10 max-w-2xl mx-auto leading-relaxed animate-[slideUp_380ms_cubic-bezier(0.4,0,0.2,1)_100ms_both]">
+            Accessible, quality healthcare for every student at Legon. Your wellbeing; physical, mental, and emotional matters to us.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
-              <Button size="lg" className="bg-white text-[#1e3a8a] hover:bg-gray-100 font-semibold px-8 rounded-xl transition-all duration-200 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#1e3a8a]">
-                Student Sign In
-              </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-[slideUp_380ms_cubic-bezier(0.4,0,0.2,1)_180ms_both]">
+            <Link
+              href="/login"
+              className="
+                inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-[#0F172A] bg-white
+                shadow-[0_4px_20px_rgba(255,255,255,0.25)]
+                hover:bg-blue-50 hover:shadow-[0_8px_32px_rgba(255,255,255,0.30)]
+                hover:-translate-y-0.5
+                active:translate-y-0 active:scale-[0.98]
+                transition-all duration-200
+              "
+            >
+              Student Sign In <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/services"
+              className="
+                inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white
+                bg-white/10 border border-white/20 backdrop-blur-sm
+                hover:bg-white/20 hover:border-white/30
+                hover:-translate-y-0.5
+                active:translate-y-0 active:scale-[0.98]
+                transition-all duration-200
+              "
+            >
+              Our Services
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Welcome Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      {/* ── Welcome ── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="relative h-80 lg:h-96 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+            {/* Image */}
+            <div className="relative h-80 lg:h-[420px] rounded-2xl overflow-hidden shadow-[0_20px_60px_-12px_rgba(15,23,42,0.18)] group">
               <Image
                 src={welcomeIcon}
                 alt="Welcome to Student Clinic"
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/30 to-transparent" />
             </div>
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-                Welcome to the Student Clinic
+            {/* Text */}
+            <div className="space-y-5">
+              <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100">
+                Welcome
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
+                Welcome to the<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e3a8a] to-[#0369A1]">Student Clinic</span>
               </h2>
-              <p className="text-gray-600 mb-4 leading-relaxed">
+              <p className="text-[#4B5A6E] leading-relaxed">
                 Our Student Clinic provides comprehensive healthcare services designed specifically for university students. We understand the unique health challenges you face and are committed to providing accessible, confidential, and professional care.
               </p>
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-[#4B5A6E] leading-relaxed">
                 From routine check-ups to mental health support, our experienced team of healthcare professionals is here to support your wellbeing throughout your academic journey.
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#1e3a8a] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-3 p-4 bg-blue-50/60 border border-blue-100 rounded-xl">
+                <div className="w-9 h-9 bg-gradient-to-br from-[#1e3a8a] to-[#0369A1] rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">Free for All Students</p>
-                  <p className="text-xs text-gray-500">No appointment fees or hidden costs</p>
+                  <p className="font-bold text-gray-900 text-sm">Free for All Students</p>
+                  <p className="text-xs text-[#6B7A8D]">No appointment fees or hidden costs</p>
                 </div>
               </div>
             </div>
@@ -188,104 +154,123 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* Core Values Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      {/* ── Core Values ── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F5F7FB]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Our Core Values</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do at the Student Clinic.
-            </p>
+            <span className="inline-block bg-white text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-sm mb-4">
+              Our Foundation
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Our Core Values</h2>
+            <p className="text-[#6B7A8D] max-w-xl mx-auto">The principles that guide everything we do at the Student Clinic.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {coreValues.map((value, index) => (
-              <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4 overflow-hidden">
-                    <img
-                      src={getImageSrc(value.image)}
-                      alt={value.title}
-                      className="w-full h-full object-contain p-2"
-                    />
-                  </div>
-                  <CardTitle className="text-lg text-gray-900">{value.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-600 leading-relaxed">{value.description}</p>
-                </CardContent>
-              </Card>
+              <div
+                key={index}
+                className="
+                  bg-white border border-[#DDE3EE] rounded-2xl p-6 shadow-sm
+                  hover:shadow-[0_12px_36px_-8px_rgba(15,23,42,0.14)]
+                  hover:-translate-y-1.5 hover:border-blue-100
+                  transition-all duration-300 group
+                "
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-[#1e3a8a] to-[#0369A1] rounded-2xl flex items-center justify-center mb-5 overflow-hidden shadow-md group-hover:scale-110 transition-transform duration-300">
+                  <img src={getImageSrc(value.image)} alt={value.title} className="w-full h-full object-contain p-2" />
+                </div>
+                <h3 className="font-extrabold text-gray-900 mb-2 text-base">{value.title}</h3>
+                <p className="text-sm text-[#6B7A8D] leading-relaxed">{value.description}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-
-      {/* Mission Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8">Our Mission</h2>
-          <p className="text-blue-100 text-lg leading-relaxed mb-6">
+      {/* ── Mission ── */}
+      <section className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+        <div className="relative max-w-4xl mx-auto text-center">
+          <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-6 backdrop-blur-sm">
+            Our Purpose
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-8">Our Mission</h2>
+          <p className="text-blue-100/90 text-lg leading-relaxed mb-5">
             To provide accessible, comprehensive, and student-centered healthcare services that promote physical, mental, and emotional wellbeing. We are committed to creating a supportive environment where every student can thrive academically and personally.
           </p>
-          <p className="text-blue-100 text-lg leading-relaxed">
+          <p className="text-blue-100/80 text-base leading-relaxed">
             Through prevention, education, and compassionate care, we empower students to make informed health decisions and maintain optimal wellness throughout their university experience.
           </p>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      {/* ── Services ── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How Can We Help?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Comprehensive healthcare services tailored to student needs
-            </p>
+            <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-4">
+              What We Offer
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">How Can We Help?</h2>
+            <p className="text-[#6B7A8D] max-w-xl mx-auto">Comprehensive healthcare services tailored to student needs</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((service, index) => {
               const Icon = service.icon;
               return (
-                <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 text-center">
-                  <CardHeader className="pb-2 items-center">
-                    <div className="w-14 h-14 bg-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4">
-                      <Icon className="h-7 w-7 text-white" />
-                    </div>
-                    <CardTitle className="text-lg text-gray-900">{service.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 leading-relaxed">{service.description}</p>
-                  </CardContent>
-                </Card>
+                <div
+                  key={index}
+                  className="
+                    group bg-white border border-[#DDE3EE] rounded-2xl p-6 shadow-sm text-center
+                    hover:shadow-[0_12px_36px_-8px_rgba(15,23,42,0.14)]
+                    hover:-translate-y-1.5 hover:border-transparent
+                    transition-all duration-300 cursor-default
+                  "
+                >
+                  <div className={`w-14 h-14 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-5 mx-auto shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                    <Icon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="font-extrabold text-gray-900 mb-2">{service.title}</h3>
+                  <p className="text-sm text-[#6B7A8D] leading-relaxed">{service.description}</p>
+                </div>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* Health Updates Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      {/* ── Health Updates ── */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F5F7FB]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Health Updates & Tips</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Stay informed about important health initiatives and wellness advice
-            </p>
+            <span className="inline-block bg-white text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-sm mb-4">
+              Latest News
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Health Updates & Tips</h2>
+            <p className="text-[#6B7A8D] max-w-xl mx-auto">Stay informed about important health initiatives and wellness advice</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {healthUpdates.map((update, index) => {
               const FallbackIcon = update.fallbackIcon;
               const errorKey = `health-${index}`;
               return (
-                <Card key={index} className="bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                <div
+                  key={index}
+                  className="
+                    group bg-white border border-[#DDE3EE] rounded-2xl overflow-hidden shadow-sm
+                    hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.15)]
+                    hover:-translate-y-2 hover:border-transparent
+                    transition-all duration-300
+                  "
+                >
+                  {/* Image */}
                   <div className={`h-48 ${update.bgColor} relative overflow-hidden`}>
                     {!imageErrors[errorKey] ? (
                       <Image
                         src={update.image}
                         alt={update.title}
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                         onError={() => handleImageError(errorKey)}
                       />
                     ) : (
@@ -293,20 +278,23 @@ export default function HomePageClient() {
                         <FallbackIcon className="h-16 w-16 text-white/50" />
                       </div>
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
-                  <CardHeader className="pb-2">
-                    <span className={`inline-block px-3 py-1 rounded-md text-xs font-medium mb-3 ${update.tagColor}`}>
+
+                  <div className="p-5">
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border mb-3 ${update.tagColor}`}>
                       {update.tag}
                     </span>
-                    <CardTitle className="text-lg text-gray-900">{update.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4">{update.description}</p>
-                    <Link href={update.href} className="text-[#1e3a8a] text-sm font-medium flex items-center gap-1 hover:underline hover:text-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded">
+                    <h3 className="font-extrabold text-gray-900 mb-2">{update.title}</h3>
+                    <p className="text-sm text-[#6B7A8D] mb-4 leading-relaxed">{update.description}</p>
+                    <Link
+                      href={update.href}
+                      className="inline-flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:text-[#0369A1] hover:gap-2 transition-all duration-200"
+                    >
                       {update.action} <ChevronRight className="h-4 w-4" />
                     </Link>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>

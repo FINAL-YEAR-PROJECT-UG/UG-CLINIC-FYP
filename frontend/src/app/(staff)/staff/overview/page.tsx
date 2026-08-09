@@ -38,7 +38,7 @@ import {
   Wand2,
   ShieldAlert,
   Zap,
-} from 'lucide-react';
+} from '@/components/icons';
 
 interface DailyTrend {
   date: string;

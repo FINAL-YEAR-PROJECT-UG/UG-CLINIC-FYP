@@ -432,3 +432,32 @@
 .register-spinner {
   animation: spin 1s linear infinite;
 }
+
+/* ── Hint text beneath form fields ────────────────────────── */
+.register-hint-text {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #9CA3AF;
+  line-height: 1.5;
+}
+
+/* ── Password reveal toggle button ────────────────────────── */
+.register-reveal-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9CA3AF;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+.register-reveal-btn:hover {
+  color: #4B5563;
+}

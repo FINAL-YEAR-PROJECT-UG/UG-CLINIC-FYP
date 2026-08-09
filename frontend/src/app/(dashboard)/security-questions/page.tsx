@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Trash2, Shield } from 'lucide-react';
+import { Loader2, Plus, Trash2, Shield } from '@/components/icons';
 import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 import './page.css';

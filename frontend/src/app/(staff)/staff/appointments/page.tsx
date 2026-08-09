@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/authStore";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import UGLogo from "@/components/shared/UGLogo";
 import { getErrorMessage, normalizeRole, isStaffRole, formatTimeLabel, getAppointmentTimestamp } from "@/lib/utils";
+import StaffNav from "@/components/shared/StaffNav";
 import {
   assignDoctorToAppointment,
   getAllStaffAppointments,
@@ -51,7 +52,7 @@ import {
   Wand2,
   X,
   Zap,
-} from "lucide-react";
+} from "@/components/icons";
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   confirmed: {
@@ -697,40 +698,7 @@ export default function StaffAppointmentsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <nav className="bg-white rounded-xl border border-[#E2E8F0] p-2 mb-8">
-          <div className="flex gap-2 flex-wrap">
-            <Link
-              href="/staff/overview"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm"
-            >
-              <Activity className="w-4 h-4" /> Overview & Analytics
-            </Link>
-            <Link
-              href="/staff/appointments"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#0F172A] text-white font-medium text-sm"
-            >
-              <Calendar className="w-4 h-4" /> Appointments & Slots
-            </Link>
-            <Link
-              href="/staff/students"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm"
-            >
-              <Users className="w-4 h-4" /> Student Records
-            </Link>
-            <Link
-              href="/staff/resources"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm"
-            >
-              <FileText className="w-4 h-4" /> Resources
-            </Link>
-            <Link
-              href="/staff/settings"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[#334155] hover:bg-[#F8FAFC] font-medium text-sm"
-            >
-              <Settings className="w-4 h-4" /> Settings
-            </Link>
-          </div>
-        </nav>
+        <StaffNav userRole={userRole} />
 
         {error && (
           <div className="mb-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 flex items-center justify-between">

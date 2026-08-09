@@ -15,6 +15,7 @@ import {
   studentIdMessage,
   validatePhoneNumber,
 } from '@/lib/validation';
+import { CheckCircle2, Eye, EyeOff } from '@/components/icons';
 import './page.css';
 import logoIcon from '@/Assets/logo.svg';
 
@@ -98,10 +99,45 @@ const NAV_LINKS = [
   { name: 'Contact', href: '/contact' },
 ];
 
+// ─── Password strength helper ──────────────────────────────────────────────────
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: 'At least 8 characters', pass: password.length >= 8 },
+    { label: 'One uppercase letter (A–Z)', pass: /[A-Z]/.test(password) },
+    { label: 'One lowercase letter (a–z)', pass: /[a-z]/.test(password) },
+    { label: 'One number (0–9)', pass: /[0-9]/.test(password) },
+    { label: 'One special character (!@#$…)', pass: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+  ];
+  const passed = checks.filter((c) => c.pass).length;
+  const strengthColor = passed <= 1 ? 'bg-red-400' : passed <= 3 ? 'bg-amber-400' : 'bg-emerald-500';
+  const strengthLabel = passed <= 1 ? 'Weak' : passed <= 3 ? 'Fair' : passed === 4 ? 'Good' : 'Strong';
+  if (!password) return null;
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-500 ${strengthColor}`} style={{ width: `${(passed / 5) * 100}%` }} />
+        </div>
+        <span className={`text-[10px] font-bold ${passed <= 1 ? 'text-red-500' : passed <= 3 ? 'text-amber-500' : 'text-emerald-600'}`}>{strengthLabel}</span>
+      </div>
+      <ul className="space-y-0.5">
+        {checks.map((c) => (
+          <li key={c.label} className={`flex items-center gap-1.5 text-[10px] font-medium ${c.pass ? 'text-emerald-600' : 'text-gray-400'}`}>
+            <CheckCircle2 className={`w-3 h-3 shrink-0 ${c.pass ? 'text-emerald-500' : 'text-gray-300'}`} />
+            {c.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(true);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(true);
 
   const {
     register,
@@ -292,8 +328,9 @@ export default function RegisterPage() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
-                      <input id="phone" type="tel" placeholder="" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
+                      <input id="phone" type="tel" placeholder="e.g. 0241234567" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
                     </div>
+                    <p className="register-hint-text">Enter a valid Ghanaian mobile number (e.g. 024 or 050 prefix).</p>
                     {errors.phone && <p className="register-error-text" role="alert">{errors.phone.message}</p>}
                   </div>
 
@@ -347,8 +384,12 @@ export default function RegisterPage() {
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input id="password" type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.password ? 'error' : ''}`} {...register('password')} />
+                      <input id="password" type={showPassword ? 'text' : 'password'} placeholder="Create a strong password" disabled={isLoading} className={`register-input ${errors.password ? 'error' : ''}`} style={{ paddingRight: '2.5rem' }} {...register('password')} />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="register-reveal-btn" tabIndex={-1}>
+                        {showPassword ? <EyeOff width={15} height={15} /> : <Eye width={15} height={15} />}
+                      </button>
                     </div>
+                    <PasswordStrength password={watch('password') ?? ''} />
                     {errors.password && <p className="register-error-text" role="alert">{errors.password.message}</p>}
                   </div>
 
@@ -360,8 +401,12 @@ export default function RegisterPage() {
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input id="confirmPassword" type="password" placeholder="••••••••" disabled={isLoading} className={`register-input ${errors.confirmPassword ? 'error' : ''}`} {...register('confirmPassword')} />
+                      <input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="Re-enter your password" disabled={isLoading} className={`register-input ${errors.confirmPassword ? 'error' : ''}`} style={{ paddingRight: '2.5rem' }} {...register('confirmPassword')} />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="register-reveal-btn" tabIndex={-1}>
+                        {showConfirmPassword ? <EyeOff width={15} height={15} /> : <Eye width={15} height={15} />}
+                      </button>
                     </div>
+                    <p className="register-hint-text">Re-enter the same password to confirm it.</p>
                     {errors.confirmPassword && <p className="register-error-text" role="alert">{errors.confirmPassword.message}</p>}
                   </div>
 

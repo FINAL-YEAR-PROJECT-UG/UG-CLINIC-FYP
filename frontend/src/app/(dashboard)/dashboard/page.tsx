@@ -21,7 +21,7 @@ import {
   MessageCircle,
   LogOut,
   Loader2,
-} from 'lucide-react';
+} from '@/components/icons';
 
 const CLINIC_LOCATION = 'Student Clinic, UG Legon';
 

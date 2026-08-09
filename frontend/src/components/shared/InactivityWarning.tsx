@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock } from '@/components/icons';
 
 interface InactivityWarningProps {
   show: boolean;

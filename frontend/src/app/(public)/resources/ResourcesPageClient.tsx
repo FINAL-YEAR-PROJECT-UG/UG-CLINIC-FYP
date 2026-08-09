@@ -26,7 +26,8 @@ import {
   Loader2,
   Plus,
   ShieldAlert,
-} from 'lucide-react';
+  BookOpen,
+} from '@/components/icons';
 
 type ResKind = 'article' | 'guide' | 'video';
 
@@ -201,46 +202,53 @@ export default function ResourcesPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-[#EEF1FB]">
+    <div className="min-h-screen bg-[#F5F7FB]">
       <Header />
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] text-white pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 text-center">
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">Health Resources</h1>
-          <p className="text-blue-100 max-w-2xl mx-auto text-lg">
+      <section className="relative bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] text-white pb-24 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 text-center z-10">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200 backdrop-blur-md mb-4">
+            <BookOpen className="w-3.5 h-3.5 text-cyan-300" />
+            UG Health Knowledge Base
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">Health Resources</h1>
+          <p className="text-blue-100/90 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
             Trusted health guides, wellness tips, and educational materials to help you stay healthy
             throughout your time at the University of Ghana.
           </p>
         </div>
         <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none" style={{ height: 80 }}>
-          <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H0Z" fill="#EEF1FB" />
+          <path d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H0Z" fill="#F5F7FB" />
         </svg>
       </section>
 
       {/* Tabs + search + filters */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
-        <div className="flex justify-center gap-2 mb-4 flex-wrap">
+        <div className="flex justify-center gap-2.5 mb-5 flex-wrap">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => { setTab(t.id); setVisible(INITIAL_VISIBLE); }}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                tab === t.id ? 'bg-white text-[#1e3a8a] shadow-lg scale-105' : 'bg-[#1e3a8a]/40 text-white border border-[#3b82f6]/30 hover:bg-[#1e3a8a]/60 hover:scale-105'
+              className={`px-5 py-2.5 rounded-xl text-xs transition-all duration-200 ${
+                tab === t.id
+                  ? 'bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white shadow-md font-extrabold scale-105 ring-2 ring-[#1e3a8a]/20'
+                  : 'bg-white text-[#4B5A6E] border border-[#DDE3EE] shadow-sm font-bold hover:text-[#0F172A] hover:border-[#0369A1] hover:bg-blue-50/60'
               }`}
             >
               {t.label}
             </button>
           ))}
         </div>
-        <div className="bg-white rounded-2xl shadow-lg p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#DDE3EE] p-5">
           <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA8BA]" />
             <input
               value={query}
               onChange={(e) => { setQuery(e.target.value); setVisible(INITIAL_VISIBLE); }}
               placeholder="Search resources, guides, topics..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a] outline-none transition-all"
+              className="w-full rounded-xl border border-[#DDE3EE] bg-[#F5F7FB] pl-11 pr-4 py-2.5 text-sm text-[#0B1221] placeholder-[#9CA8BA] focus:border-[#0369A1] focus:ring-2 focus:ring-[#0369A1]/20 outline-none transition-all"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -248,10 +256,10 @@ export default function ResourcesPageClient() {
               <button
                 key={c}
                 onClick={() => { setCategory(c); setVisible(INITIAL_VISIBLE); }}
-                className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 ${
                   category === c
-                    ? 'bg-blue-900 text-white border-blue-900 shadow-md scale-105'
-                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:shadow-sm hover:scale-105'
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm scale-105'
+                    : 'bg-white text-[#4B5A6E] border-[#DDE3EE] hover:border-[#0369A1] hover:shadow-2xs'
                 }`}
               >
                 {c}
@@ -292,38 +300,41 @@ export default function ResourcesPageClient() {
 
       {/* All resources grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">All Resources</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-extrabold text-[#0B1221]">All Resources</h2>
+          <span className="px-3 py-1 bg-white border border-[#DDE3EE] rounded-full text-xs font-bold text-[#1e3a8a]">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</span>
+        </div>
         {shown.length === 0 ? (
-          <div className="bg-white rounded-xl p-10 text-center text-gray-500">No resources match your filters.</div>
+          <div className="bg-white rounded-2xl border border-[#DDE3EE] p-10 text-center text-[#6B7A8D] text-sm">No resources match your filters.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {shown.map((r) => {
               const meta = kindMeta[r.kind];
               const Icon = meta.Icon;
               return (
-                <article key={r.title} className="bg-white rounded-xl shadow-sm p-5 flex flex-col">
+                <article key={r.title} className="bg-white border border-[#DDE3EE] rounded-2xl p-5 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
                   <div className="flex items-start justify-between mb-3">
                     <div
-                      className="inline-flex items-center justify-center h-10 w-10 rounded-lg"
-                      style={{ backgroundColor: `${meta.color}1A`, color: meta.color }}
+                      className="inline-flex items-center justify-center h-10 w-10 rounded-xl border border-[#DDE3EE]"
+                      style={{ backgroundColor: `${meta.color}15`, color: meta.color }}
                     >
                       <Icon className="h-5 w-5" />
                     </div>
                     {r.isNew && (
-                      <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">NEW</span>
+                      <span className="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-emerald-200">NEW</span>
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{r.category}</p>
-                  <h3 className="font-bold text-gray-900 mb-2">{r.title}</h3>
-                  <p className="text-sm text-gray-600 flex-1">{r.description}</p>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 my-4">
-                    <span className="flex items-center gap-1">{meta.Icon === Download ? <Download className="h-3.5 w-3.5" /> : meta.Icon === PlayCircle ? <PlayCircle className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{r.meta}</span>
+                  <span className="text-[10px] font-extrabold text-[#0369A1] uppercase tracking-wider mb-1">{r.category}</span>
+                  <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{r.title}</h3>
+                  <p className="text-xs text-[#6B7A8D] leading-relaxed flex-1">{r.description}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-[#6B7A8D] font-medium my-4 pt-3 border-t border-[#EEF1F8]">
+                    <span className="flex items-center gap-1">{meta.Icon === Download ? <Download className="h-3 w-3" /> : meta.Icon === PlayCircle ? <PlayCircle className="h-3 w-3" /> : <FileText className="h-3 w-3" />}{r.meta}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="flex-1 bg-[#1e3a8a] hover:bg-[#1e3a8a]/90 text-white text-sm font-semibold py-2.5 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
+                    <button className="flex-1 bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white text-xs font-extrabold py-2.5 rounded-xl shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                       {meta.cta}
                     </button>
-                    <button aria-label="Bookmark" className="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-[#3b82f6] hover:text-[#1e3a8a] transition-all duration-200">
+                    <button aria-label="Bookmark" className="h-9 w-9 flex items-center justify-center rounded-xl border border-[#DDE3EE] text-[#6B7A8D] hover:bg-blue-50 hover:border-[#0369A1] hover:text-[#0369A1] transition-all duration-200">
                       <Bookmark className="h-4 w-4" />
                     </button>
                   </div>
@@ -336,7 +347,7 @@ export default function ResourcesPageClient() {
           <div className="text-center mt-8">
             <button
               onClick={() => setVisible((v) => v + 3)}
-              className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 hover:border-[#3b82f6] hover:shadow-md transition-all duration-200"
+              className="inline-flex items-center gap-2 bg-white border border-[#DDE3EE] text-[#4B5A6E] font-bold text-xs px-6 py-3 rounded-xl shadow-sm hover:bg-[#F5F7FB] hover:border-[#0369A1] hover:text-[#0369A1] transition-all duration-200"
             >
               Load more resources <ChevronDown className="h-4 w-4" />
             </button>
@@ -345,9 +356,12 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* Browse by category */}
-      <section className="bg-[#1e3a8a] text-white mt-16">
+      <section className="bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <h2 className="text-2xl font-bold text-center mb-8">Browse by Category</h2>
+          <div className="text-center mb-8">
+            <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-3 backdrop-blur-sm">Categories</span>
+            <h2 className="text-2xl font-extrabold text-white">Browse by Health Topic</h2>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {browseCategories.map((c) => {
               const Icon = c.icon;
@@ -375,7 +389,7 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* Submit article */}
-      <section className="bg-green-50">
+      <section className="bg-white border-t border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mb-4">For Students</span>
@@ -477,7 +491,7 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* Newsletter */}
-      <section className="bg-[#E7EAF7]">
+      <section className="bg-[#F5F7FB] border-t border-[#E2E8F0]">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
           <Mail className="h-9 w-9 text-[#1e3a8a] mx-auto mb-3" />
           <h2 className="text-2xl font-bold text-blue-950 mb-2">Stay Updated on Health Tips</h2>
@@ -499,7 +513,7 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* FAQ */}
-      <section className="bg-[#EEF1FB]">
+      <section className="bg-white border-t border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
@@ -526,9 +540,10 @@ export default function ResourcesPageClient() {
       </section>
 
       {/* CTA */}
-      <section className="bg-[#EEF1FB] pb-16">
+      <section className="bg-[#F5F7FB] border-t border-[#E2E8F0] pb-16 pt-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-[#1e3a8a] to-[#3b82f6] rounded-2xl text-white text-center px-6 py-12">
+          <div className="bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#0369A1] rounded-2xl text-white text-center px-6 py-14 shadow-[0_8px_30px_rgba(15,23,42,0.25)] overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
             <h2 className="text-3xl font-bold mb-3">Have a Health Concern?</h2>
             <p className="text-blue-100 mb-8 max-w-xl mx-auto">
               Don&apos;t wait — book an appointment with the UG Student Clinic or reach out to our team.

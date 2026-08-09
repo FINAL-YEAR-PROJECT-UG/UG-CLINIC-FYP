@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import UGLogo from '@/components/shared/UGLogo';
-import { Mail, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Mail, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from '@/components/icons';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 

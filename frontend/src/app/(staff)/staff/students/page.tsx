@@ -7,8 +7,9 @@ import UGLogo from '@/components/shared/UGLogo';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessStudentRecords, getErrorMessage, formatTimeLabel } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import StaffNav from '@/components/shared/StaffNav';
 import { getAllStudents, getStudentHistory, updateStudentStatus, type StaffStudent } from '@/lib/staffApi';
-import { Search, Users, Mail, Phone, GraduationCap, ChevronLeft, ChevronRight, Eye, Calendar, Clock, X, CheckCircle2, UserX } from 'lucide-react';
+import { Search, Users, Mail, Phone, GraduationCap, ChevronLeft, ChevronRight, Eye, Calendar, Clock, X, CheckCircle2, UserX } from '@/components/icons';
 
 export default function StaffStudentsPage() {
   const router = useRouter();
@@ -107,68 +108,63 @@ export default function StaffStudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <UGLogo size="md" href="/staff/overview" />
-              <Link
-                href="/staff/overview"
-                className="text-xs font-semibold text-[#1e3a8a] hover:underline"
-              >
-                ← Back to Overview
-              </Link>
-            </div>
-            <h1 className="text-sm font-bold text-gray-700 hidden md:block">Student Medical & Activity Records</h1>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-[#F1F4F9]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <StaffNav userRole={user?.role ?? ''} />
+
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0B1221]">Student Medical & Activity Records</h1>
+            <p className="text-xs text-[#6B7A8D]">View student patient files, consultation history, and activity status</p>
+          </div>
+          <span className="self-start sm:self-auto px-3.5 py-1.5 bg-white border border-[#DDE3EE] rounded-xl text-xs font-bold text-[#1e3a8a] shadow-xs">
+            {students.length} Registered Students
+          </span>
+        </div>
+
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 flex justify-between items-center text-sm">
+          <div className="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4 text-rose-700 flex justify-between items-center text-xs font-semibold">
             <span>{error}</span>
             <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
           </div>
         )}
 
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <LoadingSpinner size={48} />
           </div>
         ) : (
           <>
             {/* Search */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+            <div className="bg-white rounded-2xl border border-[#DDE3EE] p-4 mb-6 shadow-sm">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA8BA]" />
                 <input
                   type="text"
-                  placeholder="Search student by name, student ID, email, program..."
+                  placeholder="Search by student name, Student ID, email, or program..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                  className="w-full pl-10 pr-4 py-2.5 border-[1.5px] border-[#DDE3EE] bg-white text-[#0B1221] rounded-xl text-sm hover:border-[#94A3B8] focus:outline-none focus:border-[#0369A1] focus:ring-[3px] focus:ring-[#0369A1]/15 transition-all duration-200 placeholder:text-[#9CA8BA]"
                 />
               </div>
             </div>
 
             {/* Students Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#DDE3EE] shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-[#F5F7FB] border-b border-[#DDE3EE]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Student ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Program</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Contact</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider">Student Name</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider">Student ID</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider">Program</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider">Contact</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider">Status</th>
+                      <th className="px-5 py-3.5 text-xs font-extrabold text-[#4B5A6E] uppercase tracking-wider text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-[#EEF1F8]">
                     {paginatedStudents.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
@@ -352,10 +348,10 @@ export default function StaffStudentsPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+              <div className="p-4 bg-[#F5F7FB] border-t border-[#DDE3EE] flex justify-end">
                 <button
                   onClick={() => setSelectedStudent(null)}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-lg text-xs font-semibold hover:bg-gray-800"
+                  className="px-5 py-2 bg-[#0F172A] hover:bg-[#1e3a8a] text-white rounded-xl text-xs font-bold transition-all duration-200 shadow-xs"
                 >
                   Close Record
                 </button>
