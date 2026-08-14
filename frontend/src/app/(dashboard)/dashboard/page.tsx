@@ -229,8 +229,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Welcome banner */}
-      <header className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white sticky top-0 z-10 shadow-md">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {firstName}</h1>
             <p className="text-blue-100 mt-1">

@@ -36,65 +36,67 @@ export default function StaffNav({ userRole }: { userRole: string }) {
   ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-sm rounded-2xl border border-[#E2E8F0] p-2 mb-8 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
-      <div className="flex gap-1.5 flex-wrap">
-        {items
-          .filter((item) => item.show)
-          .map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  relative group flex items-center gap-2 px-4 py-2.5 rounded-xl
-                  font-semibold text-[0.8125rem] tracking-[-0.01em]
-                  transition-all duration-200 overflow-hidden
-                  ${isActive
-                    ? 'text-white shadow-[0_4px_14px_rgba(15,23,42,0.28)]'
-                    : 'text-[#4B5A6E] hover:text-[#0F172A] hover:bg-[#F1F4F9] hover:shadow-sm hover:-translate-y-px'
-                  }
-                `}
-              >
-                {/* Active background gradient */}
-                <span
+    <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-4 pb-3 bg-[#F8FAFC]/90 backdrop-blur-md border-b border-[#E2E8F0] mb-6 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.06)]">
+      <nav className="bg-white/80 backdrop-blur-sm rounded-2xl border border-[#E2E8F0] p-2 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+        <div className="flex gap-1.5 flex-wrap">
+          {items
+            .filter((item) => item.show)
+            .map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
                   className={`
-                    absolute inset-0 rounded-xl transition-opacity duration-200
-                    bg-gradient-to-r from-[#0F172A] to-[#1e3a8a]
-                    ${isActive ? 'opacity-100' : 'opacity-0'}
+                    relative group flex items-center gap-2 px-4 py-2.5 rounded-xl
+                    font-semibold text-[0.8125rem] tracking-[-0.01em]
+                    transition-all duration-200 overflow-hidden
+                    ${isActive
+                      ? 'text-white shadow-[0_4px_14px_rgba(15,23,42,0.28)]'
+                      : 'text-[#4B5A6E] hover:text-[#0F172A] hover:bg-[#F1F4F9] hover:shadow-sm hover:-translate-y-px'
+                    }
                   `}
-                />
-
-                {/* Hover shimmer */}
-                <span
-                  className="
-                    absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100
-                    transition-opacity duration-300
-                    bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,179,237,0.10)_0%,transparent_70%)]
-                  "
-                />
-
-                {/* Icon */}
-                <span className="relative z-10">
-                  <Icon
-                    className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 ${
-                      isActive ? 'text-white' : 'text-[#6B7A8D]'
-                    }`}
+                >
+                  {/* Active background gradient */}
+                  <span
+                    className={`
+                      absolute inset-0 rounded-xl transition-opacity duration-200
+                      bg-gradient-to-r from-[#0F172A] to-[#1e3a8a]
+                      ${isActive ? 'opacity-100' : 'opacity-0'}
+                    `}
                   />
-                </span>
 
-                {/* Label */}
-                <span className="relative z-10">{item.name}</span>
+                  {/* Hover shimmer */}
+                  <span
+                    className="
+                      absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100
+                      transition-opacity duration-300
+                      bg-[radial-gradient(ellipse_at_50%_0%,rgba(99,179,237,0.10)_0%,transparent_70%)]
+                    "
+                  />
 
-                {/* Active dot indicator */}
-                {isActive && (
-                  <span className="relative z-10 ml-auto w-1.5 h-1.5 rounded-full bg-white/70 shrink-0" />
-                )}
-              </Link>
-            );
-          })}
-      </div>
-    </nav>
+                  {/* Icon */}
+                  <span className="relative z-10">
+                    <Icon
+                      className={`w-4 h-4 transition-all duration-200 group-hover:scale-110 ${
+                        isActive ? 'text-white' : 'text-[#6B7A8D]'
+                      }`}
+                    />
+                  </span>
+
+                  {/* Label */}
+                  <span className="relative z-10">{item.name}</span>
+
+                  {/* Active dot indicator */}
+                  {isActive && (
+                    <span className="relative z-10 ml-auto w-1.5 h-1.5 rounded-full bg-white/70 shrink-0" />
+                  )}
+                </Link>
+              );
+            })}
+        </div>
+      </nav>
+    </div>
   );
 }

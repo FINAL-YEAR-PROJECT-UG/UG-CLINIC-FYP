@@ -56,7 +56,7 @@ export default function HomePageClient() {
   const handleImageError = (key: string) => setImageErrors((prev) => ({ ...prev, [key]: true }));
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* ── Hero ── */}
