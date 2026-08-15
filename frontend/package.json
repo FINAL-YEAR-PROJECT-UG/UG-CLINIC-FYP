@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set \"NODE_OPTIONS=--max-old-space-size=8192\" && set \"TURBOPACK_WORKER_PARALLELISM=2\" && next dev -H 0.0.0.0 -p 3001",
+    "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev --hostname 0.0.0.0 --port 3001 --webpack",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3001",
     "lint": "eslint src",
@@ -53,6 +53,7 @@
     "@types/node": "^20.19.43",
     "@types/react": "19.2.17",
     "@types/react-dom": "^19.2.3",
+    "cross-env": "^10.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

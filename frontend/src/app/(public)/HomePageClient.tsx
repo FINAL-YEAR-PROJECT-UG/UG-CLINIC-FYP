@@ -91,7 +91,7 @@ export default function HomePageClient() {
                 transition-all duration-200
               "
             >
-              Student Sign In <ArrowRight className="w-4 h-4" />
+              Student Sign In
             </Link>
             <Link
               href="/services"
