@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   experimental: {
     serverActions: {
-      allowedOrigins: ["10.107.9.172:3001", "localhost:3001", "10.107.9.172:3000", "localhost:3000"],
+      allowedOrigins: ["localhost:3001"],
     },
     optimizePackageImports: ["lucide-react"],
   },
@@ -12,6 +12,25 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: {
     position: "bottom-right",
+  },
+  webpack: (config, { dev, isServer }) => {
+    if (dev) {
+      // Limit parallelism so compilation doesn't eat all CPU cores
+      config.parallelism = 2;
+
+      // Reduce watcher polling overhead on Windows
+      config.watchOptions = {
+        poll: false,
+        aggregateTimeout: 300,
+        ignored: /node_modules/,
+      };
+
+      // Use cheaper source maps in dev (faster rebuilds)
+      if (!isServer) {
+        config.devtool = "eval-cheap-module-source-map";
+      }
+    }
+    return config;
   },
 };
 

@@ -337,11 +337,9 @@ export default function DashboardPage() {
               <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
                 <div className="flex items-start justify-between">
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${
-                      STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
-                    }`}
+                    className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
+                      }`}
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
                     {STATUS_PILL[nextAppointment.status]?.label ?? nextAppointment.status}
                   </span>
                   <div className="text-right">

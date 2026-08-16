@@ -325,7 +325,7 @@ export const autoConfirmPending = staffApi.autoConfirmPending;
 
 // Public (unauthenticated) submission of articles for staff review
 import axios from 'axios';
-const publicApi = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api' });
+const publicApi = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005/api' });
 
 export const submitPublicResource = async (payload: PublicResourceSubmissionPayload): Promise<{
   success: boolean;

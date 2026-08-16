@@ -117,7 +117,6 @@ export default function AboutPageClient() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-4xl mx-auto text-center z-10 animate-[fadeIn_300ms_ease_both]">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200 backdrop-blur-md mb-4">
-            <Building2 className="w-3.5 h-3.5 text-blue-300" />
             University of Ghana Student Clinic
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
@@ -131,7 +130,7 @@ export default function AboutPageClient() {
               href="/services"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs bg-white text-[#0F172A] shadow-md hover:bg-blue-50 transition-all duration-200"
             >
-              Explore Our Services <ArrowRight className="w-3.5 h-3.5" />
+              Explore Our Services
             </Link>
             <Link
               href="/contact"
@@ -174,7 +173,6 @@ export default function AboutPageClient() {
               <div className="pt-2">
                 <div className="inline-flex items-center gap-3 p-3.5 bg-[#F5F7FB] border border-[#DDE3EE] rounded-xl">
                   <div className="w-9 h-9 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs">
-                    <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="font-bold text-[#0B1221] text-xs">Established 2010</p>
@@ -247,7 +245,6 @@ export default function AboutPageClient() {
             <div className="bg-[#F5F7FB] rounded-2xl border border-[#DDE3EE] p-8 flex flex-col justify-between">
               <div>
                 <div className="w-12 h-12 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-2xl flex items-center justify-center text-white mb-6 shadow-sm">
-                  <Eye className="w-6 h-6" />
                 </div>
                 <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3 py-1 rounded-full border border-blue-100 mb-3">
                   Our Vision
@@ -390,7 +387,6 @@ export default function AboutPageClient() {
               ].map((feature, index) => (
                 <div key={index} className="flex items-start gap-3 p-2 bg-white border border-[#DDE3EE] rounded-xl">
                   <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   </div>
                   <p className="text-xs font-semibold text-[#0B1221] leading-relaxed">{feature}</p>
                 </div>

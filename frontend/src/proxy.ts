@@ -19,7 +19,7 @@ const PUBLIC_ROUTES = [
   '/verify-otp',
 ];
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Check if this is a protected booking route
@@ -63,13 +63,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
 
   } catch (error) {
-    console.error('Middleware auth check failed:', error);
+    console.error('Proxy auth check failed:', error);
     // On error, redirect to login for safety
     return NextResponse.redirect(new URL('/login', req.url));
   }
 }
 
-// Configure which routes the middleware should run on
+// Configure which routes the proxy should run on
 export const config = {
   matcher: ['/demo-booking/:path*'],
 };

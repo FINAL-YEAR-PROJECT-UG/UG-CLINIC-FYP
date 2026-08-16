@@ -198,7 +198,6 @@ export default function ContactPageClient() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-4xl mx-auto text-center z-10 animate-[fadeIn_300ms_ease_both]">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200 backdrop-blur-md mb-4">
-            <Building2 className="w-3.5 h-3.5 text-blue-300" />
             UG Student Health Center
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4 leading-tight">
@@ -234,7 +233,6 @@ export default function ContactPageClient() {
       <div className="bg-rose-500/10 border-b border-rose-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-rose-900 text-xs sm:text-sm font-semibold">
-            <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
             <span>For urgent medical emergencies, call our 24/7 hotline <strong>+233 20 123 4567</strong> or visit the clinic immediately.</span>
           </p>
           <a
@@ -282,7 +280,7 @@ export default function ContactPageClient() {
                   rel="noreferrer"
                   className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold border border-[#DDE3EE] text-[#4B5A6E] hover:text-[#0F172A] hover:bg-[#F5F7FB] transition-all duration-200"
                 >
-                  {w.cta} <ArrowRight className="w-3.5 h-3.5" />
+                  {w.cta}
                 </a>
               </div>
             );
@@ -391,7 +389,6 @@ export default function ContactPageClient() {
           {submitted ? (
             <div className="bg-white rounded-2xl border border-emerald-200 p-10 text-center shadow-md animate-[scaleIn_200ms_ease]">
               <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
               </div>
               <h3 className="text-xl font-extrabold text-[#0B1221] mb-2">Message Delivered</h3>
               <p className="text-sm text-[#6B7A8D] mb-6 max-w-md mx-auto">
@@ -495,7 +492,6 @@ export default function ContactPageClient() {
                 >
                   <div>
                     <div className="w-10 h-10 bg-white border border-[#DDE3EE] rounded-xl flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
-                      <Icon className="w-5 h-5" />
                     </div>
                     <h3 className="font-extrabold text-[#0B1221] text-base mb-1">{d.name}</h3>
                     <p className="text-xs text-[#6B7A8D] font-medium mb-4">{d.location}</p>
@@ -511,7 +507,7 @@ export default function ContactPageClient() {
                     href={`mailto:${d.email}`}
                     className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-white border border-[#DDE3EE] text-[#0F172A] hover:bg-blue-50 hover:border-blue-200 transition-all"
                   >
-                    Email Unit <ArrowRight className="w-3.5 h-3.5" />
+                    Email Unit
                   </a>
                 </div>
               );
