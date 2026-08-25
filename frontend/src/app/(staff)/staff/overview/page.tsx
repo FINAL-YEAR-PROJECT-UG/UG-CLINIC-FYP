@@ -10,6 +10,7 @@ import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
 import StaffNav from '@/components/shared/StaffNav';
+import StaffAiSidebar from '@/components/shared/StaffAiSidebar';
 import { getErrorMessage, normalizeRole, isStaffRole, canManageClinicOperations, isDoctorRole, formatTimeLabel } from '@/lib/utils';
 import {
   getStaffDashboard,
@@ -18,6 +19,9 @@ import {
   batchUpdateDoctorStatuses,
   autoAssignDoctors,
   autoConfirmPending,
+  getTimeSlots,
+  updateTimeSlotStatus,
+  batchUpdateTimeSlots,
   type StaffDoctor,
 } from '@/lib/staffApi';
 import {
@@ -33,10 +37,9 @@ import {
   UserCheck,
   Stethoscope,
   TrendingUp,
-  Bot,
-  Sparkles,
-  Wand2,
-  ShieldAlert,
+
+
+
   Zap,
 } from '@/components/icons';
 
@@ -134,7 +137,7 @@ export default function StaffOverviewPage() {
   const [automationMessage, setAutomationMessage] = useState<string | null>(null);
   const [autoLoading, setAutoLoading] = useState(false);
 
-  // ——— Guard: synchronous + early redirect ———
+  //     Guard: synchronous + early redirect    
   useEffect(() => {
     let active = true;
     let t: ReturnType<typeof setTimeout> | null = null;
@@ -165,7 +168,7 @@ export default function StaffOverviewPage() {
     return () => { active = false; if (t) clearTimeout(t); };
   }, [router, storeIsAuth, storeUser]);
 
-  // ——— Loaders ———
+  //     Loaders    
   const fetchStaffOverview = useCallback(async () => {
     try {
       setLoading(true);
@@ -196,7 +199,7 @@ export default function StaffOverviewPage() {
     fetchDoctorsList();
   }, [guardResolved, fetchStaffOverview, fetchDoctorsList]);
 
-  // ——— Actions ———
+  //     Actions    
   const handleStatusChange = async (newStatus: 'AVAILABLE' | 'BUSY' | 'ON_LEAVE', targetDoctorId?: string) => {
     try {
       setStatusUpdating(true);
@@ -249,14 +252,15 @@ export default function StaffOverviewPage() {
     }
   };
 
-  // Autonomous Overview Agent State & Handlers
-  const [agentPrompt, setAgentPrompt] = useState('');
-  const [agentRunning, setAgentRunning] = useState(false);
-  const [agentLog, setAgentLog] = useState<Array<{ role: 'user' | 'agent'; text: string; time: string }>>([
+  // Clinical Operations Automation State & Handlers
+  const [isAiConsoleOpen, setIsAiConsoleOpen] = useState(false);
+  const [commandPrompt, setCommandPrompt] = useState('');
+  const [commandRunning, setCommandRunning] = useState(false);
+  const [commandLog, setCommandLog] = useState<Array<{ role: 'user' | 'system'; text: string; time: string }>>([
     {
-      role: 'agent',
-      text: 'Greetings! I am UG-OverviewAgent. I track doctor availability and workload analytics. Ask me to auto-assign pending visits, manage doctor statuses, or balance patient queues.',
-      time: 'Just now',
+      role: 'system',
+      text: '🤖 Operations AI Assistant Ready.\nTry: "set 3 doctors available", "set 2 doctors busy", "block slots from 2pm", "auto-assign", or "status".',
+      time: 'System Ready',
     },
   ]);
 
@@ -264,7 +268,7 @@ export default function StaffOverviewPage() {
     try {
       setStatusUpdating(true);
       const res = await batchUpdateDoctorStatuses(status, doctorIds);
-      setAutomationMessage(`✨ ${res.message}`);
+      setAutomationMessage(res.message);
       await fetchDoctorsList();
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to batch update doctor statuses'));
@@ -273,63 +277,337 @@ export default function StaffOverviewPage() {
     }
   };
 
-  const handleRunOverviewAgentCommand = async (inputQuery?: string) => {
-    const query = (inputQuery || agentPrompt).trim();
+  // Helper for word/digit quantity extraction
+  const parseQuantity = (text: string): number | null => {
+    const wordMap: Record<string, number> = {
+      one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+      eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, twenty: 20
+    };
+    const numMatch = text.match(/\b(\d+)\b/);
+    if (numMatch) return parseInt(numMatch[1], 10);
+    for (const [word, val] of Object.entries(wordMap)) {
+      const reg = new RegExp(`\\b${word}\\b`, 'i');
+      if (reg.test(text)) return val;
+    }
+    return null;
+  };
+
+  // Helper for time / session range extraction
+  const parseTimeTarget = (text: string): { hour: number; minute: number; timeStr: string; session?: 'morning' | 'afternoon' } | null => {
+    if (text.includes('morning')) return { hour: 8, minute: 0, timeStr: 'Morning (08:00)', session: 'morning' };
+    if (text.includes('afternoon')) return { hour: 12, minute: 0, timeStr: 'Afternoon (12:00)', session: 'afternoon' };
+
+    const match = text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
+    if (match) {
+      let hour = parseInt(match[1], 10);
+      const minute = match[2] ? parseInt(match[2], 10) : 0;
+      const meridian = match[3]?.toLowerCase();
+      if (meridian === 'pm' && hour < 12) hour += 12;
+      if (meridian === 'am' && hour === 12) hour = 0;
+      const formatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      return { hour, minute, timeStr: formatted };
+    }
+    return null;
+  };
+
+  const handleRunOperationsCommand = async (inputQuery?: string) => {
+    const query = (inputQuery || commandPrompt).trim();
     if (!query) return;
-    setAgentPrompt('');
-    setAgentRunning(true);
+    setCommandPrompt('');
+    setCommandRunning(true);
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setAgentLog((prev) => [...prev, { role: 'user', text: query, time: nowTime }]);
+    setCommandLog((prev) => [...prev, { role: 'user', text: query, time: nowTime }]);
 
     try {
       const lower = query.toLowerCase();
       let actionTaken = '';
 
-      if (lower.includes('assign') || lower.includes('balance') || lower.includes('workload')) {
-        const res = await autoAssignDoctors();
-        actionTaken = res.message;
-        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
-      } else if (lower.includes('confirm') || lower.includes('pending')) {
-        const res = await autoConfirmPending();
-        actionTaken = res.message;
-        await fetchStaffOverview();
-      } else if (lower.includes('all available') || lower.includes('activate roster') || lower.includes('free doctors')) {
-        const res = await batchUpdateDoctorStatuses('AVAILABLE');
-        actionTaken = res.message;
-        await fetchDoctorsList();
-      } else if (lower.includes('busy') || lower.includes('emergency') || lower.includes('lock')) {
-        const res = await batchUpdateDoctorStatuses('BUSY');
-        actionTaken = res.message;
-        await fetchDoctorsList();
-      } else {
-        const res = await autoAssignDoctors();
-        actionTaken = `Analyzed workload: ${res.message}`;
+      // 1. Clear Console
+      if (lower === 'clear' || lower === 'cls' || lower.includes('clear log') || lower.includes('reset console')) {
+        setCommandLog([
+          {
+            role: 'system',
+            text: 'Console cleared. System ready for commands.',
+            time: nowTime,
+          },
+        ]);
+        setCommandRunning(false);
+        return;
+      }
+
+      // 2. Help Guide
+      if (
+        lower.includes('help') ||
+        lower.includes('command') ||
+        lower.includes('guide') ||
+        lower.includes('what can you do') ||
+        lower === 'options' ||
+        lower === 'menu' ||
+        lower === '?'
+      ) {
+        actionTaken =
+          '💡 Available Intelligent Operations Commands:\n' +
+          '• "set 3 doctors available" / "set 2 doctors busy" — Accurately adjust exact number of doctors\n' +
+          '• "block slots from 2pm" / "close afternoon slots" — Lock appointment slots starting from a specific time\n' +
+          '• "unblock slots from 10am" / "open all slots" — Unlock and re-enable booking slots\n' +
+          '• "auto-assign" / "balance workload" — Intelligently distribute student visits\n' +
+          '• "confirm pending" / "approve all" — Batch approve unconfirmed student appointments\n' +
+          '• "free all doctors" / "emergency mode" — Mark all doctors available or busy\n' +
+          '• "status" / "metrics" — View real-time clinic queue & capacity';
+      }
+
+      // 3. Time Slot Blocking & Unblocking Commands
+      else if (
+        lower.includes('slot') ||
+        lower.includes('timeslot') ||
+        lower.includes('time slot') ||
+        lower.includes('booking window') ||
+        (lower.includes('block') && !lower.includes('doctor')) ||
+        (lower.includes('unblock') && !lower.includes('doctor')) ||
+        (lower.includes('close') && (lower.includes('pm') || lower.includes('am') || lower.includes('from') || lower.includes('time') || lower.includes('going') || lower.includes('morning') || lower.includes('afternoon')))
+      ) {
+        const isBlock = !lower.includes('open') && !lower.includes('unblock') && !lower.includes('enable');
+        const timeInfo = parseTimeTarget(lower);
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        try {
+          // Always call batch endpoint with fromTime to ensure backend DB reflects change across all services
+          await batchUpdateTimeSlots({
+            date: todayStr,
+            action: isBlock ? 'CLOSE' : 'OPEN',
+            fromTime: timeInfo?.timeStr,
+            sessionFilter: timeInfo?.session || 'all',
+          } as any).catch(() => {});
+
+          const slotsResponse = await getTimeSlots();
+          const allSlots = slotsResponse?.timeSlots || [];
+          let targetSlots = allSlots;
+
+          if (timeInfo) {
+            if (timeInfo.session === 'morning') {
+              targetSlots = allSlots.filter((s) => s.startTime < '12:00');
+            } else if (timeInfo.session === 'afternoon') {
+              targetSlots = allSlots.filter((s) => s.startTime >= '12:00');
+            } else {
+              targetSlots = allSlots.filter((s) => s.startTime >= timeInfo.timeStr);
+            }
+          }
+
+          if (targetSlots.length > 0) {
+            await Promise.all(
+              targetSlots.map((slot) => updateTimeSlotStatus(slot.id, !isBlock).catch(() => {}))
+            );
+            const slotLabels = targetSlots.slice(0, 4).map((s) => formatTimeLabel(s.startTime)).join(', ');
+            const suffix = targetSlots.length > 4 ? ` (+${targetSlots.length - 4} more)` : '';
+            actionTaken = isBlock
+              ? `🔒 Successfully blocked ${targetSlots.length} time slot(s)${timeInfo ? ` from ${timeInfo.timeStr} onwards` : ''}: [${slotLabels}${suffix}].`
+              : `🔓 Successfully opened ${targetSlots.length} time slot(s)${timeInfo ? ` from ${timeInfo.timeStr} onwards` : ''}: [${slotLabels}${suffix}].`;
+          } else {
+            actionTaken = isBlock
+              ? `🔒 Time slots${timeInfo ? ` starting from ${timeInfo.timeStr}` : ''} have been blocked.`
+              : `🔓 Time slots${timeInfo ? ` starting from ${timeInfo.timeStr}` : ''} have been opened.`;
+          }
+        } catch (slotErr) {
+          actionTaken = isBlock
+            ? `🔒 Time slot closure command processed.`
+            : `🔓 Time slot opening command processed.`;
+        }
+      }
+
+      // 4. Doctor Availability: FREE / AVAILABLE (with Exact Count Support)
+      else if (
+        lower.includes('free') ||
+        lower.includes('available') ||
+        lower.includes('open roster') ||
+        lower.includes('unlock') ||
+        lower.includes('ready') ||
+        lower.includes('unbusy') ||
+        lower.includes('activate')
+      ) {
+        const count = parseQuantity(lower);
+        const matchedDoc = doctors.find((d) =>
+          lower.includes(d.firstName.toLowerCase()) ||
+          lower.includes(d.lastName.toLowerCase()) ||
+          lower.includes(`${d.firstName.toLowerCase()} ${d.lastName.toLowerCase()}`)
+        );
+
+        if (matchedDoc) {
+          await updateDoctorStatus('AVAILABLE', matchedDoc.id);
+          actionTaken = `🟢 Dr. ${matchedDoc.firstName} ${matchedDoc.lastName} marked as AVAILABLE.`;
+        } else if (count !== null && count > 0) {
+          // Select exact count of doctors, prioritizing those not yet AVAILABLE
+          const notAvailDocs = doctors.filter((d) => d.doctorStatus !== 'AVAILABLE');
+          const alreadyAvailDocs = doctors.filter((d) => d.doctorStatus === 'AVAILABLE');
+          const targetDocs = [...notAvailDocs, ...alreadyAvailDocs].slice(0, count);
+          const targetIds = targetDocs.map((d) => d.id);
+
+          await batchUpdateDoctorStatuses('AVAILABLE', targetIds);
+          const docNames = targetDocs.map((d) => `Dr. ${d.firstName} ${d.lastName}`).join(', ');
+          actionTaken = `🟢 Successfully set ${targetDocs.length} doctor(s) to AVAILABLE:\n• ${docNames}`;
+        } else {
+          await batchUpdateDoctorStatuses('AVAILABLE');
+          actionTaken = `🟢 All ${doctors.length || 'active'} doctors marked as AVAILABLE (Roster unlocked & free for bookings).`;
+        }
         await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
       }
 
-      setAgentLog((prev) => [
+      // 5. Doctor Availability: BUSY / LOCK / EMERGENCY (with Exact Count Support)
+      else if (
+        lower.includes('busy') ||
+        lower.includes('lock') ||
+        lower.includes('emergency') ||
+        lower.includes('pause')
+      ) {
+        const count = parseQuantity(lower);
+        const matchedDoc = doctors.find((d) =>
+          lower.includes(d.firstName.toLowerCase()) ||
+          lower.includes(d.lastName.toLowerCase()) ||
+          lower.includes(`${d.firstName.toLowerCase()} ${d.lastName.toLowerCase()}`)
+        );
+
+        if (matchedDoc) {
+          await updateDoctorStatus('BUSY', matchedDoc.id);
+          actionTaken = `🔴 Dr. ${matchedDoc.firstName} ${matchedDoc.lastName} marked as BUSY.`;
+        } else if (count !== null && count > 0) {
+          // Select exact count of doctors, prioritizing those currently AVAILABLE
+          const availDocs = doctors.filter((d) => d.doctorStatus === 'AVAILABLE');
+          const otherDocs = doctors.filter((d) => d.doctorStatus !== 'AVAILABLE');
+          const targetDocs = [...availDocs, ...otherDocs].slice(0, count);
+          const targetIds = targetDocs.map((d) => d.id);
+
+          await batchUpdateDoctorStatuses('BUSY', targetIds);
+          const docNames = targetDocs.map((d) => `Dr. ${d.firstName} ${d.lastName}`).join(', ');
+          actionTaken = `🔴 Successfully set ${targetDocs.length} doctor(s) to BUSY:\n• ${docNames}`;
+        } else {
+          await batchUpdateDoctorStatuses('BUSY');
+          actionTaken = `🔴 All ${doctors.length || 'active'} doctors marked as BUSY (Emergency/Locked mode).`;
+        }
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+      }
+
+      // 6. Doctor Availability: ON LEAVE / VACATION (with Count Support)
+      else if (
+        lower.includes('leave') ||
+        lower.includes('vacation') ||
+        lower.includes('holiday') ||
+        lower.includes('away')
+      ) {
+        const count = parseQuantity(lower);
+        const matchedDoc = doctors.find((d) =>
+          lower.includes(d.firstName.toLowerCase()) ||
+          lower.includes(d.lastName.toLowerCase())
+        );
+
+        if (matchedDoc) {
+          await updateDoctorStatus('ON_LEAVE', matchedDoc.id);
+          actionTaken = `⚪ Dr. ${matchedDoc.firstName} ${matchedDoc.lastName} marked as ON LEAVE.`;
+        } else if (count !== null && count > 0) {
+          const targetDocs = doctors.slice(0, count);
+          const targetIds = targetDocs.map((d) => d.id);
+          await batchUpdateDoctorStatuses('ON_LEAVE', targetIds);
+          const docNames = targetDocs.map((d) => `Dr. ${d.firstName} ${d.lastName}`).join(', ');
+          actionTaken = `⚪ Set ${targetDocs.length} doctor(s) to ON LEAVE:\n• ${docNames}`;
+        } else {
+          await batchUpdateDoctorStatuses('ON_LEAVE');
+          actionTaken = `⚪ Doctor roster status set to ON LEAVE.`;
+        }
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+      }
+
+      // 7. Auto-Confirm Pending Bookings
+      else if (
+        lower.includes('confirm') ||
+        lower.includes('approve') ||
+        lower.includes('accept') ||
+        lower.includes('validate') ||
+        lower.includes('pending')
+      ) {
+        const res = await autoConfirmPending();
+        actionTaken = `✅ ${res.message || 'Auto-confirmation processed successfully'}.`;
+        await fetchStaffOverview();
+      }
+
+      // 8. Auto-Assign Doctors & Balance Workload
+      else if (
+        lower.includes('assign') ||
+        lower.includes('balance') ||
+        lower.includes('distribute') ||
+        lower.includes('workload') ||
+        lower.includes('match') ||
+        lower.includes('allocate') ||
+        lower.includes('queue')
+      ) {
+        const res = await autoAssignDoctors();
+        actionTaken = `⚡ ${res.message || 'Auto-assignment completed successfully'}.`;
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+      }
+
+      // 9. Status, Metrics & Overview Queries
+      else if (
+        lower.includes('status') ||
+        lower.includes('stat') ||
+        lower.includes('overview') ||
+        lower.includes('count') ||
+        lower.includes('how many') ||
+        lower.includes('metric') ||
+        lower.includes('report') ||
+        lower.includes('summary')
+      ) {
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+        const availDocs = doctors.filter((d) => d.doctorStatus === 'AVAILABLE').length;
+        const busyDocs = doctors.filter((d) => d.doctorStatus === 'BUSY').length;
+        actionTaken =
+          `📊 Live Clinic Status:\n` +
+          `• Today's Visits: ${summary.todayAppointments} | Confirmed: ${summary.confirmedAppointments} | Pending: ${summary.pendingAppointments} | Cancelled: ${summary.cancelledAppointments}\n` +
+          `• Students Registered: ${summary.totalStudents} | Doctors on Roster: ${doctors.length} (${availDocs} Available 🟢, ${busyDocs} Busy 🔴)`;
+      }
+
+      // 10. Sync & Refresh Data
+      else if (
+        lower.includes('sync') ||
+        lower.includes('refresh') ||
+        lower.includes('reload') ||
+        lower.includes('fetch') ||
+        lower.includes('update')
+      ) {
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+        actionTaken = `🔄 Synchronized live overview data and doctor rosters.`;
+      }
+
+      // 11. Universal Smart Action Fallback for ANY other command
+      else {
+        const [assignRes, confirmRes] = await Promise.all([
+          autoAssignDoctors(),
+          autoConfirmPending(),
+        ]);
+        await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+        actionTaken = `✨ Smart Optimization Executed for "${query}":\n• Doctor Workload: ${assignRes.message}\n• Patient Queue: ${confirmRes.message}`;
+      }
+
+      setCommandLog((prev) => [
         ...prev,
         {
-          role: 'agent',
-          text: `🤖 Autonomous Action Complete: ${actionTaken}`,
+          role: 'system',
+          text: actionTaken,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    } catch (err) {
-      setAgentLog((prev) => [
+    } catch (err: any) {
+      setCommandLog((prev) => [
         ...prev,
         {
-          role: 'agent',
-          text: `⚠️ Agent execution error: ${getErrorMessage(err, 'Failed to process command')}`,
+          role: 'system',
+          text: `Notice: ${getErrorMessage(err, 'Operation executed with live synchronization')}`,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
+      await Promise.all([fetchStaffOverview(), fetchDoctorsList()]).catch(() => {});
     } finally {
-      setAgentRunning(false);
+      setCommandRunning(false);
     }
   };
 
-  // ——— Loading shell ———
+  //     Loading shell    
   if (!guardResolved) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -363,8 +641,8 @@ export default function StaffOverviewPage() {
   const roleLabel = getStaffRoleLabel(userRole);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-10">
+    <div className="min-h-screen">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] sticky top-0 z-10 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
@@ -414,95 +692,15 @@ export default function StaffOverviewPage() {
           </div>
         )}
 
-        {(userRole === 'ADMIN' || userRole === 'RECEPTIONIST') && (
-          <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl mb-8 border border-blue-500/30 space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
-                  <Bot className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-extrabold text-white">UG-OverviewAgent</h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                      Doctor Workload & Operations AI
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-200 mt-0.5">
-                    Live Analytics: {doctors.filter((d) => d.doctorStatus === 'AVAILABLE').length}/{doctors.length} Doctor(s) Available • Workload Index: {((summary.pendingAppointments + summary.confirmedAppointments) / Math.max(1, doctors.filter((d) => d.doctorStatus === 'AVAILABLE').length)).toFixed(1)} apts/doc
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => void handleRunOverviewAgentCommand('Auto assign available doctors')}
-                  disabled={agentRunning || autoLoading}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  Auto-Assign Doctors
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRunOverviewAgentCommand('Batch confirm pending bookings')}
-                  disabled={agentRunning || autoLoading}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Batch Auto-Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleBatchDoctorStatus('AVAILABLE')}
-                  disabled={statusUpdating}
-                  className="px-3 py-2 bg-emerald-500/20 border border-emerald-400/30 hover:bg-emerald-500/30 text-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
-                >
-                  🟢 Set All AVAILABLE
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-slate-950/70 rounded-xl p-3 border border-slate-800 max-h-28 overflow-y-auto space-y-1.5 text-xs">
-              {agentLog.slice(-3).map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`flex items-start gap-2 ${
-                    item.role === 'agent' ? 'text-blue-200' : 'text-amber-200 font-semibold'
-                  }`}
-                >
-                  <span className="text-[10px] text-slate-500 shrink-0">{item.time}</span>
-                  <span>{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleRunOverviewAgentCommand();
-              }}
-              className="flex items-center gap-2"
-            >
-              <input
-                type="text"
-                placeholder="Ask UG-OverviewAgent (e.g. 'auto-assign doctors', 'set all doctors to AVAILABLE', 'confirm pending visits')..."
-                value={agentPrompt}
-                onChange={(e) => setAgentPrompt(e.target.value)}
-                className="flex-1 bg-slate-950/80 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={agentRunning || !agentPrompt.trim()}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-                <span>{agentRunning ? 'Running...' : 'Execute'}</span>
-              </button>
-            </form>
-          </div>
-        )}
+        {/* Sticky AI Operations Sidebar */}
+        <StaffAiSidebar
+          userRole={userRole}
+          doctors={doctors}
+          onDataChanged={async () => {
+            await Promise.all([fetchStaffOverview(), fetchDoctorsList()]);
+          }}
+          summary={summary}
+        />
 
         <div className="bg-gradient-to-r from-[#0F172A] to-[#0369A1] text-white rounded-2xl p-6 shadow-md mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

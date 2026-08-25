@@ -20,7 +20,7 @@ export default function StaffSettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F1F4F9]">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StaffNav userRole={user?.role ?? ''} />
 
@@ -104,7 +104,7 @@ export default function StaffSettingsPage() {
                     <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-[1.5px] border-[#DDE3EE] bg-[#F5F7FB] rounded-xl">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1e3a8a]/10 text-[#1e3a8a] text-xs font-bold rounded-lg border border-[#1e3a8a]/20">
                         <Shield className="w-3 h-3" />
-                        {user?.role || '—'}
+                        {user?.role || ' '}
                       </span>
                     </div>
                   </div>

@@ -131,7 +131,21 @@ export default function ForgotPasswordPage() {
       </header>
 
       {/* Hero */}
-      <div className="relative bg-gradient-to-br from-[#0F172A] via-[#0369A1] to-[#0F172A] text-white py-14 px-4 text-center overflow-hidden">
+      <div className="relative bg-[#0F172A] text-white py-14 px-4 text-center overflow-hidden">
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        >
+          <source src="/ug-video.mp4" type="video/mp4" />
+          <source src="/UG video.mp4" type="video/mp4" />
+        </video>
+
+        {/* Video Overlay / Gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/85 via-[#0F172A]/70 to-[#1e3a8a]/65 backdrop-blur-[1px]" />
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5 blur-2xl pointer-events-none" />
         <div className="relative max-w-md mx-auto animate-[slideDown_280ms_cubic-bezier(0.4,0,0.2,1)_both]">
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mb-4 bg-white/10 border border-white/15 rounded-full text-xs font-bold text-blue-200">
@@ -232,7 +246,7 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   className="w-full px-3.5 py-3 border-[1.5px] border-[#DDE3EE] bg-white text-center text-2xl font-mono tracking-[0.5em] text-[#0369A1] rounded-xl hover:border-[#94A3B8] focus:outline-none focus:border-[#0369A1] focus:ring-[3px] focus:ring-[#0369A1]/15 transition-all duration-200"
                 />
-                <p className="mt-1.5 text-[10px] text-[#9CA8BA]">Check your email inbox — the code is valid for 10 minutes.</p>
+                <p className="mt-1.5 text-[10px] text-[#9CA8BA]">Check your email inbox   the code is valid for 10 minutes.</p>
               </div>
               <div className="flex gap-2.5">
                 <button

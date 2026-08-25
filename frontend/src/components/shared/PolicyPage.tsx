@@ -20,8 +20,23 @@ export default function PolicyPage({ title, breadcrumb, lastUpdated, intro, sect
     <div className="min-h-screen bg-white">
       <Header />
 
-      <section className="bg-gradient-to-br from-blue-900 to-blue-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+      <section className="relative bg-[#0F172A] text-white py-16 overflow-hidden">
+        {/* Background Video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        >
+          <source src="/ug-video.mp4" type="video/mp4" />
+          <source src="/UG video.mp4" type="video/mp4" />
+        </video>
+
+        {/* Video Overlay / Gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/85 via-[#0F172A]/70 to-[#1e3a8a]/65 backdrop-blur-[1px]" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <h1 className="text-4xl font-bold mb-3">{title}</h1>
           <p className="text-blue-200 text-sm">Last updated: {lastUpdated}</p>
           <div className="mt-4 text-sm text-blue-200">

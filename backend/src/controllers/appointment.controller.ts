@@ -147,7 +147,7 @@ async function isDoctorDoubleBooked(
 
 export const getAvailability = async (req: AuthRequest, res: Response) => {
   try {
-    const { date, serviceId } = req.query;
+    const { date, serviceId, excludeAppointmentId } = req.query;
 
     if (!date || typeof date !== 'string') {
       return res.status(400).json({ success: false, message: 'Appointment date is required' });
@@ -161,12 +161,15 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
     const sDay = startOfDay(appointmentDate);
     const eDay = endOfDay(appointmentDate);
 
-    const whereDate: any = { date: { gte: sDay, lte: eDay }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } };
+    const whereDate: any = {
+      date: { gte: sDay, lte: eDay },
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+    };
 
-    // If a specific service is requested, filter booked slots to that service.
-    // If no service filter, ALL appointments (any service) block the time slot
-    // because the clinic cannot run two appointments in the same slot for the
-    // same room/resource pool in this MVP.
+    if (excludeAppointmentId && typeof excludeAppointmentId === 'string') {
+      whereDate.id = { not: excludeAppointmentId };
+    }
+
     if (typeof serviceId === 'string' && serviceId) {
       const resolved = await resolveService(serviceId);
       if (resolved) whereDate.serviceId = resolved.id;
@@ -177,7 +180,40 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
       select: { timeSlot: true },
     });
 
-    let bookedSlots = appointments.map((a) => a.timeSlot);
+    const bookedSet = new Set<string>();
+
+    for (const appt of appointments) {
+      if (appt.timeSlot) {
+        bookedSet.add(appt.timeSlot);
+      }
+    }
+
+    // Check TimeSlot capacity table (e.g. if disabled or currentBookings >= maxBookings)
+    try {
+      const timeSlotRecords = await prisma.timeSlot.findMany({
+        where: {
+          date: { gte: sDay, lte: eDay },
+        },
+        select: { serviceId: true, startTime: true, isAvailable: true, currentBookings: true, maxBookings: true },
+      });
+
+      for (const slot of timeSlotRecords) {
+        // If matched service or general slot is unavailable, mark as booked
+        if (!whereDate.serviceId || slot.serviceId === whereDate.serviceId) {
+          if (!slot.isAvailable || slot.currentBookings >= slot.maxBookings) {
+            const norm = ALL_GENERAL_SLOTS.find(
+              (s) => timeSlotToMinutes(s) === timeSlotToMinutes(slot.startTime)
+            );
+            if (norm) bookedSet.add(norm);
+            else bookedSet.add(slot.startTime);
+          }
+        }
+      }
+    } catch {
+      /* ignore if timeSlot table not used */
+    }
+
+    let bookedSlots = Array.from(bookedSet);
 
     // If date is a weekend, all general appointment slots are unavailable
     if (isWeekend(appointmentDate)) {
@@ -196,7 +232,42 @@ export const getAvailability = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    res.status(200).json({ success: true, data: { bookedSlots } });
+    // Check if current student already has an active appointment on this date
+    let hasExistingBooking = false;
+    let existingTimeSlot: string | null = null;
+    let existingAppointmentId: string | null = null;
+
+    if (req.user?.userId) {
+      const studentExisting = await prisma.appointment.findFirst({
+        where: {
+          userId: req.user.userId,
+          date: { gte: sDay, lte: eDay },
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          ...(excludeAppointmentId ? { id: { not: String(excludeAppointmentId) } } : {}),
+        },
+        select: { id: true, timeSlot: true },
+      });
+
+      if (studentExisting) {
+        hasExistingBooking = true;
+        existingTimeSlot = studentExisting.timeSlot;
+        existingAppointmentId = studentExisting.id;
+        // Also ensure the student's already-booked slot is in bookedSlots
+        if (studentExisting.timeSlot) {
+          bookedSlots = [...new Set([...bookedSlots, studentExisting.timeSlot])];
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        bookedSlots,
+        hasExistingBooking,
+        existingTimeSlot,
+        existingAppointmentId,
+      },
+    });
   } catch (error) {
     console.error('Get availability error:', error);
     res.status(500).json({
@@ -327,7 +398,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         },
       });
       if (existingSameDay) {
-        throw new Error('You already have an appointment on this date');
+        throw new Error('You already have an appointment booked on this date. Please choose another date or manage your existing appointment.');
       }
 
       // Time-slot conflict (any user taking that slot across services -> treat as booked since single-room MVP)
@@ -339,7 +410,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         },
       });
       if (conflictingTime) {
-        throw new Error('Time slot is already booked');
+        throw new Error('This time slot is already booked. Please choose another time slot or date.');
       }
 
       // Doctor double-booking check
@@ -353,7 +424,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
           },
         });
         if (doctorConflict) {
-          throw new Error('Selected doctor is already booked at this time');
+          throw new Error('Selected doctor is already booked at this time. Please choose another doctor or time slot.');
         }
       }
 
@@ -368,7 +439,7 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         });
         if (slot) {
           if (!slot.isAvailable || slot.currentBookings >= slot.maxBookings) {
-            throw new Error('Time slot is fully booked');
+            throw new Error('This time slot is fully booked. Please select another slot.');
           }
           const nextBookings = slot.currentBookings + 1;
           await tx.timeSlot.update({
@@ -411,28 +482,44 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         : 'Appointment submitted successfully, pending doctor assignment',
       data: { appointment },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create appointment error:', error);
+    if (error?.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: 'You already have an appointment booked on this date. Please choose another date or manage your existing appointment.',
+      });
+    }
     if (error instanceof Error) {
-      switch (error.message) {
-        case 'Service not found':
-          return res.status(404).json({ success: false, message: error.message });
-        case 'Service is currently unavailable':
-        case 'Selected doctor is not available':
-        case 'Selected doctor is currently on leave':
-        case 'Cannot book an appointment in the past':
-        case 'Cannot book a time slot that has already passed':
-          return res.status(400).json({ success: false, message: error.message });
-        case 'You already have an appointment on this date':
-        case 'Time slot is already booked':
-        case 'Time slot is fully booked':
-        case 'Selected doctor is already booked at this time':
-          return res.status(409).json({ success: false, message: error.message });
+      const msg = error.message;
+      if (
+        msg.includes('already have an appointment') ||
+        msg.includes('already booked') ||
+        msg.includes('fully booked')
+      ) {
+        return res.status(409).json({ success: false, message: msg });
+      }
+      if (
+        msg.includes('unavailable') ||
+        msg.includes('not available') ||
+        msg.includes('on leave') ||
+        msg.includes('in the past') ||
+        msg.includes('already passed') ||
+        msg.includes('operating hours') ||
+        msg.includes('required')
+      ) {
+        return res.status(400).json({ success: false, message: msg });
+      }
+      if (msg.includes('Service not found') || msg.includes('not found')) {
+        return res.status(404).json({ success: false, message: msg });
+      }
+      if (!msg.includes('prisma') && !msg.includes('Prisma') && !msg.includes('Transaction') && msg.length < 150) {
+        return res.status(400).json({ success: false, message: msg });
       }
     }
     res.status(500).json({
       success: false,
-      message: 'An error occurred while booking the appointment',
+      message: 'Failed to complete booking. You may already have an active appointment on this date or this slot is no longer available.',
     });
   }
 };
@@ -618,6 +705,7 @@ export const getAllAppointments = async (req: AuthRequest, res: Response) => {
       serviceId,
       startDate,
       endDate,
+      search,
     } = req.query as any;
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -635,6 +723,20 @@ export const getAllAppointments = async (req: AuthRequest, res: Response) => {
       where.date = {};
       if (startDate) where.date.gte = startOfDay(new Date(String(startDate)));
       if (endDate) where.date.lte = endOfDay(new Date(String(endDate)));
+    }
+
+    if (search) {
+      const q = String(search).trim();
+      if (q) {
+        where.OR = [
+          { reason: { contains: q, mode: 'insensitive' } },
+          { user: { firstName: { contains: q, mode: 'insensitive' } } },
+          { user: { lastName: { contains: q, mode: 'insensitive' } } },
+          { user: { email: { contains: q, mode: 'insensitive' } } },
+          { user: { studentId: { contains: q, mode: 'insensitive' } } },
+          { service: { name: { contains: q, mode: 'insensitive' } } },
+        ];
+      }
     }
 
     const [appointments, total] = await Promise.all([
@@ -1064,7 +1166,7 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
 
 export const batchUpdateTimeSlots = async (req: AuthRequest, res: Response) => {
   try {
-    const { date, action, maxBookings, sessionFilter } = req.body || {};
+    const { date, action, maxBookings, sessionFilter, fromTime, startTimeThreshold } = req.body || {};
 
     const targetDate = date ? new Date(String(date)) : new Date();
     if (Number.isNaN(targetDate.getTime())) {
@@ -1091,6 +1193,10 @@ export const batchUpdateTimeSlots = async (req: AuthRequest, res: Response) => {
       targetDoctorCount = Math.max(1, availableDocs);
     }
 
+    const targetFromMinutes = (fromTime || startTimeThreshold)
+      ? timeSlotToMinutes(String(fromTime || startTimeThreshold))
+      : null;
+
     let updatedCount = 0;
     for (const slot of existingSlots) {
       const minutes = timeSlotToMinutes(slot.startTime);
@@ -1099,6 +1205,7 @@ export const batchUpdateTimeSlots = async (req: AuthRequest, res: Response) => {
 
       if (sessionFilter === 'MORNING' && !isMorning) continue;
       if (sessionFilter === 'AFTERNOON' && !isAfternoon) continue;
+      if (targetFromMinutes !== null && minutes < targetFromMinutes) continue;
 
       let newMax = slot.maxBookings;
       let newAvailable = slot.isAvailable;
@@ -1129,10 +1236,17 @@ export const batchUpdateTimeSlots = async (req: AuthRequest, res: Response) => {
         case 'LOCK_AFTERNOON':
           if (isAfternoon) newAvailable = false;
           break;
+        case 'LOCK_MORNING':
+          if (isMorning) newAvailable = false;
+          break;
         case 'LOCK_ALL':
+        case 'CLOSE':
+        case 'BLOCK':
           newAvailable = false;
           break;
         case 'UNLOCK_ALL':
+        case 'OPEN':
+        case 'UNBLOCK':
           newAvailable = slot.currentBookings < slot.maxBookings;
           break;
         default:

@@ -119,8 +119,8 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-blue-800/50 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-blue-300/70">
-            &copy; {new Date().getFullYear()} UG Student Clinic, University of Ghana. All rights reserved.
+          <p className="text-xs sm:text-sm text-blue-300/70">
+            &copy; {new Date().getFullYear()} University of Ghana Student Clinic. Designed and developed using standard web development practices.
           </p>
           <div className="flex gap-5 text-xs text-blue-300/70">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

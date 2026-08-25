@@ -4,6 +4,9 @@ import "./globals.css";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import AuthSyncProvider from "@/components/providers/AuthSyncProvider";
 import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
+import NavigationProgress from "@/components/providers/NavigationProgress";
+import PageTransition from "@/components/providers/PageTransition";
+import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +19,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UG Clinic Portal",
-  description: "University of Ghana Student Clinic Portal - Book Appointments and Manage Your Healthcare",
+  applicationName: "UG Student Clinic Portal",
+  authors: [{ name: "University of Ghana Health Services", url: "https://www.ug.edu.gh" }],
+  creator: "University of Ghana Health Services Directorate",
+  publisher: "University of Ghana",
+  title: "UG Clinic Portal - University of Ghana Student Clinic",
+  description: "Official University of Ghana Student Clinic Portal for student consultations, healthcare records, and campus health services.",
   icons: {
     icon: "/logo.svg",
   },
@@ -42,10 +49,14 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="min-h-screen">
+        <ServiceWorkerProvider />
+        <NavigationProgress />
         <NextAuthProvider>
           <AuthSyncProvider />
           <SessionTimeoutProvider>
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </SessionTimeoutProvider>
         </NextAuthProvider>
       </body>

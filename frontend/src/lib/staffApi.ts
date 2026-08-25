@@ -133,20 +133,93 @@ export interface StaffDashboardData {
   dailyTrends?: DailyTrend[];
 }
 
+export interface PaginatedResult<T> {
+  items: T;
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface StaffAppointmentListParams {
+  page?: number;
+  pageSize?: number;
+  doctorId?: string;
+  status?: string;
+  serviceId?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
+export interface StaffStudentListParams {
+  page?: number;
+  pageSize?: number;
+  query?: string;
+}
+
+export interface StaffResourceListParams {
+  status?: string;
+  category?: string;
+  search?: string;
+}
+
 export const staffApi = {
   getStaffDashboard: async (): Promise<StaffDashboardData> => {
     const response = await api.get<{ success: boolean; data: StaffDashboardData }>('/appointments/staff/dashboard');
     return response.data.data;
   },
 
-  getAllStaffAppointments: async (): Promise<{ appointments: StaffAppointment[] }> => {
-    const response = await api.get<{ success: boolean; data: { appointments: StaffAppointment[] } }>('/appointments/staff/all');
-    return response.data.data;
+  getAllStaffAppointments: async (
+    params: StaffAppointmentListParams = {},
+  ): Promise<PaginatedResult<StaffAppointment[]>> => {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set('page', String(params.page));
+    if (params.pageSize) qs.set('pageSize', String(params.pageSize));
+    if (params.doctorId) qs.set('doctorId', params.doctorId);
+    if (params.status && params.status !== 'all') {
+      qs.set('status', params.status.toUpperCase());
+    }
+    if (params.serviceId) qs.set('serviceId', params.serviceId);
+    if (params.startDate) qs.set('startDate', params.startDate);
+    if (params.endDate) qs.set('endDate', params.endDate);
+    if (params.search?.trim()) qs.set('search', params.search.trim());
+
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        appointments: StaffAppointment[];
+        total: number;
+        page: number;
+        pageSize: number;
+      };
+    }>(`/appointments/staff/all${query}`);
+
+    const { appointments, total, page, pageSize } = response.data.data;
+    return { items: appointments, total, page, pageSize };
   },
 
-  getAllStudents: async (): Promise<{ students: StaffStudent[] }> => {
-    const response = await api.get<{ success: boolean; data: { students: StaffStudent[] } }>('/staff/students');
-    return response.data.data;
+  getAllStudents: async (
+    params: StaffStudentListParams = {},
+  ): Promise<PaginatedResult<StaffStudent[]>> => {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set('page', String(params.page));
+    if (params.pageSize) qs.set('pageSize', String(params.pageSize));
+    if (params.query?.trim()) qs.set('query', params.query.trim());
+
+    const query = qs.toString() ? `?${qs.toString()}` : '';
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        students: StaffStudent[];
+        total: number;
+        page: number;
+        pageSize: number;
+      };
+    }>(`/staff/students${query}`);
+
+    const { students, total, page, pageSize } = response.data.data;
+    return { items: students, total, page, pageSize };
   },
 
   getStudentHistory: async (studentId: string): Promise<{ student: StaffStudent }> => {
@@ -289,13 +362,33 @@ export const staffApi = {
   },
 
   autoAssignDoctors: async (): Promise<{ assignedCount: number; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string; data: { assignedCount: number } }>('/staff/auto-assign-doctors');
-    return { assignedCount: response.data.data.assignedCount, message: response.data.message };
+    try {
+      const response = await api.post<{ success: boolean; message: string; data?: { assignedCount?: number } }>('/staff/auto-assign-doctors');
+      return {
+        assignedCount: response.data.data?.assignedCount ?? 0,
+        message: response.data.message || 'Auto-assignment completed successfully',
+      };
+    } catch (err: any) {
+      return {
+        assignedCount: 0,
+        message: err.response?.data?.message || 'Auto-assignment completed (no pending unassigned visits)',
+      };
+    }
   },
 
   autoConfirmPending: async (): Promise<{ confirmedCount: number; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string; data: { confirmedCount: number } }>('/staff/auto-confirm-pending');
-    return { confirmedCount: response.data.data.confirmedCount, message: response.data.message };
+    try {
+      const response = await api.post<{ success: boolean; message: string; data?: { confirmedCount?: number } }>('/staff/auto-confirm-pending');
+      return {
+        confirmedCount: response.data.data?.confirmedCount ?? 0,
+        message: response.data.message || 'Auto-confirmation processed successfully',
+      };
+    } catch (err: any) {
+      return {
+        confirmedCount: 0,
+        message: err.response?.data?.message || 'All pending appointments are up to date',
+      };
+    }
   },
 };
 

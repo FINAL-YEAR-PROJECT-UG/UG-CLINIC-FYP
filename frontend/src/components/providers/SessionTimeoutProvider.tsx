@@ -19,77 +19,68 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
   const [showPrompt, setShowPrompt] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(Math.floor(PROMPT_MS / 1000));
 
-  const lastActivityRef = useRef(Date.now());
-  const promptDeadlineRef = useRef<number | null>(null);
-  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const clearTimers = useCallback(() => {
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    idleTimerRef.current = null;
-    countdownRef.current = null;
-    promptDeadlineRef.current = null;
-  }, []);
-
   const performLogout = useCallback(async () => {
-    clearTimers();
     setShowPrompt(false);
     const role = useAuthStore.getState().user?.role;
     await logoutWithStore();
     router.replace(isStaffRole(role) ? '/staff-portal-access' : '/login');
-  }, [clearTimers, router]);
+  }, [router]);
 
-  const resetIdleTimer = useCallback(() => {
-    if (!isAuthenticated) return;
-    lastActivityRef.current = Date.now();
-    if (showPrompt) return;
+  // Effect 1: Idle detection (active only when authenticated AND prompt is not visible)
+  useEffect(() => {
+    if (!isAuthenticated || showPrompt) return;
 
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => {
-      setShowPrompt(true);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const startIdleTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        setShowPrompt(true);
+      }, IDLE_MS);
+    };
+
+    const onActivity = () => {
+      startIdleTimer();
+    };
+
+    ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
+    startIdleTimer();
+
+    return () => {
+      ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));
+      if (timer) clearTimeout(timer);
+    };
+  }, [isAuthenticated, showPrompt]);
+
+  // Effect 2: Countdown timer (active only when prompt is visible)
+  useEffect(() => {
+    if (!isAuthenticated || !showPrompt) {
       setSecondsLeft(Math.floor(PROMPT_MS / 1000));
-      promptDeadlineRef.current = Date.now() + PROMPT_MS;
+      return;
+    }
 
-      countdownRef.current = setInterval(() => {
-        const deadline = promptDeadlineRef.current;
-        if (!deadline) return;
-        const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-        setSecondsLeft(remaining);
-        if (remaining <= 0) {
-          void performLogout();
-        }
-      }, 1000);
-    }, IDLE_MS);
+    const initialSeconds = Math.floor(PROMPT_MS / 1000);
+    setSecondsLeft(initialSeconds);
+    const deadline = Date.now() + PROMPT_MS;
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        void performLogout();
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, [isAuthenticated, showPrompt, performLogout]);
 
   const stayActive = useCallback(() => {
     setShowPrompt(false);
     setSecondsLeft(Math.floor(PROMPT_MS / 1000));
-    clearTimers();
-    lastActivityRef.current = Date.now();
-    resetIdleTimer();
-  }, [clearTimers, resetIdleTimer]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      clearTimers();
-      setShowPrompt(false);
-      return;
-    }
-
-    const onActivity = () => {
-      if (!showPrompt) resetIdleTimer();
-    };
-
-    ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }));
-    resetIdleTimer();
-
-    return () => {
-      ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));
-      clearTimers();
-    };
-  }, [isAuthenticated, showPrompt, resetIdleTimer, clearTimers]);
+  }, []);
 
   return (
     <>

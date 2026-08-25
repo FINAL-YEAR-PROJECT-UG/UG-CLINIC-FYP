@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
@@ -92,7 +94,7 @@ export default function DashboardPage() {
   const [cancelNote, setCancelNote] = useState<string>('');
   const [cancelError, setCancelError] = useState<string | null>(null);
 
-  // ——— Early synchronous redirect: STAFF → /staff/overview, unauth → /login ———
+  //     Early synchronous redirect: STAFF → /staff/overview, unauth → /login    
   // Run once on mount. Use sync store snapshot + deps-aware effect.
   useEffect(() => {
     let active = true;
@@ -198,10 +200,10 @@ export default function DashboardPage() {
   const fullName = (firstName && lastName && firstName.toLowerCase() !== lastName.toLowerCase())
     ? `${firstName} ${lastName}`
     : firstName;
-  const studentId = user?.studentId || '—';
-  const email = user?.email || '—';
-  const mobile = user?.phone || '—';
-  const programme = user?.program || '—';
+  const studentId = user?.studentId || ' ';
+  const email = user?.email || ' ';
+  const mobile = user?.phone || ' ';
+  const programme = user?.program || ' ';
 
   const now = new Date();
   const upcoming = appointments
@@ -227,9 +229,21 @@ export default function DashboardPage() {
   const bookingTarget = getBookingRouteForRole(user?.role, isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen relative bg-[#F8FAFC] overflow-x-hidden">
+      {/* Background Campus Entrance Image & Soft Dimming Overlay */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Image
+          src={ugEntranceBg}
+          alt="University of Ghana Campus Entrance"
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-slate-900/15" />
+      </div>
+
       {/* Welcome banner */}
-      <header className="bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white sticky top-0 z-10 shadow-md">
+      <header className="relative z-10 bg-gradient-to-r from-[#1e3a8a]/95 to-[#3b82f6]/95 backdrop-blur-md text-white sticky top-0 shadow-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {firstName}</h1>
@@ -317,7 +331,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-8">
           {error && (
@@ -386,9 +400,8 @@ export default function DashboardPage() {
                     Cancel appointment
                   </button>
                   <Link
-                    href={bookingTarget}
-                    onClick={handleBookingNavClick}
-                    className="text-sm font-medium text-[#334155] hover:text-[#020617] transition-all duration-200 hover:underline focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded"
+                    href={`/demo-booking?rescheduleId=${encodeURIComponent(nextAppointment.id)}&serviceId=${encodeURIComponent(nextAppointment.serviceId || nextAppointment.service?.id || '')}&date=${encodeURIComponent(nextAppointment.date.split('T')[0])}&time=${encodeURIComponent(nextAppointment.timeSlot)}&reason=${encodeURIComponent(nextAppointment.reason || '')}`}
+                    className="text-sm font-medium text-[#1e3a8a] hover:text-blue-900 font-semibold transition-all duration-200 hover:underline focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded"
                   >
                     Reschedule
                   </Link>

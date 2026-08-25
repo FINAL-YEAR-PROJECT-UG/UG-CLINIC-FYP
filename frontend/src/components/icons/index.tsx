@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Centralized Heroicons exports for consistent iconography across the app.
- * Uses @heroicons/react (24px outline) — same design system as Assets/Heroicons (Community).
+ * Uses @heroicons/react (24px outline)   same design system as Assets/Heroicons (Community).
  */
 import * as React from 'react';
 import { cn } from '@/lib/utils';
@@ -90,7 +90,7 @@ export type IconComponent = React.ForwardRefExoticComponent<
   React.PropsWithoutRef<IconProps> & React.RefAttributes<SVGSVGElement>
 >;
 
-/** Spinning loader — replaces Lucide Loader2 */
+/** Spinning loader   replaces Lucide Loader2 */
 export function Loader2({ className, ...props }: IconProps) {
   return (
     <ArrowPathIcon
@@ -182,6 +182,7 @@ export const Printer = PrinterIcon;
 export const AlertCircle = ExclamationCircleIcon;
 export const MessageCircle = ChatBubbleLeftRightIcon;
 export const ChevronLeft = ChevronLeftIcon;
+export const ChevronUp = ChevronUpIcon;
 export const ExternalLink = ArrowTopRightOnSquareIcon;
 
 // UI component aliases (Lucide naming)

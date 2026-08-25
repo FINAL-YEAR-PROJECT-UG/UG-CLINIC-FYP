@@ -75,13 +75,29 @@ export const appointmentApi = {
     return response.data.data.services;
   },
 
-  getAvailability: async (date: string, serviceId?: string): Promise<string[]> => {
+  getAvailability: async (
+    date: string,
+    serviceId?: string,
+    excludeAppointmentId?: string
+  ): Promise<{
+    bookedSlots: string[];
+    hasExistingBooking?: boolean;
+    existingTimeSlot?: string | null;
+    existingAppointmentId?: string | null;
+  }> => {
     const params = new URLSearchParams({ date });
     if (serviceId) params.set('serviceId', serviceId);
-    const response = await api.get<{ success: boolean; data: { bookedSlots: string[] } }>(
-      `/appointments/availability?${params}`
-    );
-    return response.data.data.bookedSlots;
+    if (excludeAppointmentId) params.set('excludeAppointmentId', excludeAppointmentId);
+    const response = await api.get<{
+      success: boolean;
+      data: {
+        bookedSlots: string[];
+        hasExistingBooking?: boolean;
+        existingTimeSlot?: string | null;
+        existingAppointmentId?: string | null;
+      };
+    }>(`/appointments/availability?${params}`);
+    return response.data.data;
   },
 
   getMyAppointments: async (): Promise<ApiAppointment[]> => {
@@ -100,6 +116,14 @@ export const appointmentApi = {
     data: CreateAppointmentData
   ): Promise<{ success: boolean; message: string; data?: { appointment: ApiAppointment } }> => {
     const response = await api.post('/appointments', data);
+    return response.data;
+  },
+
+  reschedule: async (
+    id: string,
+    data: { date: string; timeSlot: string }
+  ): Promise<{ success: boolean; message: string; data?: { appointment: ApiAppointment } }> => {
+    const response = await api.patch(`/appointments/${id}/reschedule`, data);
     return response.data;
   },
 

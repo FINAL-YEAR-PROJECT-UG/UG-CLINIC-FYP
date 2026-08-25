@@ -19,9 +19,9 @@ export default function UGLogo({
   className = '',
 }: UGLogoProps) {
   const dimensions = {
-    sm: { img: 24, text: 'text-xs', sub: 'text-[8px]' },
-    md: { img: 28, text: 'text-sm', sub: 'text-[9px]' },
-    lg: { img: 32, text: 'text-base', sub: 'text-[10px]' },
+    sm: { img: 32, text: 'text-sm', sub: 'text-[9px]' },
+    md: { img: 42, text: 'text-base', sub: 'text-[11px]' },
+    lg: { img: 52, text: 'text-lg', sub: 'text-xs' },
   }[size];
 
   const logoContent = (

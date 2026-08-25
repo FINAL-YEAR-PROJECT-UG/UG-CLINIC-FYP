@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 import UGLogo from '@/components/shared/UGLogo';
+import Image from 'next/image';
+import viceChancellorBg from '@/Assets/Legon UG/vice chancelor.jpg';
 
 const staffLoginSchema = z.object({
   email: z.string().email('Please enter a valid staff email address'),
@@ -97,37 +99,48 @@ export default function StaffPortalAccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col font-sans">
+    <div className="min-h-screen relative flex flex-col bg-slate-950 text-white font-sans overflow-x-hidden">
+      {/* Background Image & High-Visibility Overlay */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Image
+          src={viceChancellorBg}
+          alt="University of Ghana Vice Chancellor's Building"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        {/* Crisp, translucent overlay: allows Vice Chancellor building to be clearly seen while keeping UI pristine */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/65 via-slate-900/45 to-slate-950/70 backdrop-blur-[0.5px]" />
+      </div>
+
       {/* Header */}
-      <header className="bg-slate-950 border-b border-slate-800 px-6 py-4 sticky top-0 z-20">
+      <header className="relative z-20 bg-slate-950/75 backdrop-blur-md border-b border-slate-800/60 px-6 py-4 sticky top-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <UGLogo size="md" textColor="text-white" href="/" />
 
           <Link
             href="/login"
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 px-3.5 py-1.5 rounded-full backdrop-blur-sm transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> Return to Student Sign In
+            <ArrowLeft className="w-3.5 h-3.5" /> Return to Student Sign In
           </Link>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-        {/* Background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="w-full max-w-md bg-slate-800/90 border border-slate-700/80 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+        <div className="w-full max-w-md bg-slate-900/85 border border-slate-700/60 rounded-3xl p-8 sm:p-9 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] backdrop-blur-xl relative z-10 animate-[scaleIn_260ms_cubic-bezier(0.4,0,0.2,1)_both]">
           <div className="text-center mb-6">
-            <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto mb-3 text-blue-400">
+            <div className="w-12 h-12 bg-blue-500/15 border border-blue-500/30 rounded-2xl flex items-center justify-center mx-auto mb-3 text-blue-400 shadow-sm">
               <Lock className="w-6 h-6" />
             </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/15 border border-amber-500/30 rounded-full text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-2">
               <ShieldAlert className="w-3.5 h-3.5" /> Restricted Access
             </span>
-            <h1 className="text-2xl font-extrabold text-white">Admin & Receptionist Portal</h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Secured administrative portal for receptionists and clinic staff to manage student appointments and doctor assignments.
+            <h1 className="text-2xl sm:text-3xl font-black text-white drop-shadow-sm">Staff & Admin Portal</h1>
+            <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+              Secured portal for clinic receptionists, doctors, and administrators to manage health operations.
             </p>
           </div>
 
@@ -147,8 +160,7 @@ export default function StaffPortalAccessPage() {
                 autoComplete="email"
                 placeholder="staff@ug.edu.gh"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 {...register('email')}
               />
               {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
@@ -163,8 +175,7 @@ export default function StaffPortalAccessPage() {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 disabled={isLoading}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ color: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 {...register('password')}
               />
               {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}

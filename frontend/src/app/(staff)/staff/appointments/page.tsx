@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
@@ -8,11 +9,12 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import UGLogo from "@/components/shared/UGLogo";
 import { getErrorMessage, normalizeRole, isStaffRole, formatTimeLabel, getAppointmentTimestamp } from "@/lib/utils";
 import StaffNav from "@/components/shared/StaffNav";
+const StaffAiSidebar = dynamic(
+  () => import("@/components/shared/StaffAiSidebar"),
+  { ssr: false, loading: () => null },
+);
 import {
   assignDoctorToAppointment,
-  getAllStaffAppointments,
-  getDoctors,
-  getTimeSlots,
   rescheduleAppointment,
   staffCancelAppointment,
   updateAppointmentStatus,
@@ -23,11 +25,23 @@ import {
   type StaffDoctor,
   type StaffTimeSlot,
 } from "@/lib/staffApi";
+import {
+  getCachedAppointments,
+  getCachedDoctors,
+  getCachedStaffDashboard,
+  getCachedTimeSlots,
+  invalidateAppointmentsCache,
+  invalidateDoctorsCache,
+  invalidateStaffDashboardCache,
+  invalidateTimeSlotsCache,
+} from "@/lib/cachedApi";
+import { getAppointmentDateRange } from "@/lib/dateFilters";
+import type { StaffDashboardData } from "@/lib/staffApi";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  Bot,
+
   Calendar,
   CalendarClock,
   CheckCircle2,
@@ -49,7 +63,7 @@ import {
   Unlock,
   UserCheck,
   Users,
-  Wand2,
+
   X,
   Zap,
 } from "@/components/icons";
@@ -135,6 +149,11 @@ export default function StaffAppointmentsPage() {
     "appointments",
   );
   const [appointments, setAppointments] = useState<StaffAppointment[]>([]);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+  const [dashboardSummary, setDashboardSummary] = useState<
+    StaffDashboardData["summary"] | null
+  >(null);
+  const [upcomingPreview, setUpcomingPreview] = useState<StaffAppointment[]>([]);
   const [doctors, setDoctors] = useState<StaffDoctor[]>([]);
   const [timeSlots, setTimeSlots] = useState<StaffTimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,29 +162,31 @@ export default function StaffAppointmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSlotDate, setSelectedSlotDate] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
+  const [isOverviewCollapsed, setIsOverviewCollapsed] = useState(false);
 
   const [selectedAppointment, setSelectedAppointment] =
     useState<StaffAppointment | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
-  // Autonomous Slot Agent state
-  const [agentPrompt, setAgentPrompt] = useState("");
-  const [agentRunning, setAgentRunning] = useState(false);
-  const [agentMessage, setAgentMessage] = useState<string | null>(null);
-  const [agentLog, setAgentLog] = useState<
-    Array<{ role: "user" | "agent"; text: string; time: string }>
+  // Clinical Schedule Automation Controller state
+  const [commandPrompt, setCommandPrompt] = useState("");
+  const [commandRunning, setCommandRunning] = useState(false);
+  const [commandMessage, setCommandMessage] = useState<string | null>(null);
+  const [commandLog, setCommandLog] = useState<
+    Array<{ role: "user" | "system"; text: string; time: string }>
   >([
     {
-      role: "agent",
-      text: "Hello! I am UG-SlotAgent. I monitor doctor availability and optimize slot capacity. Ask me to sync capacity with doctors, expand peak slots, or trigger emergency lockdowns.",
-      time: "Just now",
+      role: "system",
+      text: "Slot Automation Ready. Manage capacity based on doctor availability, expand peak hours, or adjust emergency booking limits.",
+      time: "System Ready",
     },
   ]);
 
@@ -200,7 +221,7 @@ export default function StaffAppointmentsPage() {
         sessionFilter,
       });
       setTimeSlots(res.timeSlots);
-      setAgentMessage(`✨ ${res.message}`);
+      setCommandMessage(res.message);
     } catch (err) {
       setError(getErrorMessage(err, "Batch slot operation failed"));
     } finally {
@@ -208,16 +229,16 @@ export default function StaffAppointmentsPage() {
     }
   };
 
-  const handleRunSlotAgentCommand = async (inputQuery?: string) => {
-    const query = (inputQuery || agentPrompt).trim();
+  const handleRunSlotAutomation = async (inputQuery?: string) => {
+    const query = (inputQuery || commandPrompt).trim();
     if (!query) return;
-    setAgentPrompt("");
-    setAgentRunning(true);
+    setCommandPrompt("");
+    setCommandRunning(true);
     const nowTime = new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
-    setAgentLog((prev) => [
+    setCommandLog((prev) => [
       ...prev,
       { role: "user", text: query, time: nowTime },
     ]);
@@ -235,7 +256,7 @@ export default function StaffAppointmentsPage() {
           action: "SYNC_DOCTORS",
         });
         setTimeSlots(res.timeSlots);
-        actionTaken = `Synced all slot capacities to match the ${availableDocsCount} currently AVAILABLE doctor(s).`;
+        actionTaken = `Synced all slot capacities to match the ${availableDocsCount} currently available doctor(s).`;
       } else if (
         lower.includes("emergency") ||
         lower.includes("lockdown") ||
@@ -247,7 +268,7 @@ export default function StaffAppointmentsPage() {
           action: "LOCK_AFTERNOON",
         });
         setTimeSlots(res.timeSlots);
-        actionTaken = `Emergency protocol executed: Blocked afternoon slots to preserve doctor capacity.`;
+        actionTaken = `Emergency protocol executed: Reserved afternoon slots for urgent triage.`;
       } else if (
         lower.includes("expand") ||
         lower.includes("morning") ||
@@ -260,7 +281,7 @@ export default function StaffAppointmentsPage() {
           sessionFilter: "MORNING",
         });
         setTimeSlots(res.timeSlots);
-        actionTaken = `Expanded capacity for all Morning slots (+1 booking capacity per slot window).`;
+        actionTaken = `Expanded capacity for all morning slots (+1 booking capacity per window).`;
       } else if (
         lower.includes("reset") ||
         lower.includes("default") ||
@@ -278,21 +299,21 @@ export default function StaffAppointmentsPage() {
           action: "UNLOCK_ALL",
         });
         setTimeSlots(res.timeSlots);
-        actionTaken = `Re-opened all non-full booking slots for ${selectedSlotDate}.`;
+        actionTaken = `Re-opened all active booking slots for ${selectedSlotDate}.`;
       } else {
         const res = await batchUpdateTimeSlots({
           date: selectedSlotDate,
           action: "SYNC_DOCTORS",
         });
         setTimeSlots(res.timeSlots);
-        actionTaken = `Analyzed request and auto-aligned slot capacity with active doctor count (${availableDocsCount} doctor(s) available).`;
+        actionTaken = `Aligned slot capacity with active doctor count (${availableDocsCount} doctor(s) on duty).`;
       }
 
-      setAgentLog((prev) => [
+      setCommandLog((prev) => [
         ...prev,
         {
-          role: "agent",
-          text: `🤖 Autonomous Action Complete: ${actionTaken}`,
+          role: "system",
+          text: `Action Completed: ${actionTaken}`,
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -300,11 +321,11 @@ export default function StaffAppointmentsPage() {
         },
       ]);
     } catch (err) {
-      setAgentLog((prev) => [
+      setCommandLog((prev) => [
         ...prev,
         {
-          role: "agent",
-          text: `⚠️ Agent execution error: ${getErrorMessage(err, "Could not adjust slots")}`,
+          role: "system",
+          text: `Notice: ${getErrorMessage(err, "Could not adjust slots")}`,
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -312,7 +333,7 @@ export default function StaffAppointmentsPage() {
         },
       ]);
     } finally {
-      setAgentRunning(false);
+      setCommandRunning(false);
     }
   };
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -358,34 +379,71 @@ export default function StaffAppointmentsPage() {
     };
   }, [router, storeIsAuth, storeUser, isAuthenticated, user]);
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = useCallback(async (force = false) => {
     try {
       setLoading(true);
-      const data = await getAllStaffAppointments();
-      setAppointments(
-        Array.isArray(data.appointments) ? data.appointments : [],
+      const dateRange = getAppointmentDateRange(selectedDate);
+      const result = await getCachedAppointments(
+        {
+          page: currentPage,
+          pageSize: appointmentsPerPage,
+          status: selectedStatus !== "all" ? selectedStatus : undefined,
+          search: debouncedSearch.trim() || undefined,
+          ...dateRange,
+        },
+        {
+          force,
+          onRevalidate: (fresh) => setAppointments(fresh),
+        },
       );
+      setAppointments(result.data);
+      setTotalAppointments(result.total);
+      if (result.fromCache) setLoading(false);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load appointments"));
     } finally {
       setLoading(false);
     }
+  }, [currentPage, selectedStatus, selectedDate, debouncedSearch]);
+
+  const fetchDashboardSummary = useCallback(async (force = false) => {
+    try {
+      const result = await getCachedStaffDashboard({
+        force,
+        onRevalidate: (dashboard) => {
+          setDashboardSummary(dashboard.summary);
+          setUpcomingPreview(dashboard.upcomingAppointments.slice(0, 4));
+        },
+      });
+      setDashboardSummary(result.dashboard.summary);
+      setUpcomingPreview(result.dashboard.upcomingAppointments.slice(0, 4));
+    } catch (err) {
+      console.error("Failed to load dashboard summary:", err);
+    }
   }, []);
 
-  const fetchDoctors = useCallback(async () => {
+  const fetchDoctors = useCallback(async (force = false) => {
     try {
-      const data = await getDoctors();
-      setDoctors(Array.isArray(data.doctors) ? data.doctors : []);
+      const result = await getCachedDoctors({
+        force,
+        onRevalidate: (fresh) => setDoctors(fresh),
+      });
+      setDoctors(result.doctors);
     } catch (err) {
       console.error("Failed to load doctors list:", err);
     }
   }, []);
 
-  const fetchTimeSlots = useCallback(async (date: string) => {
+  const fetchTimeSlots = useCallback(async (date: string, force = false) => {
     try {
       setSlotsLoading(true);
-      const data = await getTimeSlots(undefined, date);
-      setTimeSlots(Array.isArray(data.timeSlots) ? data.timeSlots : []);
+      const result = await getCachedTimeSlots(date, {
+        force,
+        onRevalidate: (fresh) => setTimeSlots(fresh),
+      });
+      setTimeSlots(result.timeSlots);
+      // Immediately hide spinner when returning cached data
+      if (result.fromCache) setSlotsLoading(false);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load booking slots"));
     } finally {
@@ -394,10 +452,19 @@ export default function StaffAppointmentsPage() {
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     if (!guardResolved) return;
 
     const timeoutHandle = setTimeout(() => {
       void fetchAppointments();
+      void fetchDashboardSummary();
       void fetchDoctors();
       void fetchTimeSlots(selectedSlotDate);
     }, 0);
@@ -406,6 +473,7 @@ export default function StaffAppointmentsPage() {
   }, [
     guardResolved,
     fetchAppointments,
+    fetchDashboardSummary,
     fetchDoctors,
     fetchTimeSlots,
     selectedSlotDate,
@@ -441,11 +509,40 @@ export default function StaffAppointmentsPage() {
   };
 
   const handleRefreshAll = async () => {
+    invalidateAppointmentsCache();
+    invalidateStaffDashboardCache();
+    invalidateDoctorsCache();
+    invalidateTimeSlotsCache();
     await Promise.all([
-      fetchAppointments(),
-      fetchDoctors(),
-      fetchTimeSlots(selectedSlotDate),
+      fetchAppointments(true),
+      fetchDashboardSummary(true),
+      fetchDoctors(true),
+      fetchTimeSlots(selectedSlotDate, true),
     ]);
+  };
+
+  const [batchUpdating, setBatchUpdating] = useState(false);
+
+  const handleBatchSlots = async (
+    action: "OPEN" | "CLOSE" | "EXPAND" | "REDUCE" | "RESET" | "SYNC_DOCTORS",
+    sessionFilter?: "MORNING" | "AFTERNOON"
+  ) => {
+    try {
+      setBatchUpdating(true);
+      setError(null);
+      await batchUpdateTimeSlots({
+        date: selectedSlotDate,
+        action,
+        sessionFilter,
+      });
+      // Invalidate and force-refetch so slots reflect the mutation
+      invalidateTimeSlotsCache(selectedSlotDate);
+      await fetchTimeSlots(selectedSlotDate, true);
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to perform batch slot update"));
+    } finally {
+      setBatchUpdating(false);
+    }
   };
 
   const handleToggleSlotAvailability = async (
@@ -455,7 +552,8 @@ export default function StaffAppointmentsPage() {
     try {
       setBusyAction(slotId);
       await updateTimeSlotStatus(slotId, !currentAvailable);
-      await fetchTimeSlots(selectedSlotDate);
+      invalidateTimeSlotsCache(selectedSlotDate);
+      await fetchTimeSlots(selectedSlotDate, true);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to update time slot availability"));
     } finally {
@@ -470,8 +568,9 @@ export default function StaffAppointmentsPage() {
     try {
       setBusyAction(`appointment-${appointmentId}-${newStatus}`);
       await updateAppointmentStatus(appointmentId, newStatus);
+      invalidateAppointmentsCache();
       closeAppointmentOverlays();
-      await fetchAppointments();
+      await fetchAppointments(true);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to update appointment status"));
     } finally {
@@ -492,8 +591,9 @@ export default function StaffAppointmentsPage() {
         cancelReason,
         cancelNote,
       );
+      invalidateAppointmentsCache();
       closeAppointmentOverlays();
-      await fetchAppointments();
+      await fetchAppointments(true);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to cancel appointment"));
     } finally {
@@ -514,8 +614,10 @@ export default function StaffAppointmentsPage() {
         rescheduleDate,
         rescheduleTime,
       );
+      invalidateAppointmentsCache();
+      invalidateTimeSlotsCache(rescheduleDate);
       closeAppointmentOverlays();
-      await Promise.all([fetchAppointments(), fetchTimeSlots(rescheduleDate)]);
+      await Promise.all([fetchAppointments(true), fetchTimeSlots(rescheduleDate, true)]);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to reschedule appointment"));
     } finally {
@@ -532,8 +634,10 @@ export default function StaffAppointmentsPage() {
     try {
       setBusyAction(`assign-${selectedAppointment.id}`);
       await assignDoctorToAppointment(selectedAppointment.id, selectedDoctor);
+      invalidateAppointmentsCache();
+      invalidateDoctorsCache();
       closeAppointmentOverlays();
-      await Promise.all([fetchAppointments(), fetchDoctors()]);
+      await Promise.all([fetchAppointments(true), fetchDoctors(true)]);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to assign doctor"));
     } finally {
@@ -654,7 +758,7 @@ export default function StaffAppointmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen">
       <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -1285,203 +1389,24 @@ export default function StaffAppointmentsPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Quick Batch Capacity Controls */}
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">
-                    Quick Capacity Controls:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => void handleBatchSlotAction("SYNC_DOCTORS")}
-                    className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200 transition-colors flex items-center gap-1.5"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    Sync with Doctors ({doctors.filter((d) => d.doctorStatus === "AVAILABLE").length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleBatchSlotAction("EXPAND")}
-                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200 transition-colors flex items-center gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Expand All (+1)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleBatchSlotAction("REDUCE")}
-                    className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 transition-colors flex items-center gap-1.5"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                    Scale Down (-1)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleBatchSlotAction("LOCK_AFTERNOON")}
-                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg border border-rose-200 transition-colors flex items-center gap-1.5"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    Lock Afternoon
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleBatchSlotAction("RESET")}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
-                  >
-                    Reset Baseline (1)
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {[
-                  {
-                    label: "Total slots",
-                    value: slotOverview.total,
-                    note: "All generated booking windows",
-                    Icon: Calendar,
-                    tone: "bg-slate-50 text-slate-700",
-                  },
-                  {
-                    label: "Open slots",
-                    value: slotOverview.open,
-                    note: "Currently bookable",
-                    Icon: Unlock,
-                    tone: "bg-emerald-50 text-emerald-700",
-                  },
-                  {
-                    label: "Blocked slots",
-                    value: slotOverview.blocked,
-                    note: "Held from bookings",
-                    Icon: Lock,
-                    tone: "bg-rose-50 text-rose-700",
-                  },
-                  {
-                    label: "Near capacity",
-                    value: slotOverview.nearlyFull,
-                    note: "Monitor closely",
-                    Icon: AlertTriangle,
-                    tone: "bg-amber-50 text-amber-700",
-                  },
-                ].map((card) => (
-                  <div
-                    key={card.label}
-                    className="rounded-2xl border border-slate-200 p-4"
-                  >
-                    <div className={`inline-flex rounded-2xl p-3 ${card.tone}`}>
-                      <card.Icon className="w-5 h-5" />
-                    </div>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                      {card.label}
-                    </p>
-                    <p className="mt-2 text-3xl font-extrabold text-slate-950">
-                      {card.value}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">{card.note}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Embedded UG-SlotAgent Autonomous Assistant */}
-            <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-lg border border-indigo-500/30 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-md">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-                      UG-SlotAgent
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                        Autonomous Capacity Assistant
-                      </span>
-                    </h3>
-                    <p className="text-xs text-slate-300">
-                      Auto-evaluates slot capacity against active doctor roster ({doctors.filter((d) => d.doctorStatus === "AVAILABLE").length} doc(s) available)
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Active Agent Monitoring
-                </span>
-              </div>
-
-              {agentMessage && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs font-semibold flex items-center justify-between">
-                  <span>{agentMessage}</span>
-                  <button type="button" onClick={() => setAgentMessage(null)} className="text-slate-400 hover:text-white">✕</button>
-                </div>
-              )}
-
-              <div className="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 max-h-32 overflow-y-auto space-y-2 text-xs">
-                {agentLog.slice(-3).map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-start gap-2 ${
-                      item.role === "agent" ? "text-blue-200" : "text-amber-200 font-semibold"
-                    }`}
-                  >
-                    <span className="text-[10px] text-slate-500 shrink-0">{item.time}</span>
-                    <span>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-400 text-[11px] font-semibold">Quick Agent Prompts:</span>
-                <button
-                  type="button"
-                  onClick={() => void handleRunSlotAgentCommand("Sync slot capacity with available doctor count")}
-                  disabled={agentRunning}
-                  className="px-2.5 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 rounded-lg border border-indigo-500/30 transition-colors text-[11px] font-semibold"
-                >
-                  ⚡ Sync with {doctors.filter((d) => d.doctorStatus === "AVAILABLE").length} Available Docs
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRunSlotAgentCommand("Expand morning slots for high student demand")}
-                  disabled={agentRunning}
-                  className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg border border-blue-500/30 transition-colors text-[11px] font-semibold"
-                >
-                  📈 Expand Peak Morning Slots
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRunSlotAgentCommand("Emergency lockdown afternoon slots due to emergency")}
-                  disabled={agentRunning}
-                  className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg border border-rose-500/30 transition-colors text-[11px] font-semibold"
-                >
-                  🚨 Emergency Lockdown Afternoon
-                </button>
-              </div>
-
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void handleRunSlotAgentCommand();
-                }}
-                className="flex items-center gap-2"
-              >
-                <input
-                  type="text"
-                  placeholder="Ask UG-SlotAgent (e.g. 'set capacity to 3', 'lock afternoon slots', 'sync with doctors')..."
-                  value={agentPrompt}
-                  onChange={(e) => setAgentPrompt(e.target.value)}
-                  className="flex-1 bg-slate-950/80 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                />
-                <button
-                  type="submit"
-                  disabled={agentRunning || !agentPrompt.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>{agentRunning ? "Executing..." : "Execute"}</span>
-                </button>
-              </form>
-            </div>
+            {/* Sticky AI Operations Sidebar Controller */}
+            <StaffAiSidebar
+              userRole={userRole}
+              doctors={doctors}
+              timeSlots={timeSlots}
+              selectedDate={selectedSlotDate}
+              onDataChanged={async () => {
+                await Promise.all([fetchAppointments(), fetchTimeSlots(selectedSlotDate), fetchDoctors()]);
+              }}
+              summary={{
+                todayAppointments,
+                pendingAppointments,
+                confirmedAppointments,
+                totalDoctors: doctors.length,
+              }}
+            />
 
             {slotsLoading ? (
               <div className="bg-white rounded-2xl border border-[#E2E8F0] p-16 shadow-sm flex justify-center">
@@ -1512,111 +1437,492 @@ export default function StaffAppointmentsPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {timeSlots.map((slot) => {
-                  const occupancyRatio =
-                    slot.maxBookings > 0
-                      ? slot.currentBookings / slot.maxBookings
-                      : 0;
-                  const occupancyTone =
-                    occupancyRatio >= 1
-                      ? "text-rose-700 bg-rose-50"
-                      : occupancyRatio >= 0.75
-                        ? "text-amber-700 bg-amber-50"
-                        : "text-emerald-700 bg-emerald-50";
+              <div className="space-y-6">
+                {/* Global Controls & Collapsible Overview Header */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-slate-950">
+                        ⚡ Clinical Sessions & Capacity Overview
+                      </h3>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">
+                        {timeSlots.length} Windows ({formatDate(selectedSlotDate)})
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Split session management for morning and afternoon clinic operational windows.
+                    </p>
+                  </div>
 
-                  return (
-                    <article
-                      key={slot.id}
-                      className="bg-white rounded-2xl border border-[#E2E8F0] p-5 shadow-sm flex flex-col justify-between"
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      disabled={batchUpdating}
+                      onClick={() => void handleBatchSlots("OPEN")}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      <div>
-                        <div className="flex items-start justify-between gap-3">
+                      <Unlock className="w-3.5 h-3.5" />
+                      <span>Unlock All</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={batchUpdating}
+                      onClick={() => void handleBatchSlots("CLOSE")}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>Lock All</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={batchUpdating}
+                      onClick={() => void handleBatchSlots("SYNC_DOCTORS")}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Sync Doctors ({doctors.filter((d) => d.doctorStatus === "AVAILABLE").length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={batchUpdating}
+                      onClick={() => void handleBatchSlots("RESET")}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Reset 1/Slot</span>
+                    </button>
+
+                    {/* Collapse / Expand Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsOverviewCollapsed((prev) => !prev)}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all flex items-center gap-1.5 ml-1"
+                    >
+                      <span>{isOverviewCollapsed ? "Expand Overview ▼" : "Collapse Overview ▲"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Collapsed Split Summary View */}
+                {isOverviewCollapsed ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+                      {/* Left: Morning Collapsed Tile */}
+                      <div className="flex items-center justify-between pr-0 md:pr-6 pb-4 md:pb-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-lg">
+                            ☀️
+                          </div>
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                              Service slot
+                            <h4 className="text-sm font-bold text-slate-950">Morning Session Overview</h4>
+                            <p className="text-xs text-slate-500">
+                              08:30 AM – 12:00 PM • {timeSlots.filter((s) => s.startTime < "12:00" && s.isAvailable).length} of {timeSlots.filter((s) => s.startTime < "12:00").length} Open
                             </p>
-                            <h3 className="mt-2 text-lg font-bold text-slate-950">
-                              {formatTimeLabel(slot.startTime)} -{" "}
-                              {formatTimeLabel(slot.endTime)}
-                            </h3>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                          timeSlots.some((s) => s.startTime < "12:00" && s.isAvailable)
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                        }`}>
+                          {timeSlots.some((s) => s.startTime < "12:00" && s.isAvailable) ? "Open" : "Locked"}
+                        </span>
+                      </div>
+
+                      {/* Right: Afternoon Collapsed Tile */}
+                      <div className="flex items-center justify-between pl-0 md:pl-6 pt-4 md:pt-0">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-lg">
+                            🌤️
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-950">Afternoon Session Overview</h4>
+                            <p className="text-xs text-slate-500">
+                              01:30 PM – 05:00 PM • {timeSlots.filter((s) => s.startTime >= "12:00" && s.isAvailable).length} of {timeSlots.filter((s) => s.startTime >= "12:00").length} Open
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                          timeSlots.some((s) => s.startTime >= "12:00" && s.isAvailable)
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                        }`}>
+                          {timeSlots.some((s) => s.startTime >= "12:00" && s.isAvailable) ? "Open" : "Locked"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Expanded 2-Column Split: Morning on the Left, Afternoon on the Right */
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    {/* ══════════════════════════════════════════════════════════
+                        LEFT COLUMN: MORNING SESSION OVERVIEW (08:30 AM – 12:00 PM)
+                       ══════════════════════════════════════════════════════════ */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                      <div className="p-5 border-b border-slate-100 bg-slate-50/60">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-lg shadow-2xs">
+                              ☀️
+                            </div>
+                            <div>
+                              <h3 className="text-base font-extrabold text-slate-950">Morning Overview</h3>
+                              <p className="text-xs text-slate-500 font-semibold">08:30 AM – 12:00 PM Session</p>
+                            </div>
                           </div>
                           <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                              slot.isAvailable
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-rose-50 text-rose-700 border border-rose-200"
+                            className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
+                              timeSlots.some((s) => s.startTime < "12:00" && s.isAvailable)
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
                             }`}
                           >
-                            {slot.isAvailable ? "Open to booking" : "Blocked"}
+                            {timeSlots.some((s) => s.startTime < "12:00" && s.isAvailable)
+                              ? `Open (${timeSlots.filter((s) => s.startTime < "12:00" && s.isAvailable).length}/${timeSlots.filter((s) => s.startTime < "12:00").length})`
+                              : "Locked"}
                           </span>
                         </div>
 
-                        <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                          <p className="text-sm font-semibold text-slate-900">
-                            {slot.service?.name || "General service"}
-                          </p>
-                          <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                            <span className="text-slate-500 text-xs font-semibold">Bookings Capacity</span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => void handleAdjustSlotCapacity(slot.id, slot.maxBookings, -1)}
-                                disabled={busyAction === slot.id || slot.maxBookings <= 1}
-                                title="Reduce max capacity (-1)"
-                                className="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center text-slate-700 transition-colors shadow-2xs"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span
-                                className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${occupancyTone}`}
-                              >
-                                {slot.currentBookings} / {slot.maxBookings}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => void handleAdjustSlotCapacity(slot.id, slot.maxBookings, 1)}
-                                disabled={busyAction === slot.id}
-                                title="Expand max capacity (+1)"
-                                className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 disabled:opacity-30 flex items-center justify-center font-bold transition-colors shadow-2xs"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
+                        {/* Morning KPI Stats */}
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Total Windows</p>
+                            <p className="text-base font-extrabold text-slate-900 mt-0.5">
+                              {timeSlots.filter((s) => s.startTime < "12:00").length}
+                            </p>
                           </div>
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Open Bookable</p>
+                            <p className="text-base font-extrabold text-emerald-600 mt-0.5">
+                              {timeSlots.filter((s) => s.startTime < "12:00" && s.isAvailable).length}
+                            </p>
+                          </div>
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Avg Capacity</p>
+                            <p className="text-base font-extrabold text-blue-600 mt-0.5">
+                              {(() => {
+                                const morning = timeSlots.filter((s) => s.startTime < "12:00");
+                                if (!morning.length) return "1";
+                                return Math.round(morning.reduce((sum, s) => sum + s.maxBookings, 0) / morning.length);
+                              })()} / slot
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Morning Batch Action Buttons */}
+                        <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("OPEN", "MORNING")}
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Unlock className="w-3 h-3" />
+                            <span>Unlock</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("CLOSE", "MORNING")}
+                            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Lock</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("EXPAND", "MORNING")}
+                            className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>+1 Cap</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("REDUCE", "MORNING")}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Minus className="w-3 h-3" />
+                            <span>-1 Cap</span>
+                          </button>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          void handleToggleSlotAvailability(
-                            slot.id,
-                            slot.isAvailable,
-                          )
-                        }
-                        disabled={busyAction === slot.id}
-                        className={`mt-5 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${
-                          slot.isAvailable
-                            ? "bg-rose-600 text-white hover:bg-rose-700"
-                            : "bg-emerald-600 text-white hover:bg-emerald-700"
-                        }`}
-                      >
-                        {slot.isAvailable ? (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            Block this slot
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="w-4 h-4" />
-                            Re-open this slot
-                          </>
-                        )}
-                      </button>
-                    </article>
-                  );
-                })}
+                      {/* Morning Time Windows Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
+                            <tr>
+                              <th className="px-4 py-2.5">Time Window</th>
+                              <th className="px-4 py-2.5">Status</th>
+                              <th className="px-4 py-2.5">Bookings</th>
+                              <th className="px-4 py-2.5 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-800">
+                            {Array.from(
+                              new Set(
+                                timeSlots
+                                  .filter((s) => s.startTime < "12:00")
+                                  .map((s) => `${s.startTime}-${s.endTime}`)
+                              )
+                            )
+                              .sort()
+                              .map((timeKey) => {
+                                const [startTime, endTime] = timeKey.split("-");
+                                const matchingSlots = timeSlots.filter(
+                                  (s) => s.startTime === startTime && s.endTime === endTime
+                                );
+                                const isAvailable = matchingSlots.some((s) => s.isAvailable);
+                                const totalCap = matchingSlots.reduce((acc, s) => acc + s.maxBookings, 0);
+                                const totalBooked = matchingSlots.reduce((acc, s) => acc + s.currentBookings, 0);
+
+                                return (
+                                  <tr key={timeKey} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-bold text-slate-950">
+                                      {formatTimeLabel(startTime)} – {formatTimeLabel(endTime)}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                          isAvailable
+                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${
+                                            isAvailable ? "bg-emerald-500" : "bg-rose-500"
+                                          }`}
+                                        ></span>
+                                        {isAvailable ? "Open" : "Locked"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 font-semibold text-slate-600">
+                                      {totalBooked}/{totalCap}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                      <button
+                                        type="button"
+                                        disabled={busyAction === timeKey}
+                                        onClick={async () => {
+                                          try {
+                                            setBusyAction(timeKey);
+                                            await Promise.all(
+                                              matchingSlots.map((s) =>
+                                                updateTimeSlotStatus(s.id, !isAvailable).catch(() => {})
+                                              )
+                                            );
+                                            await fetchTimeSlots(selectedSlotDate);
+                                          } finally {
+                                            setBusyAction(null);
+                                          }
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                          isAvailable
+                                            ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                                            : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                        }`}
+                                      >
+                                        {isAvailable ? "Lock" : "Unlock"}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* ══════════════════════════════════════════════════════════
+                        RIGHT COLUMN: AFTERNOON SESSION OVERVIEW (01:30 PM – 05:00 PM)
+                       ══════════════════════════════════════════════════════════ */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                      <div className="p-5 border-b border-slate-100 bg-slate-50/60">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-lg shadow-2xs">
+                              🌤️
+                            </div>
+                            <div>
+                              <h3 className="text-base font-extrabold text-slate-950">Afternoon Overview</h3>
+                              <p className="text-xs text-slate-500 font-semibold">01:30 PM – 05:00 PM Session</p>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
+                              timeSlots.some((s) => s.startTime >= "12:00" && s.isAvailable)
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {timeSlots.some((s) => s.startTime >= "12:00" && s.isAvailable)
+                              ? `Open (${timeSlots.filter((s) => s.startTime >= "12:00" && s.isAvailable).length}/${timeSlots.filter((s) => s.startTime >= "12:00").length})`
+                              : "Locked"}
+                          </span>
+                        </div>
+
+                        {/* Afternoon KPI Stats */}
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Total Windows</p>
+                            <p className="text-base font-extrabold text-slate-900 mt-0.5">
+                              {timeSlots.filter((s) => s.startTime >= "12:00").length}
+                            </p>
+                          </div>
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Open Bookable</p>
+                            <p className="text-base font-extrabold text-emerald-600 mt-0.5">
+                              {timeSlots.filter((s) => s.startTime >= "12:00" && s.isAvailable).length}
+                            </p>
+                          </div>
+                          <div className="bg-white border border-slate-200/80 rounded-xl p-2.5">
+                            <p className="text-[10px] uppercase font-bold text-slate-500">Avg Capacity</p>
+                            <p className="text-base font-extrabold text-blue-600 mt-0.5">
+                              {(() => {
+                                const afternoon = timeSlots.filter((s) => s.startTime >= "12:00");
+                                if (!afternoon.length) return "1";
+                                return Math.round(afternoon.reduce((sum, s) => sum + s.maxBookings, 0) / afternoon.length);
+                              })()} / slot
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Afternoon Batch Action Buttons */}
+                        <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("OPEN", "AFTERNOON")}
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Unlock className="w-3 h-3" />
+                            <span>Unlock</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("CLOSE", "AFTERNOON")}
+                            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Lock className="w-3 h-3" />
+                            <span>Lock</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("EXPAND", "AFTERNOON")}
+                            className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>+1 Cap</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={batchUpdating}
+                            onClick={() => void handleBatchSlots("REDUCE", "AFTERNOON")}
+                            className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            <Minus className="w-3 h-3" />
+                            <span>-1 Cap</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Afternoon Time Windows Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
+                            <tr>
+                              <th className="px-4 py-2.5">Time Window</th>
+                              <th className="px-4 py-2.5">Status</th>
+                              <th className="px-4 py-2.5">Bookings</th>
+                              <th className="px-4 py-2.5 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-800">
+                            {Array.from(
+                              new Set(
+                                timeSlots
+                                  .filter((s) => s.startTime >= "12:00")
+                                  .map((s) => `${s.startTime}-${s.endTime}`)
+                              )
+                            )
+                              .sort()
+                              .map((timeKey) => {
+                                const [startTime, endTime] = timeKey.split("-");
+                                const matchingSlots = timeSlots.filter(
+                                  (s) => s.startTime === startTime && s.endTime === endTime
+                                );
+                                const isAvailable = matchingSlots.some((s) => s.isAvailable);
+                                const totalCap = matchingSlots.reduce((acc, s) => acc + s.maxBookings, 0);
+                                const totalBooked = matchingSlots.reduce((acc, s) => acc + s.currentBookings, 0);
+
+                                return (
+                                  <tr key={timeKey} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-3 font-bold text-slate-950">
+                                      {formatTimeLabel(startTime)} – {formatTimeLabel(endTime)}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                          isAvailable
+                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                            : "bg-rose-50 text-rose-700 border border-rose-200"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${
+                                            isAvailable ? "bg-emerald-500" : "bg-rose-500"
+                                          }`}
+                                        ></span>
+                                        {isAvailable ? "Open" : "Locked"}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 font-semibold text-slate-600">
+                                      {totalBooked}/{totalCap}
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                      <button
+                                        type="button"
+                                        disabled={busyAction === timeKey}
+                                        onClick={async () => {
+                                          try {
+                                            setBusyAction(timeKey);
+                                            await Promise.all(
+                                              matchingSlots.map((s) =>
+                                                updateTimeSlotStatus(s.id, !isAvailable).catch(() => {})
+                                              )
+                                            );
+                                            await fetchTimeSlots(selectedSlotDate);
+                                          } finally {
+                                            setBusyAction(null);
+                                          }
+                                        }}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                          isAvailable
+                                            ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                                            : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                        }`}
+                                      >
+                                        {isAvailable ? "Lock" : "Unlock"}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>

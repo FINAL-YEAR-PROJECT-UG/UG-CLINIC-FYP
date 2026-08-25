@@ -1,5 +1,5 @@
 /* ============================================================
-   UG CLINIC PORTAL — GLOBAL DESIGN SYSTEM
+   UG CLINIC PORTAL   GLOBAL DESIGN SYSTEM
    Professional, elegant, and polished UI system
    ============================================================ */
 
@@ -33,6 +33,17 @@ html {
 @keyframes vt-in {
   from { opacity: 0; transform: translateY(-4px) scale(1.004); filter: blur(1px); }
   to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* ── Page Transition Keyframes (used by PageTransition.tsx) ── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pageExit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
 }
 
 /* ── Design Tokens ────────────────────────────────────────── */
@@ -142,9 +153,6 @@ input, button, textarea, select {
 }
 
 /* ── Form element text color enforcement ──────────────────── */
-/* Ensures all form controls show dark, readable text on light backgrounds.
-   Inputs that intentionally need white text use inline Tailwind
-   utilities (e.g. text-white) which take precedence via specificity. */
 @layer base {
   input,
   textarea,
@@ -153,19 +161,7 @@ input, button, textarea, select {
   }
 }
 
-/* Ensure form controls inside dark / text-white containers remain readable.
-   Targets admin/dashboard panels that use `text-white` or dark bg utilities. */
-.text-white input,
-.text-white textarea,
-.text-white select,
-[class*="bg-slate-950"] input,
-[class*="bg-slate-950"] textarea,
-[class*="bg-slate-950"] select {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-}
-
-/* Autofill text color override — browser injects white bg/text */
+/* Autofill text color and background fix across all browsers */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
@@ -175,8 +171,28 @@ textarea:-webkit-autofill:hover,
 textarea:-webkit-autofill:focus,
 select:-webkit-autofill,
 select:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--foreground) !important;
-  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  -webkit-text-fill-color: #0B1221 !important;
+  color: #0B1221 !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  caret-color: #0B1221 !important;
+  font-weight: 500 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Explicit Dark-themed inputs autofill support (e.g. terminals and dark search boxes) */
+.dark-input:-webkit-autofill,
+.dark-input:-webkit-autofill:hover,
+.dark-input:-webkit-autofill:focus,
+.dark-input:-webkit-autofill:active,
+input.bg-slate-900:-webkit-autofill,
+input.bg-slate-950:-webkit-autofill {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #0F172A inset !important;
+  box-shadow: 0 0 0 1000px #0F172A inset !important;
+  caret-color: #ffffff !important;
+  font-weight: 500 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -199,7 +215,7 @@ select:-webkit-autofill:focus {
 
 /* ── Text Selection ───────────────────────────────────────── */
 ::selection {
-  background-color: #FCD34D; /* Amber-300 — pops against any blue */
+  background-color: #FCD34D; /* Amber-300   pops against any blue */
   color: #1e1b4b;
 }
 ::-moz-selection {
@@ -213,6 +229,27 @@ select:-webkit-autofill:focus {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ── Performance: GPU-accelerated animated elements ───────── */
+/* Promote elements that use transform/opacity to the compositor
+   thread so animations run at 60fps without triggering layout. */
+[class*="hover:-translate"],
+[class*="hover:scale"],
+[class*="group-hover:scale"],
+[style*="animation"],
+.transition-all,
+.transition-transform {
+  will-change: auto; /* let browser decide per-element */
+}
+
+/* ── Content Visibility: lazy render off-screen sections ──── */
+/* Browser can skip rendering sections not yet in the viewport,
+   dramatically cutting first-paint time on long pages. */
+section:not(:first-of-type) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
+}
+
 
 /* ============================================================
    KEYFRAME ANIMATIONS LIBRARY

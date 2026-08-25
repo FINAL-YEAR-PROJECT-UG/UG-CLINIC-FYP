@@ -294,7 +294,7 @@ export default function StaffResourcesPage() {
   const flaggedCount = resources.filter((r) => r.status === 'FLAGGED').length;
 
   return (
-    <div className="min-h-screen bg-[#F1F4F9]">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StaffNav userRole={userRole} />
 

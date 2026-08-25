@@ -36,8 +36,8 @@ export default function StaffNav({ userRole }: { userRole: string }) {
   ];
 
   return (
-    <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 pt-4 pb-3 bg-[#F8FAFC]/90 backdrop-blur-md border-b border-[#E2E8F0] mb-6 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.06)]">
-      <nav className="bg-white/80 backdrop-blur-sm rounded-2xl border border-[#E2E8F0] p-2 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]">
+    <div className="sticky top-16 z-20 mb-6">
+      <nav className="bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2E8F0] p-1.5 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.12)]">
         <div className="flex gap-1.5 flex-wrap">
           {items
             .filter((item) => item.show)

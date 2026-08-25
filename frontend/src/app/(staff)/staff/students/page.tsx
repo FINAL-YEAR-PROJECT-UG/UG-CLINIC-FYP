@@ -9,6 +9,7 @@ import { canAccessStudentRecords, getErrorMessage, formatTimeLabel } from '@/lib
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import StaffNav from '@/components/shared/StaffNav';
 import { getAllStudents, getStudentHistory, updateStudentStatus, type StaffStudent } from '@/lib/staffApi';
+import { queryCache, CACHE_TTL } from '@/lib/queryCache';
 import { Search, Users, Mail, Phone, GraduationCap, ChevronLeft, ChevronRight, Eye, Calendar, Clock, X, CheckCircle2, UserX } from '@/components/icons';
 
 export default function StaffStudentsPage() {
@@ -42,11 +43,30 @@ export default function StaffStudentsPage() {
     fetchStudents();
   }, [isAuthenticated, user]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (force = false) => {
     try {
       setLoading(true);
+      const cacheKey = 'students:all';
+
+      // Return stale data immediately while we revalidate in background
+      const stale = queryCache.getStale<StaffStudent[]>(cacheKey);
+      if (stale && !force) {
+        setStudents(stale);
+        setLoading(false);
+        // Background revalidation
+        if (!queryCache.isFresh(cacheKey)) {
+          const data = await getAllStudents();
+          const list = Array.isArray(data.students) ? data.students : [];
+          queryCache.set(cacheKey, list, CACHE_TTL.STUDENTS);
+          setStudents(list);
+        }
+        return;
+      }
+
       const data = await getAllStudents();
-      setStudents(data.students);
+      const list = Array.isArray(data.students) ? data.students : [];
+      queryCache.set(cacheKey, list, CACHE_TTL.STUDENTS);
+      setStudents(list);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load students'));
     } finally {
@@ -72,12 +92,13 @@ export default function StaffStudentsPage() {
       if (selectedStudent && selectedStudent.id === student.id) {
         setSelectedStudent({ ...selectedStudent, isActive: !student.isActive });
       }
-      await fetchStudents();
+      // Invalidate students cache so next fetch reflects the change
+      queryCache.invalidate('students:all');
+      await fetchStudents(true);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to update student active status'));
     }
   };
-
   const filteredStudents = (students || []).filter(student => {
     const searchLower = searchQuery.toLowerCase();
     return (
@@ -108,7 +129,7 @@ export default function StaffStudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F1F4F9]">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StaffNav userRole={user?.role ?? ''} />
 

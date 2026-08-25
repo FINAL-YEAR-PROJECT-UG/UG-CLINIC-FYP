@@ -60,7 +60,7 @@ const getServerApiBaseUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3005/api";
 };
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
