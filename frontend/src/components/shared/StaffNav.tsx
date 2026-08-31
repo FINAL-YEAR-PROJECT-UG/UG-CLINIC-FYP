@@ -36,9 +36,9 @@ export default function StaffNav({ userRole }: { userRole: string }) {
   ];
 
   return (
-    <div className="sticky top-16 z-20 mb-6">
-      <nav className="bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2E8F0] p-1.5 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.12)]">
-        <div className="flex gap-1.5 flex-wrap">
+    <div className="sm:sticky sm:top-16 z-20 mb-6">
+      <nav className="bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2E8F0] p-1.5 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.12)] overflow-x-auto overscroll-x-contain">
+        <div className="flex gap-1.5 min-w-max">
           {items
             .filter((item) => item.show)
             .map((item) => {
@@ -49,8 +49,8 @@ export default function StaffNav({ userRole }: { userRole: string }) {
                   key={item.href}
                   href={item.href}
                   className={`
-                    relative group flex items-center gap-2 px-4 py-2.5 rounded-xl
-                    font-semibold text-[0.8125rem] tracking-[-0.01em]
+                    relative group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl shrink-0
+                    font-semibold text-xs sm:text-[0.8125rem]
                     transition-all duration-200 overflow-hidden
                     ${isActive
                       ? 'text-white shadow-[0_4px_14px_rgba(15,23,42,0.28)]'

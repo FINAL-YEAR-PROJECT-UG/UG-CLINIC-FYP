@@ -23,7 +23,7 @@ import respectAboutIcon from '@/Assets/respect-about.svg';
 import whoWeAreIcon from '@/Assets/who-we-are.png';
 import missionIcon from '@/Assets/mission.svg';
 import visionIcon from '@/Assets/vision.svg';
-import externalBalmeBg from '@/Assets/Legon UG/external balme.jpg';
+import balmeLibraryCampusBg from '@/Assets/Legon UG/balme library and campus.jpg';
 import { getImageSrc } from '@/lib/assets';
 
 export default function AboutPageClient() {
@@ -158,22 +158,8 @@ export default function AboutPageClient() {
         </div>
       </section>
 
-      {/* ── Background Image Section: Who We Are all the way to bottom (excluding Footer) ── */}
-      <div className="relative overflow-hidden">
-        {/* Background Campus Image & Soft Dimming Overlay */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src={externalBalmeBg}
-            alt="University of Ghana Balme Library Exterior"
-            fill
-            sizes="100vw"
-            className="object-cover object-center fixed top-0"
-          />
-          {/* Subtle dimming / frosted glass tint so campus view is visible and content is pristine */}
-          <div className="absolute inset-0 bg-[#F8FAFC]/88 backdrop-blur-[1.5px]" />
-        </div>
-
-        <div className="relative z-10">
+      {/* ── Who We Are Section ── */}
+      <div className="relative">
           {/* Who We Are Section */}
           <section className="py-20 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
@@ -319,8 +305,19 @@ export default function AboutPageClient() {
           </section>
 
           {/* Achievements Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0F172A]/95 via-[#1e3a8a]/95 to-[#0369A1]/95 backdrop-blur-md text-white shadow-lg">
-            <div className="max-w-7xl mx-auto">
+          <section className="relative py-20 px-4 sm:px-6 lg:px-8 text-white shadow-lg overflow-hidden">
+            {/* Balme Library & Campus Backdrop */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <Image
+                src={balmeLibraryCampusBg}
+                alt="University of Ghana Balme Library and Campus"
+                fill
+                sizes="100vw"
+                className="object-cover object-center scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
+            </div>
+            <div className="relative z-10 max-w-7xl mx-auto">
               <div className="text-center mb-14">
                 <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-3 backdrop-blur-sm">
                   Milestones
@@ -385,7 +382,6 @@ export default function AboutPageClient() {
               </div>
             </div>
           </section>
-        </div>
       </div>
 
       <Footer />

@@ -81,6 +81,14 @@ export function getStaffPortalLabel(role?: string | null): string {
   return 'STAFF PORTAL';
 }
 
+export function getStaffRoleLabel(role?: string | null): string {
+  if (isDoctorRole(role)) return 'Doctor';
+  if (isAdminRole(role)) return 'Administrator';
+  if (isReceptionistRole(role)) return 'Receptionist';
+  if (isStaffRole(role)) return 'Staff';
+  return 'Staff';
+}
+
 export function getBookingRouteForRole(role?: string | null, isAuth?: boolean): string {
   if (!isAuth) return '/login';
   const normRole = normalizeRole(role);
@@ -124,7 +132,7 @@ export function formatTimeLabel(time?: string | null): string {
     const ampm = ampmMatch[1].toUpperCase();
     const timeOnly = trimmed.replace(/(am|pm)/i, '').trim();
     const [hoursStr, minutesStr] = timeOnly.split(':');
-    let hours = parseInt(hoursStr, 10);
+    const hours = parseInt(hoursStr, 10);
     const minutes = minutesStr || '00';
     if (isNaN(hours)) return time;
     const displayHour = hours % 12 || 12;
@@ -132,7 +140,7 @@ export function formatTimeLabel(time?: string | null): string {
   }
 
   const [hoursStr, minutesStr] = trimmed.split(':');
-  let hours = parseInt(hoursStr, 10);
+  const hours = parseInt(hoursStr, 10);
   if (isNaN(hours)) return time;
   const minutes = minutesStr || '00';
   const suffix = hours >= 12 ? 'PM' : 'AM';

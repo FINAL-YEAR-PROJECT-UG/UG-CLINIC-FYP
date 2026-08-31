@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/stores/authStore";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import UGLogo from "@/components/shared/UGLogo";
-import { getErrorMessage, normalizeRole, isStaffRole, formatTimeLabel, getAppointmentTimestamp } from "@/lib/utils";
+import { getErrorMessage, normalizeRole, isStaffRole, getStaffRoleLabel, formatTimeLabel, getAppointmentTimestamp } from "@/lib/utils";
 import StaffNav from "@/components/shared/StaffNav";
 const StaffAiSidebar = dynamic(
   () => import("@/components/shared/StaffAiSidebar"),
@@ -51,7 +51,6 @@ import {
   FileText,
   Layers3,
   Lock,
-  LogOut,
   Minus,
   Plus,
   RefreshCw,
@@ -95,19 +94,6 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   },
 };
 
-function getStaffRoleLabel(role: string) {
-  switch ((role ?? "").toUpperCase()) {
-    case "DOCTOR":
-      return "Doctor";
-    case "RECEPTIONIST":
-      return "Receptionist";
-    case "ADMIN":
-      return "Administrator";
-    default:
-      return "Staff";
-  }
-}
-
 function formatDate(iso: string): string {
   const date = new Date(iso);
   // Use UTC to avoid timezone conversion issues
@@ -135,7 +121,7 @@ function statusMeta(status: string) {
 
 export default function StaffAppointmentsPage() {
   const router = useRouter();
-  const { logout, user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
 
@@ -498,16 +484,6 @@ export default function StaffAppointmentsPage() {
     setRescheduleTime("");
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace("/login?role=staff");
-    } catch (err) {
-      console.error("Logout failed:", err);
-      router.replace("/staff-portal-access");
-    }
-  };
-
   const handleRefreshAll = async () => {
     invalidateAppointmentsCache();
     invalidateStaffDashboardCache();
@@ -759,48 +735,6 @@ export default function StaffAppointmentsPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <UGLogo size="md" href="/staff/overview" />
-              <span className="text-xs font-extrabold uppercase px-2.5 py-1 bg-[#1e3a8a] text-white rounded-md">
-                {roleLabel} Portal
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
-              >
-                ← Public Site
-              </Link>
-              <div className="hidden sm:flex items-center gap-3 border-l pl-4 border-[#E2E8F0]">
-                <div className="w-8 h-8 bg-[#E8ECF1] rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold text-[#1e3a8a]">
-                    {firstName?.[0] || "S"}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#020617]">
-                    {firstName} {lastName}
-                  </p>
-                  <p className="text-xs text-[#334155]">{roleLabel}</p>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#334155] hover:bg-[#E8ECF1] rounded-lg transition-colors border border-[#E2E8F0]"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StaffNav userRole={userRole} />
 

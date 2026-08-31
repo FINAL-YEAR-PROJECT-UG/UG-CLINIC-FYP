@@ -34,7 +34,7 @@ export function InactivityWarning({
               Session Expiring Soon
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              You've been inactive for a while. Your session will expire in{' '}
+              You&apos;ve been inactive for a while. Your session will expire in{' '}
               <span className="font-bold text-amber-600">
                 {minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`}
               </span>
@@ -49,7 +49,7 @@ export function InactivityWarning({
               </button>
               <button
                 onClick={onLogout}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-xl transition-colors"
+                className="flex-1 inline-flex items-center justify-center bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-700 font-semibold leading-tight text-center py-2.5 px-4 rounded-xl transition-colors"
               >
                 Logout Now
               </button>

@@ -100,18 +100,17 @@ export default function StaffPortalAccessPage() {
 
   return (
     <div className="min-h-screen relative flex flex-col bg-slate-950 text-white font-sans overflow-x-hidden">
-      {/* Background Image & High-Visibility Overlay */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      {/* ── High-Security Administrative Background ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <Image
           src={viceChancellorBg}
           alt="University of Ghana Vice Chancellor's Building"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center scale-105"
         />
-        {/* Crisp, translucent overlay: allows Vice Chancellor building to be clearly seen while keeping UI pristine */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/65 via-slate-900/45 to-slate-950/70 backdrop-blur-[0.5px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/88 via-slate-900/80 to-slate-950/92 backdrop-blur-[2px]" />
       </div>
 
       {/* Header */}

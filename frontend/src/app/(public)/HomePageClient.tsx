@@ -25,7 +25,7 @@ import healthHivIcon from '@/Assets/health-hiv.png';
 import healthFluIcon from '@/Assets/health-flu.png';
 import healthWellnessIcon from '@/Assets/health-wellness.svg';
 import welcomeIcon from '@/Assets/welcome.png';
-import ug2Bg from '@/Assets/Legon UG/ug 2.jpg';
+import universityOfGhanaBg from '@/Assets/Legon UG/university-of-ghana.jpg';
 import { getImageSrc } from '@/lib/assets';
 
 export default function HomePageClient() {
@@ -122,23 +122,8 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
-
-      {/* ── Background Image Section: Welcome all the way to bottom (excluding Footer) ── */}
-      <div className="relative overflow-hidden">
-        {/* Background Campus Image & Soft Dimming Overlay */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src={ug2Bg}
-            alt="University of Ghana Legon Campus"
-            fill
-            sizes="100vw"
-            className="object-cover object-center fixed top-0"
-          />
-          {/* Subtle dimming / frosted glass tint so campus view is visible and content is pristine */}
-          <div className="absolute inset-0 bg-[#F8FAFC]/88 backdrop-blur-[1.5px]" />
-        </div>
-
-        <div className="relative z-10">
+      {/* ── Lower Content Sections ── */}
+      <div className="relative">
           {/* ── Welcome ── */}
           <section className="py-24 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
@@ -175,9 +160,20 @@ export default function HomePageClient() {
           </section>
 
           {/* ── Mission ── */}
-          <section className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#0F172A]/95 via-[#1e3a8a]/95 to-[#0369A1]/95 backdrop-blur-md overflow-hidden shadow-lg">
-            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-            <div className="relative max-w-4xl mx-auto text-center">
+          <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden shadow-lg">
+            {/* Aerial Campus Imagery Backdrop */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <Image
+                src={universityOfGhanaBg}
+                alt="University of Ghana Aerial Campus"
+                fill
+                sizes="100vw"
+                className="object-cover object-center scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
+            </div>
+            <div className="absolute inset-0 opacity-[0.04] z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+            <div className="relative z-10 max-w-4xl mx-auto text-center">
               <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-6 backdrop-blur-sm shadow-xs">
                 Our Purpose
               </span>
@@ -288,7 +284,6 @@ export default function HomePageClient() {
               </div>
             </div>
           </section>
-        </div>
       </div>
 
       <Footer />

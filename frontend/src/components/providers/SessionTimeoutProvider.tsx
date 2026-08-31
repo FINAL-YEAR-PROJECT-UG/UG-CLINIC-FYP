@@ -116,7 +116,7 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
               <button
                 type="button"
                 onClick={() => void performLogout()}
-                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                className="flex-1 inline-flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold leading-tight text-center hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
               >
                 Log out now
               </button>

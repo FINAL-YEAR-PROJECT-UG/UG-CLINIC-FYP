@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import UGLogo from '@/components/shared/UGLogo';
 import { useAuthStore } from '@/stores/authStore';
-import viceChancellorBg from '@/Assets/Legon UG/vice chancelor.jpg';
+import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Please enter your student ID or email'),
@@ -80,19 +80,19 @@ function LoginFormContent() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col font-sans overflow-x-hidden">
-      {/* ── High-Visibility Vice Chancellor Background ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+    <div className="min-h-screen relative flex flex-col font-sans overflow-x-hidden bg-[#0B1221]">
+      {/* ── Campus Entrance Atmospheric Background ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <Image
-          src={viceChancellorBg}
-          alt="University of Ghana Vice Chancellor's Building"
+          src={ugEntranceBg}
+          alt="University of Ghana Campus Entrance"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-center scale-105"
         />
-        {/* Crisp, transparent overlay: allows background image to be clearly seen while keeping UI pristine */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1221]/60 via-[#0F172A]/45 to-[#0B1221]/65 backdrop-blur-[0.5px]" />
+        {/* Multi-layer gradient mask: creates a rich cinematic dark theme with 100% text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B1221]/80 via-[#0F172A]/75 to-[#0B1221]/90 backdrop-blur-[2px]" />
       </div>
 
       {/* Top Header */}

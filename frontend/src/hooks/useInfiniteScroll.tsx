@@ -43,9 +43,9 @@ interface InfiniteScrollResult<T> {
   /** Function to reset and reload from page 1 */
   reset: () => Promise<void>;
   /** Ref to attach to the scrollable container */
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   /** Ref to attach to the sentinel element at bottom */
-  sentinelRef: React.RefObject<HTMLDivElement>;
+  sentinelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function useInfiniteScroll<T>({
@@ -175,7 +175,7 @@ export function useInfiniteScroll<T>({
  * Pass the sentinelRef from useInfiniteScroll to this component
  */
 interface InfiniteScrollSentinelProps {
-  sentinelRef: React.RefObject<HTMLDivElement>;
+  sentinelRef: React.RefObject<HTMLDivElement | null>;
   className?: string;
   isLoading?: boolean;
 }

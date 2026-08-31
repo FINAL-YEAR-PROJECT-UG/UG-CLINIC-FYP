@@ -8,11 +8,6 @@ const nextConfig: NextConfig = {
   // CDN Configuration for asset delivery
   // Set CDN_URL environment variable to enable CDN (e.g., https://cdn.example.com)
   assetPrefix: process.env.CDN_URL || undefined,
-  
-  // Enable image optimization with CDN support
-  images: {
-    // ... existing image config will be merged below
-  },
 
   experimental: {
     serverActions: {

@@ -16,8 +16,9 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePrefetchNavigation } from '@/hooks/usePrefetchNavigation';
 import LoadingSpinner from './LoadingSpinner';
 
-interface OptimisticLinkProps extends Omit<LinkProps, 'href'> {
+interface OptimisticLinkProps extends Omit<LinkProps, 'href' | 'onClick'> {
   href: string;
+  className?: string;
   /** API endpoints to prefetch when hovering */
   prefetchApi?: string[];
   /** Show loading state during navigation */
@@ -31,11 +32,12 @@ interface OptimisticLinkProps extends Omit<LinkProps, 'href'> {
   /** Enable optimistic UI updates */
   optimistic?: boolean;
   /** Optional onClick handler */
-  onClick?: (e: React.MouseEvent) => void;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
 export default function OptimisticLink({
   href,
+  className,
   prefetchApi = [],
   showLoading = false,
   loadingComponent,
@@ -48,8 +50,8 @@ export default function OptimisticLink({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const { prefetchData, cancelPrefetch, navigateWithOptimism } = usePrefetchNavigation(
     href,
@@ -59,7 +61,7 @@ export default function OptimisticLink({
     }
   );
 
-  const handleNavigation = useCallback(async (e: React.MouseEvent) => {
+  const handleNavigation = useCallback(async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     
     if (onClick) {
@@ -121,12 +123,12 @@ export default function OptimisticLink({
       <Link
         href={href}
         {...linkProps}
+        className={className}
         onMouseEnter={prefetchData}
         onMouseLeave={cancelPrefetch}
         onFocus={prefetchData}
         onBlur={cancelPrefetch}
         onClick={handleNavigation}
-        className={linkProps.className}
       >
         {renderChildren()}
       </Link>

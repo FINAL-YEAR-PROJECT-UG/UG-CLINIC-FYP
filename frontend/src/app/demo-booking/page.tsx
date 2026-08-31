@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 import { useAuthStore } from '@/stores/authStore';
 import { appointmentApi } from '@/lib/appointmentApi';
@@ -34,6 +34,7 @@ import {
   Eye,
   Clock,
   AlertCircle,
+  Calendar,
   MapPin,
   Navigation,
 } from '@/components/icons';
@@ -94,7 +95,41 @@ const CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'pharmacy', label: 'Pharmacy' },
 ];
 
-const getTimeSlotDate = (timeStr: string, baseDate: Date) => {
+const formatToDateInput = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateInput = (val: string): Date => {
+  if (!val) return new Date();
+  const parts = val.split('-');
+  if (parts.length !== 3) return new Date(val);
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  return new Date(year, month, day, 12, 0, 0);
+};
+
+const isDateToday = (d: Date): boolean => {
+  const now = new Date();
+  return (
+    now.getFullYear() === d.getFullYear() &&
+    now.getMonth() === d.getMonth() &&
+    now.getDate() === d.getDate()
+  );
+};
+
+const isDatePast = (d: Date): boolean => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const check = new Date(d);
+  check.setHours(0, 0, 0, 0);
+  return check.getTime() < now.getTime();
+};
+
+const getTimeSlotDate = (timeStr: string, baseDate: Date): Date => {
   const date = new Date(baseDate);
   const [timePart, ampm] = timeStr.split(' ');
   const [hoursStr, minutesStr] = timePart.split(':');
@@ -106,25 +141,34 @@ const getTimeSlotDate = (timeStr: string, baseDate: Date) => {
   return date;
 };
 
-const isWeekend = (date: Date) => {
+const isWeekend = (date: Date): boolean => {
   const day = date.getDay();
   return day === 0 || day === 6;
 };
 
-const isTimeSlotPast = (timeStr: string, selectedDate: Date) => {
-  const today = new Date();
-  const isSameDay = today.getFullYear() === selectedDate.getFullYear()
-    && today.getMonth() === selectedDate.getMonth()
-    && today.getDate() === selectedDate.getDate();
-  if (!isSameDay) return false;
-  return getTimeSlotDate(timeStr, selectedDate) < new Date();
+const isTimeSlotPast = (timeStr: string, selectedDate: Date): boolean => {
+  if (isDatePast(selectedDate)) return true;
+  if (!isDateToday(selectedDate)) return false;
+  const now = new Date();
+  const slotDate = getTimeSlotDate(timeStr, selectedDate);
+  return slotDate.getTime() <= now.getTime();
 };
 
-const findNextAvailableSlot = (selectedDate: Date, booked: string[]) => {
-  if (isWeekend(selectedDate)) return '';
+const getNextWorkingDate = (fromDate: Date = new Date()): Date => {
+  const next = new Date(fromDate);
+  next.setDate(next.getDate() + 1);
+  next.setHours(12, 0, 0, 0);
+  while (isWeekend(next)) {
+    next.setDate(next.getDate() + 1);
+  }
+  return next;
+};
+
+const findNextAvailableSlot = (selectedDate: Date, booked: string[] = []): string => {
+  if (isWeekend(selectedDate) || isDatePast(selectedDate)) return '';
   return TIME_SLOT_LABELS.find(
     (slot) => !isTimeSlotPast(slot, selectedDate) && !booked.includes(slot)
-  );
+  ) || '';
 };
 
 function BookingContent() {
@@ -172,13 +216,18 @@ function BookingContent() {
 
   const [bookingDate, setBookingDate] = useState<Date>(() => {
     if (queryDate) {
-      const parsed = new Date(queryDate);
+      const parsed = parseDateInput(queryDate);
       if (!Number.isNaN(parsed.getTime())) return parsed;
     }
-    return new Date();
+    const now = new Date();
+    const allTodaySlotsPast = isWeekend(now) || TIME_SLOT_LABELS.every((slot) => isTimeSlotPast(slot, now));
+    if (allTodaySlotsPast) {
+      return getNextWorkingDate(now);
+    }
+    return now;
   });
 
-  const [bookingTime, setBookingTime] = useState<string>(() => queryTime || '09:00 AM');
+  const [bookingTime, setBookingTime] = useState<string>(() => queryTime || '');
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [reason, setReason] = useState<string>(() => queryReason || '');
   const [notes, setNotes] = useState<string>('');
@@ -254,7 +303,7 @@ function BookingContent() {
 
   const fetchAvailability = useCallback(async (date: Date, serviceId: string) => {
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatToDateInput(date);
       const availabilityData = await appointmentApi.getAvailability(
         dateStr,
         serviceId,
@@ -269,9 +318,9 @@ function BookingContent() {
       setHasExistingBookingOnDate(Boolean(availabilityData?.hasExistingBooking));
       setExistingTimeSlotOnDate(availabilityData?.existingTimeSlot || null);
 
-      if (isTimeSlotPast(bookingTime, date) || slots.includes(bookingTime)) {
-        const next = findNextAvailableSlot(date, slots);
-        if (next) setBookingTime(next);
+      const next = findNextAvailableSlot(date, slots);
+      if (!bookingTime || isTimeSlotPast(bookingTime, date) || slots.includes(bookingTime)) {
+        setBookingTime(next);
       }
     } catch {
       setBookedSlots([]);
@@ -292,9 +341,9 @@ function BookingContent() {
 
   useEffect(() => {
     if (!guardResolved) return;
-    if (isTimeSlotPast(bookingTime, bookingDate) || bookedSlots.includes(bookingTime)) {
+    if (!bookingTime || isTimeSlotPast(bookingTime, bookingDate) || bookedSlots.includes(bookingTime)) {
       const next = findNextAvailableSlot(bookingDate, bookedSlots);
-      if (next) setBookingTime(next);
+      setBookingTime(next);
     }
   }, [guardResolved, bookedSlots, bookingTime, bookingDate]);
 
@@ -304,13 +353,17 @@ function BookingContent() {
       setError('Please briefly state the reason for your visit.');
       return;
     }
+    if (!isSelectedTimeSlotValid) {
+      setError('Please select a valid upcoming time slot to continue.');
+      return;
+    }
     try {
       setSubmitting(true);
       setError(null);
 
       const payload = {
         serviceId: selectedService.id,
-        date: bookingDate.toISOString().split('T')[0],
+        date: formatToDateInput(bookingDate),
         timeSlot: bookingTime,
         reason: reason.trim(),
         notes: notes.trim() || undefined,
@@ -351,11 +404,16 @@ function BookingContent() {
       return;
     }
 
+    if (!isSelectedTimeSlotValid) {
+      setError('Please select an available future time slot to reschedule.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       setError(null);
 
-      const dateStr = bookingDate.toISOString().split('T')[0];
+      const dateStr = formatToDateInput(bookingDate);
       const res = await appointmentApi.reschedule(rescheduleId, {
         date: dateStr,
         timeSlot: bookingTime,
@@ -387,6 +445,27 @@ function BookingContent() {
     ? `Dr. ${selectedDoctorObj.firstName} ${selectedDoctorObj.lastName}`
     : 'To be assigned upon arrival';
 
+  const isSelectedDateWeekend = isWeekend(bookingDate);
+  const isSelectedDatePast = isDatePast(bookingDate);
+  const isSelectedDateToday = isDateToday(bookingDate);
+
+  const areAllTodaySlotsPast = isSelectedDateToday && !isSelectedDateWeekend && TIME_SLOT_LABELS.every((slot) => isTimeSlotPast(slot, bookingDate));
+
+  const availableSlotsOnDate = !isSelectedDateWeekend && !isSelectedDatePast
+    ? TIME_SLOT_LABELS.filter((slot) => !isTimeSlotPast(slot, bookingDate) && !bookedSlots.includes(slot))
+    : [];
+
+  const hasAvailableTimeSlot = availableSlotsOnDate.length > 0 && !(hasExistingBookingOnDate && !isReschedule);
+
+  const isSelectedTimeSlotValid = Boolean(
+    bookingTime &&
+    !isSelectedDateWeekend &&
+    !isSelectedDatePast &&
+    !isTimeSlotPast(bookingTime, bookingDate) &&
+    !bookedSlots.includes(bookingTime) &&
+    !(hasExistingBookingOnDate && !isReschedule)
+  );
+
   // Paint loading shell until guard is resolved
   if (!guardResolved) {
     return (
@@ -403,22 +482,7 @@ function BookingContent() {
   }
 
   return (
-    <div className="min-h-screen relative bg-gray-50 flex flex-col font-sans overflow-x-hidden">
-      {/* Background Campus Video & Soft Dimming Overlay */}
-      <div className="fixed inset-0 z-0 pointer-events-none print:hidden overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="/ug-video.mp4" type="video/mp4" />
-          <source src="/UG video.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-[#0B1221]/20" />
-      </div>
-
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans overflow-x-hidden">
       {/* ── Web Navbar (Hidden on print) ── */}
       <header className="relative z-20 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 py-3.5 sticky top-0 shadow-2xs print:hidden">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -432,9 +496,20 @@ function BookingContent() {
         </div>
       </header>
 
-      {/* ── Page Hero Title (Single seamless background video) ── */}
-      <div className="relative py-8 px-4 print:hidden text-center z-10">
-        <div className="max-w-4xl mx-auto">
+      {/* ── Page Hero Title (Campus Background) ── */}
+      <div className="relative py-12 px-4 print:hidden text-center z-10 overflow-hidden">
+        {/* Campus Entrance Backdrop */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Image
+            src={ugEntranceBg}
+            alt="University of Ghana Campus Entrance"
+            fill
+            sizes="100vw"
+            className="object-cover object-center scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/92 via-[#0F172A]/85 to-[#1e3a8a]/90 backdrop-blur-[1px]" />
+        </div>
+        <div className="relative z-10 max-w-4xl mx-auto">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/70 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 mb-2 border border-blue-400/30">
             <ShieldCheck className="w-3.5 h-3.5" /> UG Health Services Online Appointment System
           </span>
@@ -732,10 +807,82 @@ function BookingContent() {
               </div>
             </div>
 
-            {isWeekend(bookingDate) && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                <span>General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services. Please choose a weekday.</span>
+            {/* All slots passed on selected date notice */}
+            {areAllTodaySlotsPast && (
+              <div className="mb-6 p-4.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-amber-950">All Clinic Time Slots for Today Have Passed</p>
+                    <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
+                      General clinic hours for today (8:30 AM – 4:00 PM) have ended. Please select a different day (e.g. tomorrow or next working day) to book your appointment.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextDay = getNextWorkingDate(new Date());
+                    setBookingDate(nextDay);
+                    setError(null);
+                  }}
+                  className="shrink-0 px-4 py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Calendar className="w-4 h-4 text-blue-200" />
+                  Book for {getNextWorkingDate(new Date()).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                </button>
+              </div>
+            )}
+
+            {/* Fully booked on future weekday notice */}
+            {!isSelectedDateToday && !isSelectedDateWeekend && !isSelectedDatePast && availableSlotsOnDate.length === 0 && (
+              <div className="mb-6 p-4.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-amber-950">All Time Slots are Fully Booked</p>
+                    <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
+                      There are no remaining open appointments on {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Please select another date.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextDay = getNextWorkingDate(bookingDate);
+                    setBookingDate(nextDay);
+                    setError(null);
+                  }}
+                  className="shrink-0 px-4 py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Calendar className="w-4 h-4 text-blue-200" />
+                  Check Next Day ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
+                </button>
+              </div>
+            )}
+
+            {isSelectedDateWeekend && (
+              <div className="mb-6 p-4.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <span>General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services. Please choose a weekday.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextDay = getNextWorkingDate(bookingDate);
+                    setBookingDate(nextDay);
+                    setError(null);
+                  }}
+                  className="shrink-0 px-4 py-2 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Calendar className="w-4 h-4 text-blue-200" />
+                  Pick Next Weekday ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
+                </button>
               </div>
             )}
 
@@ -746,19 +893,44 @@ function BookingContent() {
                 </label>
                 <input
                   type="date"
-                  min={new Date().toISOString().split('T')[0]}
-                  value={bookingDate.toISOString().split('T')[0]}
+                  min={formatToDateInput(new Date())}
+                  value={formatToDateInput(bookingDate)}
                   onChange={(e) => {
                     setError(null);
-                    setBookingDate(new Date(e.target.value));
+                    setBookingDate(parseDateInput(e.target.value));
                   }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-[#1e3a8a]"
                 />
                 <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-gray-700 space-y-1">
-                  <p className="font-bold text-[#1e3a8a]">Selected Visit Date:</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-[#1e3a8a]">Selected Visit Date:</p>
+                    {isSelectedDateToday && (
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold bg-blue-100 text-[#1e3a8a] px-2 py-0.5 rounded-md">
+                        Today
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm font-extrabold text-gray-900">
                     {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
+                </div>
+
+                {/* Quick Date Selectors */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Quick Select:</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        setBookingDate(getNextWorkingDate(new Date()));
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-semibold text-gray-700 transition-colors flex items-center gap-1.5"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-[#1e3a8a]" />
+                      Next Working Day ({getNextWorkingDate(new Date()).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -767,10 +939,21 @@ function BookingContent() {
                   Available Time Slots *
                 </label>
 
-                {isWeekend(bookingDate) ? (
-                  <div className="p-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500 space-y-1">
+                {isSelectedDateWeekend ? (
+                  <div className="p-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500 space-y-2">
                     <p className="font-bold text-gray-700">No general appointment slots on weekends.</p>
                     <p>General clinic consultations run Monday to Friday.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBookingDate(getNextWorkingDate(bookingDate));
+                        setError(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1e3a8a] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors mt-1"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Switch to Next Monday
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -863,6 +1046,23 @@ function BookingContent() {
                     </div>
                   </div>
                 )}
+
+                {/* Inline alerts for no available slots */}
+                {!isReschedule && !isSelectedDateWeekend && !hasAvailableTimeSlot && (
+                  <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 shadow-2xs" role="alert">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                    <div>
+                      <p className="font-bold text-amber-950">
+                        {areAllTodaySlotsPast
+                          ? 'All appointment slots for today have passed.'
+                          : 'No appointment slots available on this date.'}
+                      </p>
+                      <p className="mt-0.5 leading-relaxed text-amber-900">
+                        Please select another date on the calendar or click below to pick the next working day.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -890,11 +1090,11 @@ function BookingContent() {
               {isReschedule ? (
                 <button
                   type="button"
-                  disabled={submitting || isWeekend(bookingDate) || bookedSlots.includes(bookingTime)}
+                  disabled={submitting || !isSelectedTimeSlotValid}
                   onClick={handleRescheduleSubmit}
                   className={`px-8 py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
-                    submitting || isWeekend(bookingDate) || bookedSlots.includes(bookingTime)
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                    submitting || !isSelectedTimeSlotValid
+                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
                   }`}
                 >
@@ -909,10 +1109,22 @@ function BookingContent() {
               ) : (
                 <button
                   type="button"
-                  disabled={isWeekend(bookingDate) || (hasExistingBookingOnDate && !isReschedule)}
+                  disabled={!isSelectedTimeSlotValid}
                   onClick={() => {
-                    if (isWeekend(bookingDate)) {
+                    if (isSelectedDateWeekend) {
                       setError('General appointments cannot be booked on weekends. Please select a weekday (Monday to Friday).');
+                      return;
+                    }
+                    if (areAllTodaySlotsPast || isSelectedDatePast) {
+                      setError('All appointment slots for this date have passed. Please select a different day.');
+                      return;
+                    }
+                    if (!hasAvailableTimeSlot) {
+                      setError('All appointment slots for this day have passed or are fully booked. Please select a different day.');
+                      return;
+                    }
+                    if (!bookingTime) {
+                      setError('Please select an available time slot.');
                       return;
                     }
                     if (hasExistingBookingOnDate) {
@@ -922,13 +1134,20 @@ function BookingContent() {
                     setError(null);
                     setStep(3);
                   }}
-                  className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-sm flex items-center gap-2 ${
-                    isWeekend(bookingDate) || (hasExistingBookingOnDate && !isReschedule)
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+                    !isSelectedTimeSlotValid
+                      ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
                       : 'bg-[#1e3a8a] text-white hover:bg-blue-900'
                   }`}
                 >
-                  Continue to Doctor & Details <ArrowRight className="w-4 h-4" />
+                  {areAllTodaySlotsPast
+                    ? 'All Today’s Slots Passed — Pick Another Day'
+                    : !hasAvailableTimeSlot
+                    ? 'No Slots Available — Change Date'
+                    : !bookingTime
+                    ? 'Select an Available Time Slot'
+                    : 'Continue to Doctor & Details'}
+                  {isSelectedTimeSlotValid && <ArrowRight className="w-4 h-4" />}
                 </button>
               )}
             </div>

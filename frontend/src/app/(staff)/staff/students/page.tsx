@@ -56,7 +56,7 @@ export default function StaffStudentsPage() {
         // Background revalidation
         if (!queryCache.isFresh(cacheKey)) {
           const data = await getAllStudents();
-          const list = Array.isArray(data.students) ? data.students : [];
+          const list = Array.isArray(data.items) ? data.items : [];
           queryCache.set(cacheKey, list, CACHE_TTL.STUDENTS);
           setStudents(list);
         }
@@ -64,7 +64,7 @@ export default function StaffStudentsPage() {
       }
 
       const data = await getAllStudents();
-      const list = Array.isArray(data.students) ? data.students : [];
+      const list = Array.isArray(data.items) ? data.items : [];
       queryCache.set(cacheKey, list, CACHE_TTL.STUDENTS);
       setStudents(list);
     } catch (err) {

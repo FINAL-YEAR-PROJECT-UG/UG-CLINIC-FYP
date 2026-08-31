@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
-import ug2Bg from '@/Assets/Legon UG/ug 2.jpg';
+import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 import {
   MapPin,
   Phone,
@@ -258,22 +258,8 @@ export default function ContactPageClient() {
         </div>
       </div>
 
-      {/* ── Background Image Section: Ways to Reach Us / Get in Touch all the way to bottom (excluding Footer) ── */}
-      <div className="relative overflow-hidden">
-        {/* Background Campus Image & Soft Dimming Overlay */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src={ug2Bg}
-            alt="University of Ghana Legon Campus"
-            fill
-            sizes="100vw"
-            className="object-cover object-center fixed top-0"
-          />
-          {/* Subtle dimming / frosted glass tint so campus view is visible and content is pristine */}
-          <div className="absolute inset-0 bg-[#F8FAFC]/88 backdrop-blur-[1.5px]" />
-        </div>
-
-        <div className="relative z-10">
+      {/* ── Ways to Reach Us / Get in Touch ── */}
+      <div className="relative">
           {/* Main Grid: Ways to Get in Touch */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="text-center mb-12">
@@ -582,6 +568,29 @@ export default function ContactPageClient() {
                     })}
                   </div>
                 </div>
+
+                {/* Campus Landmark Card */}
+                <div className="relative rounded-3xl overflow-hidden shadow-md border border-[#DDE3EE] group">
+                  <div className="relative h-44 w-full">
+                    <Image
+                      src={ugEntranceBg}
+                      alt="University of Ghana Main Campus Entrance"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 40vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/90 via-[#0F172A]/40 to-transparent" />
+                    <div className="absolute bottom-3.5 left-4 right-4 text-white">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-200 bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        Campus Landmark
+                      </span>
+                      <h4 className="text-sm font-extrabold mt-1">Main Gate Access</h4>
+                      <p className="text-[11px] text-blue-100/90 leading-tight">
+                        Located along the main campus artery, easily accessible from all student halls.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -686,7 +695,6 @@ export default function ContactPageClient() {
               </div>
             </div>
           </section>
-        </div>
       </div>
 
       <Footer />

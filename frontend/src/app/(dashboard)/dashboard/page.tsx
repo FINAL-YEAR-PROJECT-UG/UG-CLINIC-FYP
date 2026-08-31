@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 import { useRouter } from 'next/navigation';
+import ug2Bg from '@/Assets/Legon UG/ug 2.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
@@ -229,22 +229,23 @@ export default function DashboardPage() {
   const bookingTarget = getBookingRouteForRole(user?.role, isAuthenticated);
 
   return (
-    <div className="min-h-screen relative bg-[#F8FAFC] overflow-x-hidden">
-      {/* Background Campus Entrance Image & Soft Dimming Overlay */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <Image
-          src={ugEntranceBg}
-          alt="University of Ghana Campus Entrance"
-          fill
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-slate-900/15" />
-      </div>
-
+    <div className="min-h-screen bg-[#F8FAFC] overflow-x-hidden">
       {/* Welcome banner */}
-      <header className="relative z-10 bg-gradient-to-r from-[#1e3a8a]/95 to-[#3b82f6]/95 backdrop-blur-md text-white sticky top-0 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="relative z-10 text-white sticky top-0 shadow-md overflow-hidden">
+        {/* Campus Panoramic Backdrop */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Image
+            src={ug2Bg}
+            alt="University of Ghana Campus Panoramic"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#1d4ed8]/92 backdrop-blur-[1px]" />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {firstName}</h1>
             <p className="text-blue-100 mt-1">
@@ -254,7 +255,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={logout}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm hover:bg-white/10 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm leading-tight text-center hover:bg-red-500 hover:border-red-500 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-[#0F172A]"
               aria-label="Log out"
             >
               <LogOut className="h-4 w-4" />
@@ -271,10 +272,10 @@ export default function DashboardPage() {
               <h3 id="cancel-modal-title" className="text-lg font-semibold text-[#020617]">Cancel appointment</h3>
               <button
                 onClick={() => setShowCancelModalId(null)}
-                className="text-[#334155] hover:text-[#020617] bg-white rounded-full px-2 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                className="inline-flex min-h-8 items-center justify-center rounded-full bg-white px-3 text-xs font-semibold leading-tight text-[#334155] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
                 aria-label="Close cancel modal"
               >
-                ×
+                Close
               </button>
             </div>
             <div className="p-5 space-y-4 text-[#020617]">

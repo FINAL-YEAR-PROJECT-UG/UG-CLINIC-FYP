@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { useAuth } from '@/hooks/useAuth';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
+import universityOfGhanaBg from '@/Assets/Legon UG/university-of-ghana.jpg';
 import StaffNav from '@/components/shared/StaffNav';
 import StaffAiSidebar from '@/components/shared/StaffAiSidebar';
 import { getErrorMessage, normalizeRole, isStaffRole, canManageClinicOperations, isDoctorRole, formatTimeLabel } from '@/lib/utils';
@@ -30,7 +31,6 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  LogOut,
   FileText,
   Settings,
   Activity,
@@ -82,15 +82,6 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   RESCHEDULED: { label: 'Rescheduled', className: 'bg-blue-100 text-blue-700' },
 };
 
-function getStaffRoleLabel(role: string) {
-  switch ((role ?? '').toUpperCase()) {
-    case 'DOCTOR': return 'Doctor';
-    case 'RECEPTIONIST': return 'Receptionist';
-    case 'ADMIN': return 'Administrator';
-    default: return 'Staff';
-  }
-}
-
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -101,7 +92,6 @@ function formatShortDate(iso: string): string {
 
 export default function StaffOverviewPage() {
   const router = useRouter();
-  const { logout } = useAuth();
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
 
@@ -211,16 +201,6 @@ export default function StaffOverviewPage() {
       setError(getErrorMessage(err, 'Failed to update doctor status'));
     } finally {
       setStatusUpdating(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace('/login?role=staff');
-    } catch (err) {
-      console.error('Logout failed:', err);
-      router.replace('/staff-portal-access');
     }
   };
 
@@ -638,51 +618,18 @@ export default function StaffOverviewPage() {
     { date: '2026-07-21', dayName: 'Sun', count: 6 },
   ];
   const maxTrend = Math.max(...dailyTrends.map((t) => t.count), 1);
-  const roleLabel = getStaffRoleLabel(userRole);
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] sticky top-0 z-10 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <UGLogo size="md" href="/staff/overview" />
-              <span className="text-xs font-extrabold uppercase px-2.5 py-1 bg-[#1e3a8a] text-white rounded-md">
-                {roleLabel} Portal
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">
-                ← Public Site
-              </Link>
-              <div className="flex items-center gap-3 border-l pl-4 border-[#E2E8F0]">
-                <div className="w-8 h-8 bg-[#E8ECF1] rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold text-[#1e3a8a]">{firstName?.[0] || 'S'}</span>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-bold text-[#020617]">{firstName} {lastName}</p>
-                  <p className="text-xs text-[#334155]">{roleLabel}</p>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#334155] hover:bg-[#E8ECF1] rounded-lg transition-colors border border-[#E2E8F0]"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StaffNav userRole={userRole} />
 
         {automationMessage && (
           <div className="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-xs">
             <span>✨ {automationMessage}</span>
-            <button onClick={() => setAutomationMessage(null)} aria-label="Dismiss">✕</button>
+            <button onClick={() => setAutomationMessage(null)} aria-label="Close notification" className="inline-flex min-h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold leading-tight text-emerald-800 hover:bg-red-50 hover:text-red-600">
+              Close
+            </button>
           </div>
         )}
 
@@ -702,8 +649,20 @@ export default function StaffOverviewPage() {
           summary={summary}
         />
 
-        <div className="bg-gradient-to-r from-[#0F172A] to-[#0369A1] text-white rounded-2xl p-6 shadow-md mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="relative bg-[#0F172A] text-white rounded-2xl p-6 shadow-md mb-8 overflow-hidden">
+          {/* Aerial Campus Backdrop */}
+          <div className="absolute inset-0 z-0 pointer-events-none rounded-2xl overflow-hidden">
+            <Image
+              src={universityOfGhanaBg}
+              alt="University of Ghana Aerial Campus"
+              fill
+              sizes="100vw"
+              className="object-cover object-center scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/96 via-[#0F172A]/90 to-[#0369A1]/88 backdrop-blur-[1.5px]" />
+          </div>
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <p className="text-xs uppercase tracking-widest text-blue-200 font-semibold">UG Clinic Admin & Receptionist Portal</p>
               <h2 className="text-2xl font-extrabold mt-1">Welcome back, {firstName}!</h2>

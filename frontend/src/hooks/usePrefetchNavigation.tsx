@@ -28,7 +28,7 @@ interface PrefetchOptions {
 export function usePrefetchNavigation(targetPath: string, options: PrefetchOptions = {}) {
   const router = useRouter();
   const { apiEndpoints = [], delay = 150, optimistic = false } = options;
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hasPrefetched = useRef(false);
 
   // Prefetch Next.js page assets
@@ -91,7 +91,7 @@ export function usePrefetchNavigation(targetPath: string, options: PrefetchOptio
     prefetchData,
     cancelPrefetch,
     navigateWithOptimism,
-    hasPrefetched: hasPrefetched.current,
+    getHasPrefetched: () => hasPrefetched.current,
   };
 }
 

@@ -176,22 +176,8 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {/* ── Background Image Section: Everything You Need all the way to bottom (excluding Footer) ── */}
-      <div className="relative overflow-hidden">
-        {/* Background Campus Image & Soft Dimming Overlay */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src={ugCompoundBg}
-            alt="University of Ghana Campus Compound"
-            fill
-            sizes="100vw"
-            className="object-cover object-center fixed top-0"
-          />
-          {/* Subtle dimming / frosted glass tint so campus view is visible and content is pristine */}
-          <div className="absolute inset-0 bg-[#F8FAFC]/88 backdrop-blur-[1.5px]" />
-        </div>
-
-        <div className="relative z-10">
+      {/* ── Services Content ── */}
+      <div className="relative">
           {/* Services Grid Section */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="text-center mb-12">
@@ -325,15 +311,27 @@ export default function ServicesPage() {
             </div>
           </section>
 
-          {/* Clinic Hours Table Section */}
-          <section className="py-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Clinic Hours Table & Booking CTA Section */}
+          <section className="relative py-20 px-4 sm:px-6 lg:px-8 text-white overflow-hidden shadow-lg mt-8">
+            {/* Campus Compound Backdrop */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <Image
+                src={ugCompoundBg}
+                alt="University of Ghana Campus Compound"
+                fill
+                sizes="100vw"
+                className="object-cover object-center scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/95 via-[#1e3a8a]/92 to-[#0B1221]/96 backdrop-blur-[1px]" />
+            </div>
+
+            <div className="relative z-10 max-w-4xl mx-auto">
               <div className="text-center mb-10">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs backdrop-blur-sm">
-                  SCHEDULE
+                <span className="inline-block bg-white/15 border border-white/20 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-3 backdrop-blur-sm shadow-xs">
+                  SCHEDULE & BOOKING
                 </span>
-                <h2 className="text-3xl font-extrabold text-[#0B1221]">Weekly Consultation Timetable</h2>
-                <p className="text-sm text-[#6B7A8D] mt-2">Standard operating hours for general and specialist clinics.</p>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Weekly Consultation Timetable</h2>
+                <p className="text-sm text-blue-100/80 mt-2">Standard operating hours for general and specialist clinics.</p>
               </div>
 
               <div className="bg-white/92 backdrop-blur-md rounded-2xl border border-white/80 overflow-hidden shadow-sm">
@@ -357,17 +355,16 @@ export default function ServicesPage() {
                 </div>
               </div>
 
-              <div className="mt-8 text-center">
+              <div className="mt-10 text-center">
                 <Link
                   href="/demo-booking"
-                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] shadow-[0_4px_14px_rgba(15,23,42,0.28)] hover:shadow-[0_8px_24px_rgba(30,58,138,0.36)] hover:-translate-y-0.5 transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-xs text-[#0F172A] bg-white shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:bg-blue-50 hover:shadow-[0_8px_30px_rgba(255,255,255,0.35)] hover:-translate-y-0.5 transition-all duration-200"
                 >
                   Book Clinic Appointment Online
                 </Link>
               </div>
             </div>
           </section>
-        </div>
       </div>
 
       <Footer />

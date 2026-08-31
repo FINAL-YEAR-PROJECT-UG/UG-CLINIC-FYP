@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/shared/Header';
 import Footer from '@/components/shared/Footer';
-import balmeLibraryBg from '@/Assets/Legon UG/balme library and campus.jpg';
 import { submitPublicResource } from '@/lib/staffApi';
 import {
   Search,
@@ -239,22 +237,8 @@ export default function ResourcesPageClient() {
         </svg>
       </section>
 
-      {/* ── Background Image Section: Resources Tabs all the way to bottom (excluding Footer) ── */}
-      <div className="relative overflow-hidden">
-        {/* Background Campus Image & Soft Dimming Overlay */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <Image
-            src={balmeLibraryBg}
-            alt="University of Ghana Balme Library and Campus"
-            fill
-            sizes="100vw"
-            className="object-cover object-center fixed top-0"
-          />
-          {/* Subtle dimming / frosted glass tint so campus view is visible and content is pristine */}
-          <div className="absolute inset-0 bg-[#F8FAFC]/88 backdrop-blur-[1.5px]" />
-        </div>
-
-        <div className="relative z-10">
+      {/* ── Resources Content ── */}
+      <div className="relative">
           {/* Tabs + search + filters */}
           <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
             <div className="flex justify-center gap-2.5 mb-5 flex-wrap">
@@ -571,22 +555,23 @@ export default function ResourcesPageClient() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="bg-gradient-to-br from-[#0F172A]/95 via-[#1e3a8a]/95 to-[#0369A1]/95 backdrop-blur-md rounded-2xl text-white text-center px-6 py-14 shadow-[0_8px_30px_rgba(15,23,42,0.25)] overflow-hidden relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-                <h2 className="text-3xl font-bold mb-3">Have a Health Concern?</h2>
-                <p className="text-blue-100 mb-8 max-w-xl mx-auto">
-                  Don&apos;t wait   book an appointment with the UG Student Clinic or reach out to our team.
-                </p>
-                <div className="flex flex-wrap justify-center gap-3">
-                  <Link href="/login" className="bg-white text-[#1e3a8a] font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105">
-                    Book Appointment
-                  </Link>
-                  <Link href="/contact" className="border border-white/70 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 hover:shadow-lg transition-all duration-200 hover:scale-105">
-                    Contact the Clinic
-                  </Link>
+                <div className="relative z-10 max-w-2xl mx-auto">
+                  <h2 className="text-3xl font-bold mb-3">Have a Health Concern?</h2>
+                  <p className="text-blue-100 mb-8 max-w-xl mx-auto">
+                    Don&apos;t wait   book an appointment with the UG Student Clinic or reach out to our team.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Link href="/login" className="bg-white text-[#1e3a8a] font-bold px-6 py-3 rounded-xl hover:bg-gray-100 hover:shadow-lg transition-all duration-200 hover:scale-105">
+                      Book Appointment
+                    </Link>
+                    <Link href="/contact" className="border border-white/70 text-white font-bold px-6 py-3 rounded-xl hover:bg-white/20 hover:shadow-lg transition-all duration-200 hover:scale-105">
+                      Contact the Clinic
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
-        </div>
       </div>
 
       <Footer />
