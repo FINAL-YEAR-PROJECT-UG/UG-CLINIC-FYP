@@ -1,697 +1,489 @@
 # UG-CLINIC-FYP
 
-UG-CLINIC-FYP: A secure, scalable, and accessible web platform for the University of Ghana Student Clinic, enabling students to book medical appointments, access health resources, and communicate with clinic staff.
+**A secure, scalable, and accessible web platform for the University of Ghana Student Clinic.**  
+Students can book medical appointments, access health resources, and communicate with clinic staff — all from one place.
 
 ---
 
 ## Table of Contents
 
-1. [Tech Stack](#tech-stack)
-2. [Prerequisites](#prerequisites)
-3. [Project Setup](#project-setup)
-4. [Backend Setup](#backend-setup)
-5. [Frontend Setup](#frontend-setup)
-6. [Database Setup](#database-setup)
-7. [Environment Configuration](#environment-configuration)
-8. [Running the Application](#running-the-application)
-9. [Development Workflow](#development-workflow)
-10. [Testing](#testing)
-11. [Deployment](#deployment)
-12. [Project Structure](#project-structure)
-13. [Contributing](#contributing)
-14. [Troubleshooting](#troubleshooting)
+1. [Project Overview](#project-overview)
+2. [Tech Stack](#tech-stack)
+3. [Prerequisites](#prerequisites)
+4. [Quick Start (Local Development)](#quick-start-local-development)
+5. [Environment Configuration](#environment-configuration)
+6. [Project Structure](#project-structure)
+7. [Application Routes](#application-routes)
+8. [API Reference](#api-reference)
+9. [User Roles & Access Control](#user-roles--access-control)
+10. [Testing & QA](#testing--qa)
+11. [Docker Deployment](#docker-deployment)
+12. [Development Workflow](#development-workflow)
+13. [Troubleshooting](#troubleshooting)
+14. [License](#license)
+
+---
+
+## Project Overview
+
+UG-CLINIC-FYP is a full-stack web application built for the University of Ghana Student Clinic. It streamlines the healthcare experience for students and staff with:
+
+- 📅 **Online Appointment Booking** — multi-step wizard with real-time time slot availability, doctor assignment, reschedule/cancel flows, and downloadable confirmation receipts.
+- 🏥 **Staff Operations Portal** — dedicated management interface for receptionists, doctors, and clinic admins to manage appointments, live doctor availability, student records, and health resources.
+- 📚 **Health Resources Library** — searchable, categorised repository of verified health guides, campus clinic news, and downloadable wellness literature.
+- 🔐 **Hardened Authentication** — JWT-based session architecture, email/SMS OTP verification, customizable security questions, emergency backup recovery codes, and staff 2FA security.
+- 📣 **Smart Notifications** — in-app and email alert mechanisms for appointment confirmations, changes, and clinic broadcasts.
+- 🎨 **Campus-Themed UI** — modern, accessible interface incorporating University of Ghana branding, responsive dark/light styling, and fluid motion design.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
+
 | Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 14.x | React framework with SSR/SSG/App Router |
-| React | 18.x | UI library |
-| TypeScript | 5.x | Type safety |
-| Tailwind CSS | 3.x | Utility-first CSS framework |
-| shadcn/ui | Latest | Accessible UI component library |
-| React Hook Form | 7.x | Form handling and validation |
-| Zod | 3.x | Schema validation |
-| TanStack Query | 5.x | Server state management |
-| Zustand | 4.x | Client state management |
-| Framer Motion | 10.x | Animations and transitions |
-| Axios | 1.x | HTTP client |
-| date-fns | 2.x | Date manipulation |
+|---|---|---|
+| Next.js | **16.2.9** | React framework with App Router (Turbopack) |
+| React | **19.x** | Core UI component library |
+| TypeScript | **5.9.3** | Strict type safety and autocompletion |
+| Tailwind CSS | **4.x** | Utility-first styling with PostCSS integration |
+| Zustand | **5.x** | Client state management (auth store, sidebar state) |
+| TanStack Query | **5.x** | Asynchronous server state caching and synchronisation |
+| React Hook Form | **7.x** | Form state management and submission lifecycle |
+| Zod | **4.x** | Type-safe form validation and runtime schema assertion |
+| Framer Motion | **12.x** | Micro-animations and page transitions |
+| Radix UI | Latest | Accessible, unstyled UI primitives (Dialogs, Select, Tabs, etc.) |
+| Lucide React | **1.x** | Clean, accessible iconography |
+| Axios | **1.x** | HTTP request client with interceptor support |
+| date-fns | **4.x** | Date manipulation, slot calculations, and formatting |
+| Sonner | **2.x** | Modern toast alert system |
+| next-themes | **0.4.x** | Light / dark theme support |
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Node.js | 20.x LTS | JavaScript runtime |
-| Express.js | 4.x | Web framework |
-| TypeScript | 5.x | Type safety |
-| Prisma | 5.x | ORM and database toolkit |
-| Zod | 3.x | Runtime validation |
-| JWT (jsonwebtoken) | 9.x | Authentication tokens |
-| bcrypt | 5.x | Password hashing |
-| Helmet | 7.x | Security headers |
-| express-rate-limit | 7.x | Rate limiting |
-| cors | 2.x | Cross-origin resource sharing |
-| Bull | 4.x | Queue processing (Redis-backed) |
-| node-cron | 3.x | Scheduled tasks |
-| multer | 1.x | File upload handling |
-| sharp | 0.x | Image processing |
-| nodemailer | 6.x | Email sending |
-| twilio | 4.x | SMS gateway |
-| express-validator | 7.x | Input validation |
-| compression | 1.x | Response compression |
-| Winston | 3.x | Application logging |
-| morgan | 1.x | HTTP request logging |
 
-### Database and Infrastructure
 | Technology | Version | Purpose |
-|------------|---------|---------|
-| PostgreSQL | 16.x | Primary relational database |
-| Redis | 7.x | Cache, session store, job queue |
-| AWS S3 / MinIO | Latest | File storage for resources |
-| CloudFront / Cloudflare | Latest | CDN for static assets |
-| Docker | 24.x | Containerization |
-| Docker Compose | 2.x | Multi-container orchestration |
+|---|---|---|
+| Node.js | **20.x LTS** | JavaScript / TypeScript runtime |
+| Express.js | **4.x** | HTTP web framework and REST API routing |
+| TypeScript | **5.x** | Static typing and interfaces |
+| Prisma | **7.x** | Type-safe ORM and PostgreSQL client |
+| Zod | **3.x** | Request body and query parameter validation |
+| jsonwebtoken | **9.x** | Signed JWT access and refresh tokens |
+| bcrypt | **6.x** | Salted password hashing (12 rounds) |
+| Helmet | **8.x** | Secure HTTP header protection |
+| express-rate-limit | **8.x** | IP-based request rate limiting |
+| express-slow-down | **3.x** | Gradual delay on high request frequencies |
+| ioredis | **5.x** | Redis client for caching and session invalidation |
+| Bull | **4.x** | Asynchronous job queue processing |
+| node-cron | **4.x** | Scheduled cron tasks (reminder dispatches, session cleanups) |
+| multer | **2.x** | Multipart file and asset upload processing |
+| sharp | **0.35.x** | High-performance image transformation |
+| nodemailer | **8.x** | Transactional email delivery (SMTP) |
+| twilio | **6.x** | SMS OTP gateway integration |
+| winston | **3.x** | Structured application logging |
+| morgan | **1.x** | HTTP request logging |
 
-### External Services
-| Service | Purpose |
-|---------|---------|
-| SendGrid / AWS SES | Transactional email |
-| Twilio / Arkesel | SMS notifications |
-| Cloudflare | DDoS protection and WAF |
+### Database & Infrastructure
+
+| Technology | Version | Purpose |
+|---|---|---|
+| PostgreSQL | **16.x** | Primary ACID-compliant relational database |
+| Redis | **7.x** | High-throughput in-memory cache and queue storage |
+| Docker | **24.x** | Multi-service container packaging |
+| Docker Compose | **2.x** | Local and staging orchestration |
 
 ---
 
 ## Prerequisites
 
-Before starting, ensure you have the following installed on your machine:
+Ensure you have the following installed on your development machine:
 
-1. **Node.js** (version 20.x LTS or higher)
-   - Download from: https://nodejs.org/en/download/
-   - Verify: run `node --version` in your terminal
-
-2. **npm** (version 10.x or higher, comes with Node.js)
-   - Verify: run `npm --version` in your terminal
-
-3. **PostgreSQL** (version 16.x)
-   - Download from: https://www.postgresql.org/download/
-   - Verify: run `psql --version` in your terminal
-
-4. **Redis** (version 7.x)
-   - Download from: https://redis.io/download/
-   - Verify: run `redis-cli --version` in your terminal
-
-5. **Git**
-   - Download from: https://git-scm.com/downloads
-   - Verify: run `git --version` in your terminal
-
-6. **Docker** (optional, for containerized deployment)
-   - Download from: https://docs.docker.com/get-docker/
-   - Verify: run `docker --version` and `docker-compose --version` in your terminal
-
-7. **A code editor** (VS Code recommended)
-   - Download from: https://code.visualstudio.com/
+- **Node.js**: `v20.x LTS` or higher (`node --version`)
+- **npm**: `v10.x` or higher (`npm --version`)
+- **PostgreSQL**: `v16.x` (`psql --version`)
+- **Redis**: `v7.x` (`redis-cli --version`)
+- **Git**: Latest version (`git --version`)
+- **Docker & Docker Compose**: *(Optional, for containerized run)* (`docker compose version`)
 
 ---
 
-## Project Setup
+## Quick Start (Local Development)
 
-### Step 1: Create Project Directory
+### 1. Clone the repository
 
-Open your terminal and create the root project folder.
-
-### Step 2: Initialize Git Repository
-
-Run `git init` in the project root. Create a `.gitignore` file to exclude node_modules, environment files, build outputs, logs, IDE files, OS files, database files, uploads, and Prisma migrations.
-
-### Step 3: Create Project Structure
-
-Create three main directories: `backend`, `frontend`, and `docker`.
-
-Your project structure should now look like this:
-
-```
-UG-CLINIC-FYP/
-├── backend/
-├── frontend/
-├── docker/
-├── .gitignore
-└── .git/
+```bash
+git clone https://github.com/your-org/UG-CLINIC-FYP.git
+cd UG-CLINIC-FYP
 ```
 
----
+### 2. Configure Environment Files
 
-## Backend Setup
+```bash
+# Root-level configuration (Docker Compose orchestration)
+cp .env.example .env
 
-### Step 1: Initialize Backend Project
+# Backend configuration
+cp backend/.env.example backend/.env
 
-Navigate to the backend directory and run `npm init -y` to create a package.json file.
+# Frontend configuration
+cp frontend/.env.local.example frontend/.env.local  # or create manually
+```
 
-### Step 2: Install Backend Dependencies
+### 3. Install Dependencies
 
-Install production dependencies: express, cors, helmet, compression, morgan, winston, bcrypt, jsonwebtoken, express-rate-limit, express-slow-down, express-validator, multer, sharp, nodemailer, twilio, bull, node-cron, and dotenv.
+```bash
+# Backend dependencies
+cd backend && npm install
 
-Install development dependencies: typescript, ts-node, nodemon, @types/express, @types/cors, @types/bcrypt, @types/jsonwebtoken, @types/multer, @types/node, @types/morgan, prisma, and tsconfig-paths.
+# Frontend dependencies
+cd ../frontend && npm install
+```
 
-### Step 3: Initialize TypeScript
+### 4. Database Setup & Seeding
 
-Run `npx tsc --init` to generate a tsconfig.json file. Replace the generated file with a production-ready configuration that includes:
-- Target ES2022 with CommonJS modules
-- Strict type checking enabled
-- Path aliases for clean imports (e.g., @/*, @config/*, @controllers/*, @middleware/*, @models/*, @routes/*, @services/*, @utils/*, @validators/*)
-- Source maps and declarations enabled
-- Root directory set to ./src and output directory set to ./dist
+```bash
+cd backend
 
-### Step 4: Initialize Prisma
+# Run Prisma migrations
+npx prisma migrate dev
 
-Run `npx prisma init` to create a prisma directory with schema.prisma and a .env file.
+# Generate the Prisma Client
+npx prisma generate
 
-### Step 5: Create Backend Directory Structure
+# Seed sample database (Admin, Doctors, Default Services, Slots)
+npm run prisma:seed
+```
 
-Create the following directories:
-- src/config, src/controllers, src/middleware, src/models, src/routes, src/services, src/utils, src/validators, src/types
-- prisma/seeders
-- tests/unit, tests/integration, tests/e2e
-- uploads/documents, uploads/images, uploads/videos, uploads/temp
+### 5. Launch Development Servers
 
-### Step 6: Create Core Backend Files
+Start services in separate terminal windows:
 
-Create the following essential files:
-- `nodemon.json`: Configuration for auto-reloading during development
-- `.env.example`: Template for all environment variables
-- `src/app.ts`: Main Express application entry point with security middleware (Helmet, CORS, rate limiting, compression), body parsing, logging, health check endpoint, API route mounting, and error handling
-- `src/middleware/errorHandler.ts`: Centralized error handling middleware with standardized JSON error responses
-- `src/middleware/notFound.ts`: 404 handler for undefined routes
-- Route files in src/routes/: auth.routes.ts, appointment.routes.ts, service.routes.ts, resource.routes.ts, admin.routes.ts, notification.routes.ts
+```bash
+# Terminal 1 — Redis
+redis-server
 
-### Step 7: Add Scripts to package.json
+# Terminal 2 — Backend API (http://localhost:3000)
+cd backend
+npm run dev
 
-Add the following scripts to backend/package.json:
-- dev: Start development server with nodemon
-- build: Compile TypeScript to JavaScript
-- start: Run compiled application in production
-- test: Run Jest tests
-- test:watch: Run Jest in watch mode
-- test:coverage: Run Jest with coverage report
-- prisma:generate: Generate Prisma client
-- prisma:migrate: Run database migrations
-- prisma:studio: Open Prisma Studio GUI
-- prisma:seed: Run database seeder
-- lint: Run ESLint
-- lint:fix: Run ESLint with auto-fix
+# Terminal 3 — Frontend UI (http://localhost:3001)
+cd frontend
+npm run dev
+```
 
----
-
-## Frontend Setup
-
-### Step 1: Initialize Next.js Project
-
-From the root project directory, run the Next.js create command with the following options:
-- TypeScript: Yes
-- ESLint: Yes
-- Tailwind CSS: Yes
-- src directory: Yes
-- App Router: Yes
-- Default import alias: No (use @/*)
-
-### Step 2: Install Frontend Dependencies
-
-Install shadcn/ui components using the CLI init command. Select Default style, Slate base color, and CSS variables for theming.
-
-Install the following shadcn components: button, card, input, label, badge, avatar, dialog, dropdown-menu, sheet, toast, tabs, table, select, textarea, calendar, popover, separator, skeleton, scroll-area.
-
-Install additional libraries: react-hook-form, @hookform/resolvers, zod, axios, tanstack-query, @tanstack/react-query, zustand, framer-motion, date-fns, react-aria, react-stately, clsx, tailwind-merge, class-variance-authority, lucide-react.
-
-Install development dependencies: @types/node, @types/react, @types/react-dom, prettier, eslint-config-prettier.
-
-### Step 3: Configure Tailwind CSS
-
-Update tailwind.config.ts to include shadcn/ui theme variables (colors for border, input, ring, background, foreground, primary, secondary, destructive, muted, accent, popover, card), border radius settings, and accordion animations.
-
-### Step 4: Create Frontend Directory Structure
-
-Create the following directories:
-- src/app/(auth)/ with login, register, forgot-password, and reset-password subdirectories
-- src/app/(public)/ with about, services, and contact subdirectories
-- src/app/(dashboard)/ with student and admin subdirectories
-- src/components/ui, src/components/forms, src/components/layout, src/components/shared
-- src/hooks/api, src/hooks/ui
-- src/stores, src/types, src/lib, src/utils
-- public/images, public/icons, public/fonts
-
-### Step 5: Create Core Frontend Files
-
-Create the following essential files:
-- `src/lib/utils.ts`: Utility function for merging Tailwind classes using clsx and tailwind-merge
-- `src/lib/api.ts`: Axios instance configuration with base URL, request interceptor for JWT tokens, and response interceptor for automatic token refresh on 401 errors
-- `src/types/index.ts`: TypeScript interfaces for User, Appointment, Service, Resource, ApiResponse, and PaginatedResponse
-
-### Step 6: Update Frontend package.json Scripts
-
-Add the following scripts to frontend/package.json:
-- dev: Start Next.js development server
-- build: Build production application
-- start: Start production server
-- lint: Run Next.js ESLint
-- lint:fix: Run ESLint with auto-fix
-- format: Format code with Prettier
-- format:check: Check code formatting with Prettier
-
----
-
-## Database Setup
-
-### Step 1: Create PostgreSQL Database
-
-Open PostgreSQL command line and create a new database named ug_clinic. Create a dedicated user with a secure password and grant all privileges on the database to that user.
-
-### Step 2: Configure Prisma Schema
-
-Open backend/prisma/schema.prisma and define the following models:
-
-**User Model**: id (UUID, primary key), studentId (optional, unique), email (unique), passwordHash, firstName, lastName, phone (optional), role (enum: STUDENT, RECEPTIONIST, DOCTOR, ADMIN), isActive, emailVerified, phoneVerified, createdAt, updatedAt, lastLoginAt. Relations: appointments, resources, notifications, auditLogs.
-
-**Appointment Model**: id (UUID, primary key), userId, doctorId (optional), serviceId, date, timeSlot, status (enum: PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED), notes (optional), reason, cancelledBy (optional), cancelledAt (optional), createdAt, updatedAt. Unique constraint on userId and date. Indexes on userId+date, status, and date+timeSlot.
-
-**Service Model**: id (UUID, primary key), name, description, duration (in minutes), category, isActive, createdAt. Relations: appointments, timeSlots.
-
-**TimeSlot Model**: id (UUID, primary key), serviceId, date, startTime, endTime, isAvailable, maxBookings, currentBookings, createdAt. Unique constraint on serviceId, date, and startTime. Index on date and isAvailable.
-
-**Resource Model**: id (UUID, primary key), title, description (optional), fileUrl, fileType, fileSize, category, tags (array), isPublic, uploadedBy, downloadCount, createdAt, updatedAt. Indexes on category and isPublic.
-
-**Notification Model**: id (UUID, primary key), userId, type (enum: APPOINTMENT_CONFIRMED, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLED, APPOINTMENT_RESCHEDULED, RESOURCE_UPLOADED, SYSTEM_ANNOUNCEMENT, PASSWORD_RESET), title, message, isRead, sentVia (enum: EMAIL, SMS, IN_APP), createdAt. Index on userId and isRead.
-
-**AuditLog Model**: id (UUID, primary key), userId (optional), action, entity, entityId (optional), oldValue (JSON, optional), newValue (JSON, optional), ipAddress (optional), userAgent (optional), createdAt. Indexes on userId, action, and createdAt.
-
-### Step 3: Run Prisma Migrations
-
-Run `npx prisma migrate dev --name init` in the backend directory to create the database tables.
-
-### Step 4: Generate Prisma Client
-
-Run `npx prisma generate` to generate the TypeScript client for database operations.
-
-### Step 5: Create Database Seeder
-
-Create a seeder file at backend/prisma/seeders/seed.ts that:
-- Clears existing data in the correct order (audit logs, notifications, appointments, time slots, resources, services, users)
-- Creates a default admin user with email admin@ugclinic-fyp.edu.gh
-- Creates a default doctor user with email doctor@ugclinic-fyp.edu.gh
-- Creates a default receptionist user with email receptionist@ugclinic-fyp.edu.gh
-- Creates a default student user with student ID 20240001 and email student@st.ug.edu.gh
-- Creates sample services: General Consultation (30 min), Dental Checkup (45 min), Eye Examination (30 min)
-- Creates time slots for tomorrow across all services
-- All passwords should be hashed with bcrypt using 12 rounds
-
-### Step 6: Run the Seeder
-
-Execute the seeder using ts-node to populate the database with initial data.
+Visit **http://localhost:3001** to interact with the platform.  
+Health check endpoint: **http://localhost:3000/health**.
 
 ---
 
 ## Environment Configuration
 
-### Step 1: Backend Environment File
+### Root `.env` (Docker Compose / System)
 
-Create a `.env` file in the backend directory. Copy from `.env.example` and update with your actual values. The file must include:
+```env
+POSTGRES_DB=ug_clinic
+POSTGRES_USER=ugclinic_user
+DB_PASSWORD=your_secure_password
+POSTGRES_PORT=5432
 
-**Application**: NODE_ENV, PORT, API_URL, FRONTEND_URL
+REDIS_PORT=6379
 
-**Database**: DATABASE_URL with your PostgreSQL credentials
+API_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:3001
+CORS_ORIGIN=http://localhost:3001
+BACKEND_PORT=3000
+FRONTEND_PORT=3001
 
-**Redis**: REDIS_URL pointing to your Redis instance
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=UG-CLINIC-FYP
+NEXT_PUBLIC_APP_URL=http://localhost:3001
 
-**JWT**: JWT_SECRET (minimum 32 characters), JWT_EXPIRES_IN (15 minutes), JWT_REFRESH_EXPIRES_IN (7 days)
+JWT_SECRET=change-me-to-a-secret-with-at-least-32-characters
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+BCRYPT_ROUNDS=12
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+AUTH_RATE_LIMIT_MAX=5
 
-**Security**: BCRYPT_ROUNDS (12), RATE_LIMIT_WINDOW_MS (15 minutes in milliseconds), RATE_LIMIT_MAX_REQUESTS (100), AUTH_RATE_LIMIT_MAX (5)
+LOG_LEVEL=info
+MAX_FILE_SIZE=10485760
+MAX_VIDEO_SIZE=104857600
 
-**Email**: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL, FROM_NAME
+# Optional services:
+SMTP_HOST=smtp.yourprovider.com
+SMTP_PORT=587
+SMTP_USER=your_user
+SMTP_PASS=your_pass
+FROM_EMAIL=noreply@ugclinic-fyp.edu.gh
+FROM_NAME=UG Student Clinic
 
-**SMS**: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+```
 
-**File Upload**: MAX_FILE_SIZE (10MB in bytes), MAX_VIDEO_SIZE (100MB in bytes), UPLOAD_PATH
+### Backend `.env`
 
-**Logging**: LOG_LEVEL (debug for development)
+```env
+DATABASE_URL=postgresql://ugclinic_user:your_secure_password@localhost:5432/ug_clinic
+REDIS_URL=redis://localhost:6379
+```
 
-### Step 2: Frontend Environment File
+### Frontend `.env.local`
 
-Create a `.env.local` file in the frontend directory with:
-- NEXT_PUBLIC_API_URL pointing to your backend API
-- NEXT_PUBLIC_APP_NAME set to UG-CLINIC-FYP
-- NEXT_PUBLIC_APP_URL pointing to your frontend URL
-
----
-
-## Running the Application
-
-### Step 1: Start Redis
-
-Open a new terminal and start the Redis server using the `redis-server` command.
-
-### Step 2: Start Backend Server
-
-Navigate to the backend directory and run `npm run dev`. The backend server will start on port 3000. Verify it is running by visiting the health endpoint at http://localhost:3000/health. You should receive a JSON response with status "ok" and a timestamp.
-
-### Step 3: Start Frontend Development Server
-
-Navigate to the frontend directory and run `npm run dev`. The frontend will start on port 3001. Open your browser and visit http://localhost:3001.
-
----
-
-## Development Workflow
-
-### Daily Development Steps
-
-1. Start Redis if it is not running as a system service
-2. Start the backend server in one terminal
-3. Start the frontend development server in another terminal
-4. Access Prisma Studio for database management by running `npx prisma studio` in the backend directory and opening http://localhost:5555 in your browser
-
-### Git Workflow
-
-1. Create a feature branch from the main branch using the naming convention `feature/your-feature-name`
-2. Make your changes and commit using conventional commit messages
-3. Push the feature branch to the remote repository
-4. Open a Pull Request for code review
-
-### Commit Message Convention
-
-Use the following prefixes for commit messages:
-- feat: New feature
-- fix: Bug fix
-- docs: Documentation changes
-- style: Code style changes (formatting only)
-- refactor: Code refactoring without changing functionality
-- test: Adding or updating tests
-- chore: Build process or auxiliary tool changes
-
----
-
-## Testing
-
-### Backend Testing
-
-Install Jest, ts-jest, supertest, and their type definitions. Create a jest.config.js file with TypeScript preset, path aliases matching tsconfig, and coverage collection settings. Run tests using `npm run test`, `npm run test:watch`, or `npm run test:coverage`.
-
-### Frontend Testing
-
-Next.js includes Jest configuration by default. Run tests using `npm run test` in the frontend directory.
-
-### End-to-End Testing
-
-Install Playwright and its browser binaries. Create E2E tests in the frontend/e2e directory. Run tests using `npx playwright test`.
-
----
-
-## Deployment
-
-### Docker Deployment
-
-Create a `docker-compose.yml` file in the root directory with the following services:
-
-**postgres**: PostgreSQL 16 Alpine with persistent volume, port 5432, health checks, and environment variables for database name, user, and password.
-
-**redis**: Redis 7 Alpine with persistent volume, port 6379, and health checks.
-
-**backend**: Node.js 20 Alpine build with environment variables for NODE_ENV, DATABASE_URL, REDIS_URL, and JWT_SECRET. Exposes port 3000. Depends on postgres and redis being healthy.
-
-**frontend**: Node.js 20 Alpine build with NEXT_PUBLIC_API_URL environment variable. Exposes port 3001. Depends on backend.
-
-Create a `Dockerfile` in the backend directory using Node.js 20 Alpine, installing production dependencies only, copying source code, building the TypeScript project, exposing port 3000, and running the compiled app.js.
-
-Create a `Dockerfile` in the frontend directory using Node.js 20 Alpine, installing all dependencies, copying source code, building the Next.js project, exposing port 3000, and running the production start command.
-
-Deploy by running `docker-compose up -d` in the root directory.
-
-### Production Environment Variables
-
-Create a `.env.production` file for production deployment containing secure values for DB_PASSWORD, JWT_SECRET, SENDGRID_API_KEY, TWILIO_ACCOUNT_SID, and TWILIO_AUTH_TOKEN. Never commit this file to version control.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=UG-CLINIC-FYP
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+```
 
 ---
 
 ## Project Structure
 
-### Complete Project Structure
-
 ```
 UG-CLINIC-FYP/
-├── backend/
+├── backend/                        # Express.js REST API
 │   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── seeders/
-│   │       └── seed.ts
+│   │   ├── schema.prisma           # Prisma Database schema & relationships
+│   │   ├── migrations/             # SQL migration history
+│   │   └── seeders/                # Seed script for default users & services
+│   ├── scripts/
+│   │   └── create-staff.ts         # CLI tool to provision staff members
 │   ├── src/
-│   │   ├── app.ts
-│   │   ├── config/
-│   │   │   ├── database.ts
-│   │   │   ├── redis.ts
-│   │   │   └── logger.ts
-│   │   ├── controllers/
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── appointment.controller.ts
-│   │   │   ├── service.controller.ts
-│   │   │   ├── resource.controller.ts
-│   │   │   ├── admin.controller.ts
-│   │   │   └── notification.controller.ts
-│   │   ├── middleware/
-│   │   │   ├── auth.ts
-│   │   │   ├── errorHandler.ts
-│   │   │   ├── notFound.ts
-│   │   │   ├── rateLimiter.ts
-│   │   │   ├── upload.ts
-│   │   │   └── validate.ts
-│   │   ├── models/
-│   │   ├── routes/
-│   │   │   ├── auth.routes.ts
-│   │   │   ├── appointment.routes.ts
-│   │   │   ├── service.routes.ts
-│   │   │   ├── resource.routes.ts
-│   │   │   ├── admin.routes.ts
-│   │   │   └── notification.routes.ts
-│   │   ├── services/
-│   │   │   ├── auth.service.ts
-│   │   │   ├── appointment.service.ts
-│   │   │   ├── email.service.ts
-│   │   │   ├── sms.service.ts
-│   │   │   ├── notification.service.ts
-│   │   │   └── upload.service.ts
-│   │   ├── utils/
-│   │   │   ├── jwt.ts
-│   │   │   ├── password.ts
-│   │   │   ├── response.ts
-│   │   │   └── validators.ts
-│   │   ├── validators/
-│   │   │   ├── auth.validator.ts
-│   │   │   ├── appointment.validator.ts
-│   │   │   └── resource.validator.ts
-│   │   └── types/
-│   │       └── index.ts
-│   ├── tests/
-│   │   ├── unit/
-│   │   ├── integration/
-│   │   └── e2e/
-│   ├── uploads/
-│   │   ├── documents/
-│   │   ├── images/
-│   │   ├── videos/
-│   │   └── temp/
-│   ├── .env
-│   ├── .env.example
-│   ├── .gitignore
+│   │   ├── config/                 # Database, Redis, Logger configs
+│   │   ├── controllers/            # Request handlers (Auth, Appointments, Staff, etc.)
+│   │   ├── middleware/             # Auth guards, Rate limiters, Error middleware
+│   │   ├── routes/                 # Express route definitions
+│   │   ├── services/               # Core business logic
+│   │   ├── utils/                  # Helper utilities (JWT, Crypto, Responses)
+│   │   └── validators/             # Zod schema validators
 │   ├── Dockerfile
-│   ├── jest.config.js
 │   ├── nodemon.json
 │   ├── package.json
-│   ├── tsconfig.json
-│   └── tsconfig-paths-bootstrap.js
-├── frontend/
+│   └── tsconfig.json
+│
+├── frontend/                       # Next.js 16 Web Application
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── (auth)/
-│   │   │   │   ├── login/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── register/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── forgot-password/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── reset-password/
-│   │   │   │       └── page.tsx
-│   │   │   ├── (public)/
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── about/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   ├── services/
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── contact/
-│   │   │   │       └── page.tsx
-│   │   │   ├── (dashboard)/
-│   │   │   │   ├── student/
-│   │   │   │   │   ├── appointments/
-│   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   ├── resources/
-│   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   └── profile/
-│   │   │   │   │       └── page.tsx
-│   │   │   │   ├── admin/
-│   │   │   │   │   ├── appointments/
-│   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   ├── users/
-│   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   ├── resources/
-│   │   │   │   │   │   └── page.tsx
-│   │   │   │   │   └── reports/
-│   │   │   │   │       └── page.tsx
-│   │   │   │   └── layout.tsx
-│   │   │   ├── layout.tsx
-│   │   │   └── globals.css
+│   │   │   ├── (auth)/             # Login, Register, Forgot Password, Reset Password
+│   │   │   ├── (public)/           # Home, About, Services, Resources, Contact, Legal
+│   │   │   ├── (dashboard)/        # Student Dashboard, Security Question flows
+│   │   │   ├── (staff)/            # Staff 2FA Gate & Portal (Overview, Appointments, Students, Settings)
+│   │   │   ├── demo-booking/       # Booking & Rescheduling wizard flow
+│   │   │   └── verify-otp/         # OTP verification page
 │   │   ├── components/
-│   │   │   ├── ui/
-│   │   │   ├── forms/
-│   │   │   │   ├── LoginForm.tsx
-│   │   │   │   ├── RegisterForm.tsx
-│   │   │   │   ├── AppointmentForm.tsx
-│   │   │   │   └── ContactForm.tsx
-│   │   │   ├── layout/
-│   │   │   │   ├── Navbar.tsx
-│   │   │   │   ├── Footer.tsx
-│   │   │   │   ├── Sidebar.tsx
-│   │   │   │   └── LayoutWrapper.tsx
-│   │   │   └── shared/
-│   │   │       ├── LoadingSpinner.tsx
-│   │   │       ├── ErrorBoundary.tsx
-│   │   │       ├── Pagination.tsx
-│   │   │       └── DataTable.tsx
-│   │   ├── hooks/
-│   │   │   ├── api/
-│   │   │   │   ├── useAuth.ts
-│   │   │   │   ├── useAppointments.ts
-│   │   │   │   ├── useServices.ts
-│   │   │   │   └── useResources.ts
-│   │   │   └── ui/
-│   │   │       ├── useToast.ts
-│   │   │       └── useMediaQuery.ts
-│   │   ├── lib/
-│   │   │   ├── utils.ts
-│   │   │   └── api.ts
-│   │   ├── stores/
-│   │   │   ├── authStore.ts
-│   │   │   └── uiStore.ts
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   └── utils/
-│   │       └── helpers.ts
-│   ├── public/
-│   │   ├── images/
-│   │   ├── icons/
-│   │   └── fonts/
-│   ├── .env.local
-│   ├── .eslintrc.json
-│   ├── .gitignore
-│   ├── components.json
+│   │   │   ├── shared/             # Header, Footer, StaffNav, StaffAiSidebar, UGLogo, Spinners
+│   │   │   ├── ui/                 # Accessible primitives
+│   │   │   └── providers/          # Query, Theme & Auth context providers
+│   │   ├── hooks/                  # Inactivity timeout & custom lifecycle hooks
+│   │   ├── lib/                    # API clients (appointmentApi, staffApi, utils)
+│   │   ├── stores/                 # Zustand global client stores
+│   │   └── types/                  # TypeScript interface definitions
+│   ├── public/                     # Static media & hero video
 │   ├── Dockerfile
-│   ├── next.config.js
 │   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.ts
 │   └── tsconfig.json
-├── docker/
-├── docker-compose.yml
-├── .gitignore
-└── README.md
+│
+├── postman/                        # Postman API Collections & Environment definitions
+├── docker-compose.yml              # Multi-container orchestration
+├── QA_CHECKLIST.md                 # Pre-release QA checklist & test plan
+├── CHANGELOG.md                    # Project release notes & changelog
+├── QUICKSTART.md                   # 5-minute setup cheatsheet
+├── SETUP.md                        # In-depth architectural setup guide
+└── README.md                       # Main project documentation
 ```
 
 ---
 
-## Contributing
+## Application Routes
 
-### Getting Started
+### Public Pages
+- `/` — Main Homepage (Interactive Hero Video, Services Grid, Mission, Testimonials)
+- `/about` — About the Clinic (Staff details, facilities, historical milestones)
+- `/services` — Medical Services catalogue & outpatient consultation hours
+- `/resources` — Public Health Library, articles, and downloadable resources
+- `/contact` — Contact directory, campus map, emergency phone numbers, and enquiry form
+- `/accessibility` — Accessibility statement and standards compliance
+- `/privacy` — Student health data privacy policy
+- `/terms` — Terms of use and clinic appointment guidelines
 
-1. Fork the repository on GitHub
-2. Clone your fork to your local machine
-3. Create a feature branch from the main branch
-4. Make your changes following the code standards
-5. Commit using conventional commit messages
-6. Push your feature branch to your fork
-7. Open a Pull Request on the original repository
+### Authentication & Account Security
+- `/login` — Student account login
+- `/register` — Student self-registration
+- `/forgot-password` — Password recovery trigger
+- `/reset-password` — Secure password reset form with token
+- `/verify-otp` — One-time-pin verification screen
+- `/security-questions` — Security questions configuration and verification
 
-### Code Standards
+### Student Dashboard & Appointment Booking
+- `/dashboard` — Student Dashboard (Upcoming clinic visits, appointment history, quick actions)
+- `/demo-booking` — Interactive 4-step appointment booking wizard with printable confirmation
 
-- Use TypeScript for all new code
-- Follow the ESLint and Prettier configurations
-- Write unit tests for new features and bug fixes
-- Update API documentation for any endpoint changes
-- Ensure accessibility compliance with WCAG 2.1 Level AA
-- Use semantic HTML and proper ARIA labels
-- Maintain responsive design across all breakpoints
+### Staff Portal
+- `/staff-portal-access` — Secure staff access point with mandatory 2-step verification (2FA)
+- `/staff/overview` — Executive KPI overview & live doctor availability toggle
+- `/staff/appointments` — Clinic queue management, doctor assignments, and status updates
+- `/staff/students` — Student medical records directory and historical appointments
+- `/staff/resources` — Resource publisher and medical bulletin editor
+- `/staff/settings` — Staff profile settings and security management
 
-### Pull Request Process
+---
 
-1. Update the README.md with details of changes if applicable
-2. Update the API documentation for any endpoint changes
-3. Ensure all tests pass locally before submitting
-4. Request review from at least one team member
-5. Address all review comments promptly
-6. Merge only after receiving approval from reviewers
+## API Reference
+
+All backend API routes are versioned under `/api/v1`.
+
+### 🔑 Authentication (`/api/v1/auth`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `POST` | `/register` | Register new student account | Public |
+| `POST` | `/login` | Authenticate user & issue tokens | Public |
+| `POST` | `/logout` | Invalidate active refresh token | Public |
+| `POST` | `/refresh` | Exchange refresh token for new access token | Public |
+| `GET` | `/profile` | Get current user's profile | Authenticated |
+| `POST` | `/forgot-password` | Send password reset email/SMS | Public |
+| `POST` | `/reset-password` | Reset password using verified token | Public |
+| `POST` | `/send-otp` | Request OTP code generation | Public |
+| `POST` | `/verify-otp` | Verify 6-digit OTP code | Public |
+| `POST` | `/security-questions` | Set or update recovery questions | Authenticated |
+| `POST` | `/verify-security-questions` | Verify answers for password recovery | Public |
+| `POST` | `/generate-backup-codes` | Generate emergency recovery codes | Authenticated |
+| `POST` | `/verify-backup-code` | Verify recovery code during login | Public |
+
+### 📅 Appointments (`/api/v1/appointments`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/` | List appointments for authenticated user | Authenticated |
+| `POST` | `/` | Create a new clinic appointment | Authenticated |
+| `GET` | `/availability` | Check available date & time slots | Authenticated |
+| `PATCH` | `/:id/cancel` | Cancel an upcoming appointment | Authenticated (Owner) |
+| `GET` | `/staff/dashboard` | Get operational clinic statistics | Staff (Receptionist/Admin) |
+| `GET` | `/staff/all` | Query all appointments across the clinic | Staff |
+| `PATCH` | `/:id/assign` | Assign a doctor to a booked appointment | Staff (Receptionist/Admin) |
+| `PATCH` | `/:id/reschedule` | Move appointment to a new date/slot | Staff (Receptionist/Admin) |
+| `PATCH` | `/:id/status` | Update visit status (`COMPLETED`, `NO_SHOW`, etc.) | Staff |
+| `POST` | `/:id/staff-cancel` | Cancel an appointment with a clinic reason | Staff (Receptionist/Admin) |
+| `GET` | `/timeslots` | Retrieve slot schedule configurations | Staff (Receptionist/Admin) |
+| `PATCH` | `/timeslots/batch` | Batch enable/disable time slots | Staff |
+
+### 👨‍⚕️ Staff Management (`/api/v1/staff`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `POST` | `/login` | Staff initial login (triggers 2FA challenge) | Public |
+| `POST` | `/verify-2fa` | Verify staff 2FA code & complete login | Public |
+| `GET` | `/students` | Search and filter registered students | Staff (Receptionist/Admin) |
+| `GET` | `/students/:id` | View specific student demographic profile | Staff (Receptionist/Admin) |
+| `GET` | `/students/:id/history` | View student's historical clinic visits | Staff (Receptionist/Admin) |
+| `GET` | `/doctors` | List doctors and their current active status | Staff |
+| `PATCH` | `/doctors/status` | Update own/specified doctor availability | Staff |
+| `POST` | `/auto-assign-doctors` | Trigger auto-assignment of pending visits | Staff (Receptionist/Admin) |
+| `POST` | `/auto-confirm-pending` | Auto-confirm eligible appointments | Staff (Receptionist/Admin) |
+
+### 📖 Resources (`/api/v1/resources`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/` | List published health articles & downloads | Public |
+| `POST` | `/` | Upload new health resource document | Staff |
+| `PATCH` | `/:id` | Update metadata or category of a resource | Staff |
+| `DELETE` | `/:id` | Remove a resource item | Staff |
+
+---
+
+## User Roles & Access Control
+
+| Role | Target Users | Permissions |
+|---|---|---|
+| `STUDENT` | UG Students | View public pages, book/reschedule visits, download health guides, manage security settings. |
+| `RECEPTIONIST` | Clinic Front Desk | Manage clinic queue, assign doctors, reschedule/cancel student appointments, manage time slots, register walk-ins. |
+| `DOCTOR` | Medical Officers | Toggle live availability (`AVAILABLE`/`BUSY`), view assigned consultations, update consultation status. |
+| `ADMIN` | IT & Clinic Directors | Complete operational control, staff user creation, system health monitoring, audit logs. |
+
+---
+
+## Testing & QA
+
+For the complete testing matrix, test cases, and release criteria, consult [`QA_CHECKLIST.md`](./QA_CHECKLIST.md).
+
+### Frontend Type Safety & Build Verification
+```bash
+cd frontend
+
+# Verify full static TypeScript safety
+npm run type-check
+
+# Production build bundle check
+npm run build
+```
+
+### Backend Unit & Integration Tests
+```bash
+cd backend
+
+# Run Jest test suite
+npm run test
+
+# Run tests with test coverage analysis
+npm run test:coverage
+```
+
+### API Smoke Testing (Postman)
+1. Open Postman and import collections from `/postman/collections/`.
+2. Import the environment from `/postman/environments/`.
+3. Set your active environment URL to `http://localhost:3000`.
+4. Run the automated collection runner against the auth and appointment test suites.
+
+---
+
+## Docker Deployment
+
+To launch the full containerized environment (PostgreSQL, Redis, Backend, and Frontend):
+
+```bash
+# Build and run containers in detached mode
+docker compose up -d --build
+
+# Inspect running containers
+docker compose ps
+
+# Follow application logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Gracefully tear down containers and networks
+docker compose down
+```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Cannot find module '@prisma/client'
+### 1. `Cannot find module '@prisma/client'`
+**Fix:** Run `npx prisma generate` in the `backend` folder.
 
-**Solution**: Run `npx prisma generate` in the backend directory to regenerate the Prisma client.
+### 2. `Database connection refused`
+**Fix:** Verify PostgreSQL service is running and `DATABASE_URL` in `backend/.env` matches your credentials.
 
-### Issue: Database connection refused
+### 3. `Redis connection failed`
+**Fix:** Start Redis server (`redis-server` or `docker compose up -d redis`) and ensure port `6379` is reachable.
 
-**Solution**: Ensure PostgreSQL is running. On Linux, use `sudo service postgresql start`. Verify your database credentials in the `.env` file match the PostgreSQL user and database you created. Check if the database exists by listing all databases in psql.
+### 4. Port Conflict (`3000` or `3001` already in use)
+**Fix:** On Windows:
+```powershell
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+```
 
-### Issue: Redis connection failed
-
-**Solution**: Ensure Redis is running by executing `redis-cli ping` which should return PONG. If Redis is not running, start it with `redis-server`. Verify the REDIS_URL in your `.env` file is correct.
-
-### Issue: Port 3000 already in use
-
-**Solution**: Find the process using port 3000 and terminate it, or set a different port by modifying the PORT environment variable in your `.env` file.
-
-### Issue: CORS error in browser
-
-**Solution**: Ensure the FRONTEND_URL in the backend `.env` file matches your frontend URL exactly, including the protocol and port.
-
-### Issue: JWT token expired
-
-**Solution**: The application should auto-refresh tokens. If token refresh fails, log out and log in again to obtain new tokens.
-
-### Issue: npm install fails
-
-**Solution**: Clear the npm cache, delete the node_modules directory and package-lock.json file, then reinstall dependencies.
-
-### Getting Help
-
-If you encounter an issue not listed above:
-
-1. Check the terminal logs for detailed error messages
-2. Review the error message carefully for clues
-3. Search existing issues on the project GitHub repository
-4. Create a new issue including: a description of the problem, steps to reproduce, expected versus actual behavior, your environment details (operating system, Node.js version, npm version), and relevant error logs
+### 5. CORS Errors in Browser
+**Fix:** Ensure `FRONTEND_URL` and `CORS_ORIGIN` in `backend/.env` match the frontend port (`http://localhost:3001`).
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Support
-
-For support, contact the development team.
-
-## Acknowledgments
-
-- University of Ghana Student Clinic
-- Development Team
-- Open Source Community
+This project is licensed under the **MIT License** — see the [`LICENSE`](./LICENSE) file for details.
 
 ---
 
-**End of README**
+*University of Ghana Student Clinic — Final Year Project (FYP)*

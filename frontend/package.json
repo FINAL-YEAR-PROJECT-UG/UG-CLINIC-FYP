@@ -9,6 +9,7 @@
     "start": "next start -p 3001",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
+    "type-check": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
