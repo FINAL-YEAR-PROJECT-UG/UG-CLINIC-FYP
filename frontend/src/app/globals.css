@@ -410,6 +410,11 @@ section:not(:first-of-type) {
 .btn-lg  { padding: 0.7rem 1.75rem; font-size: 0.9375rem; }
 .btn-xl  { padding: 0.85rem 2rem; font-size: 1rem; }
 
+@media (max-width: 640px) {
+  .btn-lg  { padding: 0.55rem 1.25rem; font-size: 0.875rem; }
+  .btn-xl  { padding: 0.65rem 1.5rem; font-size: 0.9375rem; }
+}
+
 /* Primary */
 .btn-primary {
   background: linear-gradient(135deg, #0F172A 0%, #1e3a8a 100%);

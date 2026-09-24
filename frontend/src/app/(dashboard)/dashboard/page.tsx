@@ -240,7 +240,7 @@ export default function DashboardPage() {
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center scale-105"
+            className="object-cover object-center scale-105 opacity-25"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#1d4ed8]/92 backdrop-blur-[1px]" />
         </div>
@@ -255,10 +255,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={logout}
-              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-4 py-2.5 text-sm leading-tight text-center hover:bg-red-500 hover:border-red-500 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/40 text-white font-medium px-3 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm leading-tight text-center hover:bg-red-500 hover:border-red-500 transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 focus:ring-offset-[#0F172A]"
               aria-label="Log out"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Log out
             </button>
           </div>
@@ -315,14 +315,14 @@ export default function DashboardPage() {
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowCancelModalId(null)}
-                  className="px-4 py-2 rounded-md border border-[#E2E8F0] bg-white text-[#020617] text-sm hover:bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-md border border-[#E2E8F0] bg-white text-[#020617] text-xs sm:text-sm hover:bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] transition-all"
                 >
                   Close
                 </button>
                 <button
                   onClick={confirmCancel}
                   disabled={cancellingId === showCancelModalId}
-                  className="px-4 py-2 rounded-md bg-[#DC2626] text-white text-sm disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2 transition-all"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#DC2626] text-white text-xs sm:text-sm disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#DC2626] focus:ring-offset-2 transition-all"
                 >
                   {cancellingId === showCancelModalId ? 'Cancelling...' : 'Confirm cancel'}
                 </button>
@@ -349,7 +349,7 @@ export default function DashboardPage() {
                 <LoadingSpinner size={60} />
               </div>
             ) : nextAppointment ? (
-              <div className="bg-white rounded-xl border border-[#E2E8F0] p-6 shadow-sm">
+              <div className="bg-white rounded-xl border border-[#E2E8F0] p-4 sm:p-6 shadow-sm">
                 <div className="flex items-start justify-between">
                   <span
                     className={`inline-flex items-center gap-1 rounded-full text-xs font-medium px-2.5 py-1 ${STATUS_PILL[nextAppointment.status]?.className ?? 'bg-gray-100 text-gray-600'
@@ -359,50 +359,50 @@ export default function DashboardPage() {
                   </span>
                   <div className="text-right">
                     <p className="text-[11px] uppercase tracking-wide text-[#334155]">Booking Reference</p>
-                    <p className="text-sm font-semibold text-[#0369A1]">{bookingReference(nextAppointment)}</p>
+                    <p className="text-xs sm:text-sm font-semibold text-[#0369A1]">{bookingReference(nextAppointment)}</p>
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-[#020617] mt-4">
+                <h3 className="text-lg sm:text-xl font-bold text-[#020617] mt-3 sm:mt-4">
                   {nextAppointment.reason || nextAppointment.service?.name}
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
                   <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <Calendar className="h-4 w-4 text-[#334155] mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-[#334155]">Date</p>
-                      <p className="text-sm font-medium text-[#020617]">{formatLongDate(nextAppointment.date)}</p>
+                      <p className="text-xs sm:text-sm font-medium text-[#020617]">{formatLongDate(nextAppointment.date)}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <Clock className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <Clock className="h-4 w-4 text-[#334155] mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-[#334155]">Time</p>
-                      <p className="text-sm font-medium text-[#020617]">{formatTimeLabel(nextAppointment.timeSlot)}</p>
+                      <p className="text-xs sm:text-sm font-medium text-[#020617]">{formatTimeLabel(nextAppointment.timeSlot)}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-[#334155] mt-0.5" />
+                    <MapPin className="h-4 w-4 text-[#334155] mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-[#334155]">Location</p>
-                      <p className="text-sm font-medium text-[#020617]">{CLINIC_LOCATION}</p>
+                      <p className="text-xs sm:text-sm font-medium text-[#020617]">{CLINIC_LOCATION}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-[#E2E8F0] mt-6 pt-4 flex items-center gap-4">
+                <div className="border-t border-[#E2E8F0] mt-5 sm:mt-6 pt-3 sm:pt-4 flex flex-wrap items-center gap-3 sm:gap-4">
                   <button
                     onClick={() => handleCancel(nextAppointment.id)}
                     disabled={cancellingId === nextAppointment.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium px-4 py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 text-red-600 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 hover:bg-red-50 transition-all duration-200 hover:shadow-md disabled:opacity-60 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                   >
-                    {cancellingId === nextAppointment.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {cancellingId === nextAppointment.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     Cancel appointment
                   </button>
                   <Link
                     href={`/demo-booking?rescheduleId=${encodeURIComponent(nextAppointment.id)}&serviceId=${encodeURIComponent(nextAppointment.serviceId || nextAppointment.service?.id || '')}&date=${encodeURIComponent(nextAppointment.date.split('T')[0])}&time=${encodeURIComponent(nextAppointment.timeSlot)}&reason=${encodeURIComponent(nextAppointment.reason || '')}`}
-                    className="text-sm font-medium text-[#1e3a8a] hover:text-blue-900 font-semibold transition-all duration-200 hover:underline focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded"
+                    className="text-xs sm:text-sm font-medium text-[#1e3a8a] hover:text-blue-900 font-semibold transition-all duration-200 hover:underline focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:ring-offset-2 rounded"
                   >
                     Reschedule
                   </Link>
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                 <Link
                   href={bookingTarget}
                   onClick={handleBookingNavClick}
-                  className="mt-3 inline-flex items-center justify-center rounded-full bg-[#0369A1] text-white font-semibold px-5 py-2.5 text-sm hover:bg-[#0F172A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0369A1] focus:ring-offset-2"
+                  className="mt-3 inline-flex items-center justify-center rounded-full bg-[#0369A1] text-white font-semibold px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm hover:bg-[#0F172A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0369A1] focus:ring-offset-2"
                 >
                   Book an appointment
                 </Link>

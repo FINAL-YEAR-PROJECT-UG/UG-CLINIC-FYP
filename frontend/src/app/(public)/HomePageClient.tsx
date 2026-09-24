@@ -68,7 +68,7 @@ export default function HomePageClient() {
           muted
           playsInline
           preload="none"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />
@@ -92,11 +92,11 @@ export default function HomePageClient() {
           <p className="text-lg text-blue-100/90 mb-10 max-w-2xl mx-auto leading-relaxed animate-[slideUp_380ms_cubic-bezier(0.4,0,0.2,1)_100ms_both]">
             Accessible, quality healthcare for every student at Legon. Your wellbeing; physical, mental, and emotional matters to us.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-[slideUp_380ms_cubic-bezier(0.4,0,0.2,1)_180ms_both]">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-[slideUp_380ms_cubic-bezier(0.4,0,0.2,1)_180ms_both]">
             <Link
               href="/login"
               className="
-                inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-[#0F172A] bg-white
+                inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base text-[#0F172A] bg-white
                 shadow-[0_4px_20px_rgba(255,255,255,0.25)]
                 hover:bg-blue-50 hover:shadow-[0_8px_32px_rgba(255,255,255,0.30)]
                 hover:-translate-y-0.5
@@ -109,7 +109,7 @@ export default function HomePageClient() {
             <Link
               href="/services"
               className="
-                inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-bold text-white
+                inline-flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl font-bold text-sm sm:text-base text-white
                 bg-white/10 border border-white/20 backdrop-blur-sm
                 hover:bg-white/20 hover:border-white/30
                 hover:-translate-y-0.5
@@ -124,166 +124,166 @@ export default function HomePageClient() {
       </section>
       {/* ── Lower Content Sections ── */}
       <div className="relative">
-          {/* ── Welcome ── */}
-          <section className="py-24 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center bg-white/90 backdrop-blur-md rounded-3xl p-8 sm:p-12 border border-white/80 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.08)]">
-                {/* Image */}
-                <div className="relative h-80 lg:h-[420px] rounded-2xl overflow-hidden shadow-[0_20px_60px_-12px_rgba(15,23,42,0.18)] group">
-                  <Image
-                    src={welcomeIcon}
-                    alt="Welcome to Student Clinic"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/30 to-transparent" />
-                </div>
-                {/* Text */}
-                <div className="space-y-5">
-                  <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs">
-                    Welcome
-                  </span>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
-                    Welcome to the<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e3a8a] to-[#0369A1]">Student Clinic</span>
-                  </h2>
-                  <p className="text-[#4B5A6E] leading-relaxed">
-                    Our Student Clinic provides comprehensive healthcare services designed specifically for university students. We understand the unique health challenges you face and are committed to providing accessible, confidential, and professional care.
-                  </p>
-                  <p className="text-[#4B5A6E] leading-relaxed">
-                    From routine check-ups to mental health support, our experienced team of healthcare professionals is here to support your wellbeing throughout your academic journey.
-                  </p>
-                </div>
+        {/* ── Welcome ── */}
+        <section className="py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center bg-white/90 backdrop-blur-md rounded-3xl p-8 sm:p-12 border border-white/80 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.08)]">
+              {/* Image */}
+              <div className="relative h-80 lg:h-[420px] rounded-2xl overflow-hidden shadow-[0_20px_60px_-12px_rgba(15,23,42,0.18)] group">
+                <Image
+                  src={welcomeIcon}
+                  alt="Welcome to Student Clinic"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/30 to-transparent" />
               </div>
-            </div>
-          </section>
-
-          {/* ── Mission ── */}
-          <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden shadow-lg">
-            {/* Aerial Campus Imagery Backdrop */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <Image
-                src={universityOfGhanaBg}
-                alt="University of Ghana Aerial Campus"
-                fill
-                sizes="100vw"
-                className="object-cover object-center scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
-            </div>
-            <div className="absolute inset-0 opacity-[0.04] z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-            <div className="relative z-10 max-w-4xl mx-auto text-center">
-              <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-6 backdrop-blur-sm shadow-xs">
-                Our Purpose
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-8">Our Mission</h2>
-              <p className="text-blue-100/90 text-lg leading-relaxed mb-5">
-                To provide accessible, comprehensive, and student-centered healthcare services that promote physical, mental, and emotional wellbeing. We are committed to creating a supportive environment where every student can thrive academically and personally.
-              </p>
-              <p className="text-blue-100/80 text-base leading-relaxed">
-                Through prevention, education, and compassionate care, we empower students to make informed health decisions and maintain optimal wellness throughout their university experience.
-              </p>
-            </div>
-          </section>
-
-          {/* ── Services ── */}
-          <section className="py-24 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-16">
-                <span className="inline-block bg-white/90 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-4 shadow-xs backdrop-blur-sm">
-                  What We Offer
+              {/* Text */}
+              <div className="space-y-5">
+                <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs">
+                  Welcome
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">How Can We Help?</h2>
-                <p className="text-[#6B7A8D] max-w-xl mx-auto">Comprehensive healthcare services tailored to student needs</p>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
+                  Welcome to the<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e3a8a] to-[#0369A1]">Student Clinic</span>
+                </h2>
+                <p className="text-[#4B5A6E] leading-relaxed">
+                  Our Student Clinic provides comprehensive healthcare services designed specifically for university students. We understand the unique health challenges you face and are committed to providing accessible, confidential, and professional care.
+                </p>
+                <p className="text-[#4B5A6E] leading-relaxed">
+                  From routine check-ups to mental health support, our experienced team of healthcare professionals is here to support your wellbeing throughout your academic journey.
+                </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {services.map((service, index) => {
-                  const Icon = service.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="
+            </div>
+          </div>
+        </section>
+
+        {/* ── Mission ── */}
+        <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden shadow-lg">
+          {/* Aerial Campus Imagery Backdrop */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <Image
+              src={universityOfGhanaBg}
+              alt="University of Ghana Aerial Campus"
+              fill
+              sizes="100vw"
+              className="object-cover object-center scale-105 opacity-25"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
+          </div>
+          <div className="absolute inset-0 opacity-[0.04] z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+          <div className="relative z-10 max-w-4xl mx-auto text-center">
+            <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-6 backdrop-blur-sm shadow-xs">
+              Our Purpose
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-8">Our Mission</h2>
+            <p className="text-blue-100/90 text-lg leading-relaxed mb-5">
+              To provide accessible, comprehensive, and student-centered healthcare services that promote physical, mental, and emotional wellbeing. We are committed to creating a supportive environment where every student can thrive academically and personally.
+            </p>
+            <p className="text-blue-100/80 text-base leading-relaxed">
+              Through prevention, education, and compassionate care, we empower students to make informed health decisions and maintain optimal wellness throughout their university experience.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Services ── */}
+        <section className="py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="inline-block bg-white/90 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-4 shadow-xs backdrop-blur-sm">
+                What We Offer
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">How Can We Help?</h2>
+              <p className="text-[#6B7A8D] max-w-xl mx-auto">Comprehensive healthcare services tailored to student needs</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {services.map((service, index) => {
+                const Icon = service.icon;
+                return (
+                  <div
+                    key={index}
+                    className="
                         group bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm text-center
                         hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)]
                         hover:-translate-y-1.5 hover:border-blue-200
                         transition-all duration-300 cursor-default
                       "
-                    >
-                      <div className={`w-14 h-14 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-5 mx-auto shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                        <Icon className="h-7 w-7 text-white" />
-                      </div>
-                      <h3 className="font-extrabold text-gray-900 mb-2">{service.title}</h3>
-                      <p className="text-sm text-[#6B7A8D] leading-relaxed">{service.description}</p>
+                  >
+                    <div className={`w-14 h-14 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-5 mx-auto shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                      <Icon className="h-7 w-7 text-white" />
                     </div>
-                  );
-                })}
-              </div>
+                    <h3 className="font-extrabold text-gray-900 mb-2">{service.title}</h3>
+                    <p className="text-sm text-[#6B7A8D] leading-relaxed">{service.description}</p>
+                  </div>
+                );
+              })}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* ── Health Updates ── */}
-          <section className="py-24 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-16">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-4 backdrop-blur-sm">
-                  Latest News
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Health Updates & Tips</h2>
-                <p className="text-[#6B7A8D] max-w-xl mx-auto">Stay informed about important health initiatives and wellness advice</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {healthUpdates.map((update, index) => {
-                  const FallbackIcon = update.fallbackIcon;
-                  const errorKey = `health-${index}`;
-                  return (
-                    <div
-                      key={index}
-                      className="
+        {/* ── Health Updates ── */}
+        <section className="py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-4 backdrop-blur-sm">
+                Latest News
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Health Updates & Tips</h2>
+              <p className="text-[#6B7A8D] max-w-xl mx-auto">Stay informed about important health initiatives and wellness advice</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {healthUpdates.map((update, index) => {
+                const FallbackIcon = update.fallbackIcon;
+                const errorKey = `health-${index}`;
+                return (
+                  <div
+                    key={index}
+                    className="
                         group bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl overflow-hidden shadow-sm
                         hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)]
                         hover:-translate-y-2 hover:border-blue-200
                         transition-all duration-300
                       "
-                    >
-                      {/* Image */}
-                      <div className={`h-48 ${update.bgColor} relative overflow-hidden`}>
-                        {!imageErrors[errorKey] ? (
-                          <Image
-                            src={update.image}
-                            alt={update.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 33vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            onError={() => handleImageError(errorKey)}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <FallbackIcon className="h-16 w-16 text-white/50" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                      </div>
-
-                      <div className="p-5">
-                        <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border mb-3 ${update.tagColor}`}>
-                          {update.tag}
-                        </span>
-                        <h3 className="font-extrabold text-gray-900 mb-2">{update.title}</h3>
-                        <p className="text-sm text-[#6B7A8D] mb-4 leading-relaxed">{update.description}</p>
-                        <Link
-                          href={update.href}
-                          className="inline-flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:text-[#0369A1] hover:gap-2 transition-all duration-200"
-                        >
-                          {update.action} <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </div>
+                  >
+                    {/* Image */}
+                    <div className={`h-48 ${update.bgColor} relative overflow-hidden`}>
+                      {!imageErrors[errorKey] ? (
+                        <Image
+                          src={update.image}
+                          alt={update.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          onError={() => handleImageError(errorKey)}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full">
+                          <FallbackIcon className="h-16 w-16 text-white/50" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div className="p-5">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold border mb-3 ${update.tagColor}`}>
+                        {update.tag}
+                      </span>
+                      <h3 className="font-extrabold text-gray-900 mb-2">{update.title}</h3>
+                      <p className="text-sm text-[#6B7A8D] mb-4 leading-relaxed">{update.description}</p>
+                      <Link
+                        href={update.href}
+                        className="inline-flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:text-[#0369A1] hover:gap-2 transition-all duration-200"
+                      >
+                        {update.action} <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </section>
+          </div>
+        </section>
       </div>
 
       <Footer />

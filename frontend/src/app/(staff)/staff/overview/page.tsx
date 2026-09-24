@@ -657,7 +657,7 @@ export default function StaffOverviewPage() {
               alt="University of Ghana Aerial Campus"
               fill
               sizes="100vw"
-              className="object-cover object-center scale-110"
+              className="object-cover object-center scale-110 opacity-25"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/96 via-[#0F172A]/90 to-[#0369A1]/88 backdrop-blur-[1.5px]" />
           </div>

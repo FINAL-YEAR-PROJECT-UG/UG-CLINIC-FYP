@@ -122,7 +122,7 @@ export default function AboutPageClient() {
           muted
           playsInline
           preload="none"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />
@@ -160,228 +160,228 @@ export default function AboutPageClient() {
 
       {/* ── Who We Are Section ── */}
       <div className="relative">
-          {/* Who We Are Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-white/90 backdrop-blur-md rounded-3xl p-8 sm:p-12 border border-white/80 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.08)]">
-                <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden shadow-[0_16px_40px_-8px_rgba(15,23,42,0.15)] border border-[#DDE3EE]">
-                  <Image
-                    src={whoWeAreIcon}
-                    alt="Who We Are"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/40 to-transparent" />
-                </div>
-                <div className="space-y-4">
-                  <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs">
-                    Our Overview
-                  </span>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">
-                    Who We Are
-                  </h2>
-                  <p className="text-[#4B5A6E] leading-relaxed text-sm">
-                    The University of Ghana Student Clinic is a dedicated healthcare facility serving students across all colleges and faculties. We provide comprehensive medical consultations, preventive health checkups, and health education to support physical and mental wellbeing.
-                  </p>
-                  <p className="text-[#4B5A6E] leading-relaxed text-sm">
-                    Our qualified staff of physicians, nurses, counselors, and administrative team members work together to deliver confidential, compassionate care in a student-friendly environment.
-                  </p>
-
-                  <div className="pt-2">
-                    <div className="inline-flex items-center gap-3 p-3.5 bg-[#F5F7FB]/90 backdrop-blur-sm border border-[#DDE3EE] rounded-xl shadow-xs">
-                      <div className="w-9 h-9 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs">
-                        <Building2 className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-[#0B1221] text-xs">Established 2010</p>
-                        <p className="text-[11px] text-[#6B7A8D]">14+ years of dedicated service to Legon students</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        {/* Who We Are Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-white/90 backdrop-blur-md rounded-3xl p-8 sm:p-12 border border-white/80 shadow-[0_16px_40px_-12px_rgba(15,23,42,0.08)]">
+              <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden shadow-[0_16px_40px_-8px_rgba(15,23,42,0.15)] border border-[#DDE3EE]">
+                <Image
+                  src={whoWeAreIcon}
+                  alt="Who We Are"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/40 to-transparent" />
               </div>
-            </div>
-          </section>
-
-          {/* Our Story Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-14">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
-                  History & Milestones
+              <div className="space-y-4">
+                <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs">
+                  Our Overview
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Growth Story</h2>
-                <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
-                  From an initial consult post to a full-service health institution.
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">
+                  Who We Are
+                </h2>
+                <p className="text-[#4B5A6E] leading-relaxed text-sm">
+                  The University of Ghana Student Clinic is a dedicated healthcare facility serving students across all colleges and faculties. We provide comprehensive medical consultations, preventive health checkups, and health education to support physical and mental wellbeing.
                 </p>
-              </div>
+                <p className="text-[#4B5A6E] leading-relaxed text-sm">
+                  Our qualified staff of physicians, nurses, counselors, and administrative team members work together to deliver confidential, compassionate care in a student-friendly environment.
+                </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {ourStory.map((milestone, index) => (
-                  <div
-                    key={index}
-                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-                  >
+                <div className="pt-2">
+                  <div className="inline-flex items-center gap-3 p-3.5 bg-[#F5F7FB]/90 backdrop-blur-sm border border-[#DDE3EE] rounded-xl shadow-xs">
+                    <div className="w-9 h-9 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-xl flex items-center justify-center text-white shrink-0 shadow-xs">
+                      <Building2 className="w-5 h-5 text-white" />
+                    </div>
                     <div>
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white rounded-lg text-xs font-extrabold mb-4 shadow-xs">
-                        <Calendar className="w-3 h-3" />
-                        {milestone.year}
-                      </div>
-                      <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{milestone.title}</h3>
-                      <p className="text-xs text-[#6B7A8D] leading-relaxed">{milestone.description}</p>
+                      <p className="font-bold text-[#0B1221] text-xs">Established 2010</p>
+                      <p className="text-[11px] text-[#6B7A8D]">14+ years of dedicated service to Legon students</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Core Values Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-14">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
-                  Guided Principles
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Core Values</h2>
-                <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
-                  The fundamental standards that drive our daily medical operations.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {coreValues.map((value, index) => (
-                  <div
-                    key={index}
-                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
-                  >
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4 overflow-hidden shadow-xs">
-                      <img
-                        src={getImageSrc(value.image)}
-                        alt={value.title}
-                        className="w-full h-full object-contain p-2"
-                      />
-                    </div>
-                    <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{value.title}</h3>
-                    <p className="text-xs text-[#6B7A8D] leading-relaxed">{value.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Team Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              <div className="text-center mb-14">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs backdrop-blur-sm">
-                  Leadership
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Medical Leadership</h2>
-                <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
-                  Dedicated healthcare professionals committed to student wellness.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {team.map((member, index) => (
-                  <div
-                    key={index}
-                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm text-center flex flex-col items-center hover:shadow-md transition-all duration-300"
-                  >
-                    <div className="w-16 h-16 bg-[#F5F7FB] border border-[#DDE3EE] rounded-full flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
-                      <Users className="h-7 w-7" />
-                    </div>
-                    <h3 className="font-extrabold text-[#0B1221] text-base">{member.name}</h3>
-                    <span className="inline-block px-3 py-1 bg-blue-50 text-[#1e3a8a] text-[11px] font-bold rounded-full border border-blue-100 my-2">
-                      {member.role}
-                    </span>
-                    <p className="text-xs text-[#6B7A8D] leading-relaxed mt-1">{member.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Achievements Section */}
-          <section className="relative py-20 px-4 sm:px-6 lg:px-8 text-white shadow-lg overflow-hidden">
-            {/* Balme Library & Campus Backdrop */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <Image
-                src={balmeLibraryCampusBg}
-                alt="University of Ghana Balme Library and Campus"
-                fill
-                sizes="100vw"
-                className="object-cover object-center scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
-            </div>
-            <div className="relative z-10 max-w-7xl mx-auto">
-              <div className="text-center mb-14">
-                <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-3 backdrop-blur-sm">
-                  Milestones
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Our Achievements</h2>
-                <p className="text-sm text-blue-100/80 max-w-lg mx-auto mt-2">
-                  Demonstrated commitments to student health excellence.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {achievements.map((achievement, index) => {
-                  const Icon = achievement.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-6 text-center shadow-md hover:bg-white/15 transition-all duration-200"
-                    >
-                      <div className="w-12 h-12 bg-white/15 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/20">
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
-                      <h3 className="font-extrabold text-white text-base mb-2">{achievement.title}</h3>
-                      <p className="text-xs text-blue-100/90 leading-relaxed">{achievement.description}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          {/* Why Choose Us Section */}
-          <section className="py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center mb-12">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs backdrop-blur-sm">
-                  Why Us
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Why Students Choose Us</h2>
-                <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
-                  Key highlights of our campus health service model.
-                </p>
-              </div>
-
-              <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-8 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    'Free consultation and basic triage for all registered students',
-                    'Qualified physicians, head nurses, and licensed mental health counselors',
-                    'Complete patient confidentiality adhering to strict privacy standards',
-                    'Modern medical equipment and digital record management',
-                    'Centralized campus location close to main student hostels',
-                    'Comprehensive care from primary consults to prescription refills',
-                  ].map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-white/80 border border-[#DDE3EE] rounded-xl shadow-2xs">
-                      <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <p className="text-xs font-semibold text-[#0B1221] leading-relaxed">{feature}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
+
+        {/* Our Story Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
+                History & Milestones
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Growth Story</h2>
+              <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
+                From an initial consult post to a full-service health institution.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {ourStory.map((milestone, index) => (
+                <div
+                  key={index}
+                  className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white rounded-lg text-xs font-extrabold mb-4 shadow-xs">
+                      <Calendar className="w-3 h-3" />
+                      {milestone.year}
+                    </div>
+                    <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{milestone.title}</h3>
+                    <p className="text-xs text-[#6B7A8D] leading-relaxed">{milestone.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Core Values Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
+                Guided Principles
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Core Values</h2>
+              <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
+                The fundamental standards that drive our daily medical operations.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {coreValues.map((value, index) => (
+                <div
+                  key={index}
+                  className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#0F172A] to-[#1e3a8a] rounded-2xl flex items-center justify-center mb-4 overflow-hidden shadow-xs">
+                    <img
+                      src={getImageSrc(value.image)}
+                      alt={value.title}
+                      className="w-full h-full object-contain p-2"
+                    />
+                  </div>
+                  <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{value.title}</h3>
+                  <p className="text-xs text-[#6B7A8D] leading-relaxed">{value.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Team Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs backdrop-blur-sm">
+                Leadership
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Our Medical Leadership</h2>
+              <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
+                Dedicated healthcare professionals committed to student wellness.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {team.map((member, index) => (
+                <div
+                  key={index}
+                  className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm text-center flex flex-col items-center hover:shadow-md transition-all duration-300"
+                >
+                  <div className="w-16 h-16 bg-[#F5F7FB] border border-[#DDE3EE] rounded-full flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
+                    <Users className="h-7 w-7" />
+                  </div>
+                  <h3 className="font-extrabold text-[#0B1221] text-base">{member.name}</h3>
+                  <span className="inline-block px-3 py-1 bg-blue-50 text-[#1e3a8a] text-[11px] font-bold rounded-full border border-blue-100 my-2">
+                    {member.role}
+                  </span>
+                  <p className="text-xs text-[#6B7A8D] leading-relaxed mt-1">{member.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Achievements Section */}
+        <section className="relative py-20 px-4 sm:px-6 lg:px-8 text-white shadow-lg overflow-hidden">
+          {/* Balme Library & Campus Backdrop */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <Image
+              src={balmeLibraryCampusBg}
+              alt="University of Ghana Balme Library and Campus"
+              fill
+              sizes="100vw"
+              className="object-cover object-center scale-105 opacity-25"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/94 via-[#1e3a8a]/90 to-[#0369A1]/92 backdrop-blur-[1px]" />
+          </div>
+          <div className="relative z-10 max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <span className="inline-block bg-white/10 border border-white/15 text-blue-200 text-xs font-bold px-3.5 py-1.5 rounded-full mb-3 backdrop-blur-sm">
+                Milestones
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Our Achievements</h2>
+              <p className="text-sm text-blue-100/80 max-w-lg mx-auto mt-2">
+                Demonstrated commitments to student health excellence.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {achievements.map((achievement, index) => {
+                const Icon = achievement.icon;
+                return (
+                  <div
+                    key={index}
+                    className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-6 text-center shadow-md hover:bg-white/15 transition-all duration-200"
+                  >
+                    <div className="w-12 h-12 bg-white/15 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/20">
+                      <Icon className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-extrabold text-white text-base mb-2">{achievement.title}</h3>
+                    <p className="text-xs text-blue-100/90 leading-relaxed">{achievement.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Why Choose Us Section */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs backdrop-blur-sm">
+                Why Us
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0B1221]">Why Students Choose Us</h2>
+              <p className="text-sm text-[#6B7A8D] max-w-lg mx-auto mt-2">
+                Key highlights of our campus health service model.
+              </p>
+            </div>
+
+            <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-8 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  'Free consultation and basic triage for all registered students',
+                  'Qualified physicians, head nurses, and licensed mental health counselors',
+                  'Complete patient confidentiality adhering to strict privacy standards',
+                  'Modern medical equipment and digital record management',
+                  'Centralized campus location close to main student hostels',
+                  'Comprehensive care from primary consults to prescription refills',
+                ].map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-white/80 border border-[#DDE3EE] rounded-xl shadow-2xs">
+                    <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <p className="text-xs font-semibold text-[#0B1221] leading-relaxed">{feature}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <Footer />
