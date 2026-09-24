@@ -1,8 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "Running database migrations..."
-npx prisma migrate deploy
+npx prisma migrate deploy --skip-generate 2>&1 | grep -v "^Prisma schema" || true
 
-echo "Starting UG Clinic API..."
 exec node dist/app.js
+
