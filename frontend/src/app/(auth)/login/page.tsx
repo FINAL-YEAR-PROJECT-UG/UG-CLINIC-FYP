@@ -89,7 +89,7 @@ function LoginFormContent() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center scale-105"
+          className="object-cover object-center scale-105 opacity-25"
         />
         {/* Multi-layer gradient mask: creates a rich cinematic dark theme with 100% text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B1221]/80 via-[#0F172A]/75 to-[#0B1221]/90 backdrop-blur-[2px]" />
@@ -258,7 +258,7 @@ function LoginFormContent() {
                 type="submit"
                 disabled={isLoading}
                 className="
-                  w-full py-3.5 rounded-xl font-bold text-sm text-white
+                  w-full py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white
                   bg-gradient-to-r from-[#0F172A] via-[#1e3a8a] to-[#2563EB]
                   shadow-[0_4px_16px_rgba(15,23,42,0.30)]
                   hover:shadow-[0_8px_24px_rgba(30,58,138,0.40)]

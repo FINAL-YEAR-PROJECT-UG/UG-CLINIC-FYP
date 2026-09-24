@@ -26,14 +26,28 @@ Students can book medical appointments, access health resources, and communicate
 
 ## Project Overview
 
-UG-CLINIC-FYP is a full-stack web application built for the University of Ghana Student Clinic. It streamlines the healthcare experience for students and staff with:
+UG-CLINIC-FYP is a full-stack web application built for the University of Ghana Student Clinic. It streamlines the healthcare experience for students and clinic staff.
 
-- 📅 **Online Appointment Booking** — multi-step wizard with real-time time slot availability, doctor assignment, reschedule/cancel flows, and downloadable confirmation receipts.
-- 🏥 **Staff Operations Portal** — dedicated management interface for receptionists, doctors, and clinic admins to manage appointments, live doctor availability, student records, and health resources.
-- 📚 **Health Resources Library** — searchable, categorised repository of verified health guides, campus clinic news, and downloadable wellness literature.
-- 🔐 **Hardened Authentication** — JWT-based session architecture, email/SMS OTP verification, customizable security questions, emergency backup recovery codes, and staff 2FA security.
-- 📣 **Smart Notifications** — in-app and email alert mechanisms for appointment confirmations, changes, and clinic broadcasts.
-- 🎨 **Campus-Themed UI** — modern, accessible interface incorporating University of Ghana branding, responsive dark/light styling, and fluid motion design.
+### ✨ Key Added Features
+- 📅 **Interactive Appointment Booking Wizard (`/demo-booking`)**: Multi-step booking workflow with real-time service selection, dynamic doctor assignment, live date and time slot availability checks, patient reason/notes entry, and instant printable confirmation slips.
+- 🔄 **Student Appointment Self-Service & Rescheduling**: Full reschedule and cancellation workflows directly from the student dashboard (`/dashboard`) with real-time appointment status updates.
+- 🏥 **Staff Clinical & Administrative Portal (`/staff/*`)**: 
+  - **Executive KPI Dashboard (`/staff/overview`)**: Real-time operational statistics on clinic visits, pending bookings, active doctors, and rapid doctor availability toggle (`AVAILABLE` / `BUSY`).
+  - **Queue Management (`/staff/appointments`)**: Dynamic queue sorting, status transitions (`CONFIRMED`, `COMPLETED`, `CANCELLED`), and automated or manual doctor assignment.
+  - **Student Medical Registry (`/staff/students`)**: Searchable student directory with comprehensive visit histories.
+  - **Health Resource Management (`/staff/resources`)**: Health article and wellness document publisher.
+- 🔐 **Enhanced Authentication & 2-Factor Gate**: Multi-layer security featuring student ID validation, password recovery (Email/SMS OTP, security questions, emergency backup recovery codes), and mandatory 2FA gateway for clinic staff (`/staff-portal-access`).
+- ⏱️ **Automatic Session Timeout & Inactivity Guards**: Proactive idle detection warnings (`InactivityWarning`) and session cleanup protecting student medical data on shared campus computers.
+- 📱 **Mobile & Responsive Refinements**: Fully optimized responsive touch targets, mobile input scaling, and responsive modal dialogues across booking, dashboards, and authentication forms.
+- 🎥 **Campus Ambient Motion Design**: Subtle, low-opacity background video banners and atmospheric University of Ghana campus visual motifs across public pages.
+- 📚 **Public Health Knowledge Base & Support**: Categorized health literature repository (`/resources`), interactive contact directory (`/contact`), emergency hotline lookup, and compliance documentation (`/privacy`, `/terms`, `/accessibility`).
+
+### 🗑️ Removed & Streamlined Features
+- 🚫 **Redundant Service Link Icons**: Removed cluttered icon wrappers from the medical services page (`/services`) to deliver a cleaner, distraction-free typography and card presentation.
+- 🚫 **Unused Submodule Dependencies**: Purged legacy external Git submodules to eliminate repo bloat and prevent deployment synchronization issues.
+- 🚫 **Heavyweight Dynamic Imports**: Replaced redundant lazy-import wrappers in `DynamicImports.tsx` with standard tree-shakeable modular imports, reducing initial bundle overhead.
+- 🚫 **Deprecated Staff & Session API Endpoints**: Trimmed obsolete session revocation and redundant placeholder requests from Postman collections and routing in favor of unified JWT refresh rotation and 2FA verification.
+- 🚫 **Static Appointment Mockups**: Phased out static mock data across booking and overview pages in favor of live, reactive state and synchronized backend endpoints.
 
 ---
 
@@ -41,56 +55,56 @@ UG-CLINIC-FYP is a full-stack web application built for the University of Ghana 
 
 ### Frontend
 
-| Technology | Version | Purpose |
-|---|---|---|
-| Next.js | **16.2.9** | React framework with App Router (Turbopack) |
-| React | **19.x** | Core UI component library |
-| TypeScript | **5.9.3** | Strict type safety and autocompletion |
-| Tailwind CSS | **4.x** | Utility-first styling with PostCSS integration |
-| Zustand | **5.x** | Client state management (auth store, sidebar state) |
-| TanStack Query | **5.x** | Asynchronous server state caching and synchronisation |
-| React Hook Form | **7.x** | Form state management and submission lifecycle |
-| Zod | **4.x** | Type-safe form validation and runtime schema assertion |
-| Framer Motion | **12.x** | Micro-animations and page transitions |
-| Radix UI | Latest | Accessible, unstyled UI primitives (Dialogs, Select, Tabs, etc.) |
-| Lucide React | **1.x** | Clean, accessible iconography |
-| Axios | **1.x** | HTTP request client with interceptor support |
-| date-fns | **4.x** | Date manipulation, slot calculations, and formatting |
-| Sonner | **2.x** | Modern toast alert system |
-| next-themes | **0.4.x** | Light / dark theme support |
+| Technology | Purpose |
+|---|---|
+| Next.js | React framework with App Router (Turbopack) |
+| React | Core UI component library |
+| TypeScript | Strict type safety and autocompletion |
+| Tailwind CSS | Utility-first styling with PostCSS integration |
+| Zustand | Client state management (auth store, sidebar state) |
+| TanStack Query | Asynchronous server state caching and synchronisation |
+| React Hook Form | Form state management and submission lifecycle |
+| Zod | Type-safe form validation and runtime schema assertion |
+| Framer Motion | Micro-animations and page transitions |
+| Radix UI | Accessible, unstyled UI primitives (Dialogs, Select, Tabs, etc.) |
+| Lucide React | Clean, accessible iconography |
+| Axios | HTTP request client with interceptor support |
+| date-fns | Date manipulation, slot calculations, and formatting |
+| Sonner | Modern toast alert system |
+| next-themes | Light / dark theme support |
 
 ### Backend
 
-| Technology | Version | Purpose |
-|---|---|---|
-| Node.js | **20.x LTS** | JavaScript / TypeScript runtime |
-| Express.js | **4.x** | HTTP web framework and REST API routing |
-| TypeScript | **5.x** | Static typing and interfaces |
-| Prisma | **7.x** | Type-safe ORM and PostgreSQL client |
-| Zod | **3.x** | Request body and query parameter validation |
-| jsonwebtoken | **9.x** | Signed JWT access and refresh tokens |
-| bcrypt | **6.x** | Salted password hashing (12 rounds) |
-| Helmet | **8.x** | Secure HTTP header protection |
-| express-rate-limit | **8.x** | IP-based request rate limiting |
-| express-slow-down | **3.x** | Gradual delay on high request frequencies |
-| ioredis | **5.x** | Redis client for caching and session invalidation |
-| Bull | **4.x** | Asynchronous job queue processing |
-| node-cron | **4.x** | Scheduled cron tasks (reminder dispatches, session cleanups) |
-| multer | **2.x** | Multipart file and asset upload processing |
-| sharp | **0.35.x** | High-performance image transformation |
-| nodemailer | **8.x** | Transactional email delivery (SMTP) |
-| twilio | **6.x** | SMS OTP gateway integration |
-| winston | **3.x** | Structured application logging |
-| morgan | **1.x** | HTTP request logging |
+| Technology | Purpose |
+|---|---|
+| Node.js | JavaScript / TypeScript runtime |
+| Express.js | HTTP web framework and REST API routing |
+| TypeScript | Static typing and interfaces |
+| Prisma | Type-safe ORM and PostgreSQL client |
+| Zod | Request body and query parameter validation |
+| jsonwebtoken | Signed JWT access and refresh tokens |
+| bcrypt | Salted password hashing (12 rounds) |
+| Helmet | Secure HTTP header protection |
+| express-rate-limit | IP-based request rate limiting |
+| express-slow-down | Gradual delay on high request frequencies |
+| ioredis | Redis client for caching and session invalidation |
+| Bull | Asynchronous job queue processing |
+| node-cron | Scheduled cron tasks (reminder dispatches, session cleanups) |
+| multer | Multipart file and asset upload processing |
+| sharp | High-performance image transformation |
+| nodemailer | Transactional email delivery (SMTP) |
+| twilio | SMS OTP gateway integration |
+| winston | Structured application logging |
+| morgan | HTTP request logging |
 
 ### Database & Infrastructure
 
-| Technology | Version | Purpose |
-|---|---|---|
-| PostgreSQL | **16.x** | Primary ACID-compliant relational database |
-| Redis | **7.x** | High-throughput in-memory cache and queue storage |
-| Docker | **24.x** | Multi-service container packaging |
-| Docker Compose | **2.x** | Local and staging orchestration |
+| Technology | Purpose |
+|---|---|
+| PostgreSQL | Primary ACID-compliant relational database |
+| Redis | High-throughput in-memory cache and queue storage |
+| Docker | Multi-service container packaging |
+| Docker Compose | Local and staging orchestration |
 
 ---
 
@@ -98,11 +112,11 @@ UG-CLINIC-FYP is a full-stack web application built for the University of Ghana 
 
 Ensure you have the following installed on your development machine:
 
-- **Node.js**: `v20.x LTS` or higher (`node --version`)
-- **npm**: `v10.x` or higher (`npm --version`)
-- **PostgreSQL**: `v16.x` (`psql --version`)
-- **Redis**: `v7.x` (`redis-cli --version`)
-- **Git**: Latest version (`git --version`)
+- **Node.js**: Active LTS recommended (`node --version`)
+- **npm** (`npm --version`)
+- **PostgreSQL** (`psql --version`)
+- **Redis** (`redis-cli --version`)
+- **Git** (`git --version`)
 - **Docker & Docker Compose**: *(Optional, for containerized run)* (`docker compose version`)
 
 ---
@@ -264,7 +278,7 @@ UG-CLINIC-FYP/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── frontend/                       # Next.js 16 Web Application
+├── frontend/                       # Next.js Web Application
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── (auth)/             # Login, Register, Forgot Password, Reset Password
@@ -333,7 +347,7 @@ UG-CLINIC-FYP/
 
 ## API Reference
 
-All backend API routes are versioned under `/api/v1`.
+All backend API routes are organized under the `/api/v1` base route.
 
 ### 🔑 Authentication (`/api/v1/auth`)
 | Method | Endpoint | Description | Access |

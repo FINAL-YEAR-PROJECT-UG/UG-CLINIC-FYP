@@ -505,7 +505,7 @@ function BookingContent() {
             alt="University of Ghana Campus Entrance"
             fill
             sizes="100vw"
-            className="object-cover object-center scale-105"
+            className="object-cover object-center scale-105 opacity-25"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[#0F172A]/92 via-[#0F172A]/85 to-[#1e3a8a]/90 backdrop-blur-[1px]" />
         </div>
@@ -589,11 +589,11 @@ function BookingContent() {
 
         {/* ── STEP 1: SERVICE SELECTION (Hidden on print) ── */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm print:hidden">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Choose Clinical Service</h2>
-            <p className="text-xs text-gray-500 mb-6">Select the type of health care service you need today.</p>
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm print:hidden">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">Choose Clinical Service</h2>
+            <p className="text-xs text-gray-500 mb-4 sm:mb-6">Select the type of health care service you need today.</p>
 
-            <div className="flex gap-2 mb-6 flex-wrap">
+            <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 flex-wrap">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.key}
@@ -602,7 +602,7 @@ function BookingContent() {
                     setError(null);
                     setSelectedCategory(cat.key);
                   }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase transition-all ${
+                  className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold uppercase transition-all ${
                     selectedCategory === cat.key
                       ? 'bg-[#1e3a8a] text-white shadow-xs'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -613,7 +613,7 @@ function BookingContent() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
               {filteredServices.map((svc) => {
                 const IconComp = svc.icon;
                 const isSelected = selectedService.id === svc.id;
@@ -626,7 +626,7 @@ function BookingContent() {
                       setError(null);
                       setSelectedService(svc);
                     }}
-                    className={`p-5 rounded-2xl border-2 transition-all text-left flex flex-col justify-between ${
+                    className={`p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all text-left flex flex-col justify-between ${
                       isSelected
                         ? isDental
                           ? 'border-amber-400 bg-amber-50/40 shadow-md ring-2 ring-amber-100'
@@ -637,9 +637,9 @@ function BookingContent() {
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-2.5 sm:mb-3">
                         <div
-                          className={`p-2.5 rounded-xl ${
+                          className={`p-2 sm:p-2.5 rounded-xl ${
                             isSelected
                               ? isDental
                                 ? 'bg-amber-600 text-white'
@@ -649,10 +649,10 @@ function BookingContent() {
                               : 'bg-blue-100 text-[#1e3a8a]'
                           }`}
                         >
-                          <IconComp className="w-5 h-5" />
+                          <IconComp className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                          className={`text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded ${
                             isDental
                               ? 'text-amber-800 bg-amber-100/90 border border-amber-200'
                               : 'text-gray-500 bg-gray-100'
@@ -661,7 +661,7 @@ function BookingContent() {
                           {isDental ? '📍 Main Hospital Only' : `⏱ ${svc.duration}`}
                         </span>
                       </div>
-                      <h3 className="font-bold text-gray-900 text-base mb-1">{svc.title}</h3>
+                      <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1">{svc.title}</h3>
                       <p className="text-xs text-gray-600 leading-relaxed">{svc.desc}</p>
 
                       {isDental && (
@@ -675,7 +675,7 @@ function BookingContent() {
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#0F172A] hover:bg-[#1e3a8a] px-3.5 py-1.5 rounded-lg transition-colors shadow-2xs"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-[#0F172A] hover:bg-[#1e3a8a] px-3 py-1.5 rounded-lg transition-colors shadow-2xs"
                           >
                             <Navigation className="w-3.5 h-3.5 text-blue-200" />
                             Get Directions on Google Maps
@@ -683,7 +683,7 @@ function BookingContent() {
                         </div>
                       )}
                     </div>
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div className="mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-gray-100 flex items-center justify-between">
                       <span
                         className={`text-xs font-semibold ${
                           isDental ? 'text-amber-800' : 'text-[#1e3a8a]'
@@ -691,15 +691,15 @@ function BookingContent() {
                       >
                         {isSelected
                           ? isDental
-                            ? '📍 Main Hospital Service Selected'
+                            ? '📍 Main Hospital Selected'
                             : '✓ Selected'
                           : isDental
-                          ? 'Click to view hospital details'
+                          ? 'Click for details'
                           : 'Click to select'}
                       </span>
                       {isSelected && (
                         <CheckCircle2
-                          className={`w-5 h-5 ${
+                          className={`w-4 h-4 sm:w-5 sm:h-5 ${
                             isDental ? 'text-amber-600' : 'text-[#1e3a8a]'
                           }`}
                         />
@@ -711,8 +711,8 @@ function BookingContent() {
             </div>
 
             {selectedService.id === 'dental' ? (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2.5 text-xs text-amber-900 bg-amber-50 border border-amber-200 px-4 py-3 rounded-xl w-full sm:w-auto flex-1">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2 text-xs text-amber-900 bg-amber-50 border border-amber-200 px-3.5 py-2.5 rounded-xl w-full sm:w-auto flex-1">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                   <span>
                     Dental checkups are only available at the Main UG Hospital. Please go to the hospital directly for oral health care.
@@ -722,10 +722,10 @@ function BookingContent() {
                   href="https://www.google.com/maps?q=5.65145873649435,-0.17833193194224153"
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full sm:w-auto px-6 py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-[#1e3a8a] transition-colors shadow-sm flex items-center justify-center gap-2 shrink-0"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-[#1e3a8a] transition-colors shadow-sm flex items-center justify-center gap-2 shrink-0"
                 >
-                  <Navigation className="w-4 h-4 text-blue-300" />
-                  Open Hospital in Google Maps
+                  <Navigation className="w-3.5 h-3.5 text-blue-300" />
+                  Open Hospital in Maps
                 </a>
               </div>
             ) : (
@@ -736,9 +736,11 @@ function BookingContent() {
                     setError(null);
                     setStep(2);
                   }}
-                  className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm flex items-center gap-2"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 transition-colors shadow-sm flex items-center justify-center gap-2"
                 >
-                  Continue to Date & Time <ArrowRight className="w-4 h-4" />
+                  <span className="hidden sm:inline">Continue to Date & Time</span>
+                  <span className="sm:hidden">Continue</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
@@ -747,13 +749,13 @@ function BookingContent() {
 
         {/* ── STEP 2: DATE & TIME (Hidden on print) ── */}
         {step === 2 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm print:hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm print:hidden">
             {isReschedule && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2.5 text-[#1e3a8a]">
-                  <Clock className="w-5 h-5 shrink-0" />
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-2.5 text-[#1e3a8a]">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                   <div>
-                    <p className="font-extrabold text-sm text-[#0F172A]">Rescheduling Appointment</p>
+                    <p className="font-extrabold text-xs sm:text-sm text-[#0F172A]">Rescheduling Appointment</p>
                     <p className="text-[#334155]">
                       Service: <strong className="text-[#1e3a8a]">{selectedService.title}</strong>
                     </p>
@@ -761,45 +763,45 @@ function BookingContent() {
                 </div>
                 <Link
                   href="/dashboard"
-                  className="text-xs font-bold text-gray-500 hover:text-red-600 px-3 py-1.5 border border-gray-200 bg-white rounded-lg transition-colors shrink-0"
+                  className="text-xs font-bold text-gray-500 hover:text-red-600 px-2.5 py-1 border border-gray-200 bg-white rounded-lg transition-colors shrink-0"
                 >
-                  Cancel Reschedule
+                  Cancel
                 </Link>
               </div>
             )}
 
-            <h2 className="text-lg font-bold text-gray-900 mb-2">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
               {isReschedule ? 'Select New Date & Time Slot' : 'Select Date & Time Slot'}
             </h2>
-            <p className="text-xs text-gray-500 mb-6">
+            <p className="text-xs text-gray-500 mb-4 sm:mb-6">
               {isReschedule
-                ? 'Pick your preferred date and time, then click the button below to reschedule instantly.'
+                ? 'Pick your preferred date and time, then click confirm to reschedule instantly.'
                 : 'Choose a date for your visit to view available clinic time slots.'}
             </p>
 
             {/* Same-day Booking Warning if student already booked on this date */}
             {hasExistingBookingOnDate && !isReschedule && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-3 shadow-xs">
-                <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div className="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-start gap-2.5 sm:gap-3 shadow-xs">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-bold text-amber-950 text-sm">You already have an appointment on this date</p>
+                  <p className="font-bold text-amber-950 text-xs sm:text-sm">You already have an appointment on this date</p>
                   <p className="mt-0.5 leading-relaxed text-amber-900">
                     You have an active appointment scheduled at <strong>{existingTimeSlotOnDate || 'this date'}</strong>.
-                    Students may only book one appointment per day. Please select a different date, or manage/reschedule your existing appointment from the dashboard.
+                    Students may only book one appointment per day. Please select a different date, or manage your appointment from the dashboard.
                   </p>
                 </div>
               </div>
             )}
 
             {/* General Schedule Banner */}
-            <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-start gap-3 shadow-xs">
-              <Clock className="w-5 h-5 text-[#1e3a8a] shrink-0 mt-0.5" />
+            <div className="mb-4 sm:mb-6 p-3.5 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-start gap-2.5 sm:gap-3 shadow-xs">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#1e3a8a] shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="font-bold text-slate-900 text-sm">General Appointments Schedule</p>
+                <p className="font-bold text-slate-900 text-xs sm:text-sm">General Appointments Schedule</p>
                 <p><span className="font-semibold text-slate-800">Operating Days:</span> Monday to Friday</p>
-                <div className="flex flex-wrap gap-4 text-slate-700 pt-0.5">
-                  <span><strong className="text-[#1e3a8a]">Morning Session:</strong> 8:30 AM – 12:00 PM</span>
-                  <span><strong className="text-[#1e3a8a]">Afternoon Session:</strong> 1:30 PM – 4:00 PM</span>
+                <div className="flex flex-wrap gap-2 sm:gap-4 text-slate-700 pt-0.5">
+                  <span><strong className="text-[#1e3a8a]">Morning:</strong> 8:30 AM – 12:00 PM</span>
+                  <span><strong className="text-[#1e3a8a]">Afternoon:</strong> 1:30 PM – 4:00 PM</span>
                 </div>
                 <p className="text-[11px] text-amber-800 font-semibold pt-1">
                   NB: Weekend & Public Holidays: Emergency Services Only.
@@ -809,15 +811,15 @@ function BookingContent() {
 
             {/* All slots passed on selected date notice */}
             {areAllTodaySlotsPast && (
-              <div className="mb-6 p-4.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
-                    <Clock className="w-5 h-5" />
+              <div className="mb-4 sm:mb-6 p-3.5 sm:p-4.5 bg-amber-50 border-2 border-amber-300 rounded-xl sm:rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-amber-950">All Clinic Time Slots for Today Have Passed</p>
+                    <p className="font-bold text-xs sm:text-sm text-amber-950">All Clinic Time Slots for Today Have Passed</p>
                     <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
-                      General clinic hours for today (8:30 AM – 4:00 PM) have ended. Please select a different day (e.g. tomorrow or next working day) to book your appointment.
+                      General clinic hours for today have ended. Please pick another day to book.
                     </p>
                   </div>
                 </div>
@@ -828,9 +830,9 @@ function BookingContent() {
                     setBookingDate(nextDay);
                     setError(null);
                   }}
-                  className="shrink-0 px-4 py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="shrink-0 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Calendar className="w-4 h-4 text-blue-200" />
+                  <Calendar className="w-3.5 h-3.5 text-blue-200" />
                   Book for {getNextWorkingDate(new Date()).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
                 </button>
               </div>
@@ -838,15 +840,15 @@ function BookingContent() {
 
             {/* Fully booked on future weekday notice */}
             {!isSelectedDateToday && !isSelectedDateWeekend && !isSelectedDatePast && availableSlotsOnDate.length === 0 && (
-              <div className="mb-6 p-4.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
-                    <AlertCircle className="w-5 h-5" />
+              <div className="mb-4 sm:mb-6 p-3.5 sm:p-4.5 bg-amber-50 border-2 border-amber-300 rounded-xl sm:rounded-2xl text-amber-950 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 animate-in fade-in duration-200">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800 mt-0.5">
+                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-amber-950">All Time Slots are Fully Booked</p>
+                    <p className="font-bold text-xs sm:text-sm text-amber-950">All Time Slots are Fully Booked</p>
                     <p className="text-xs text-amber-900 mt-0.5 leading-relaxed">
-                      There are no remaining open appointments on {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}. Please select another date.
+                      There are no remaining open appointments on {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}.
                     </p>
                   </div>
                 </div>
@@ -857,19 +859,19 @@ function BookingContent() {
                     setBookingDate(nextDay);
                     setError(null);
                   }}
-                  className="shrink-0 px-4 py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="shrink-0 px-3.5 sm:px-4 py-2 sm:py-2.5 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Calendar className="w-4 h-4 text-blue-200" />
-                  Check Next Day ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
+                  <Calendar className="w-3.5 h-3.5 text-blue-200" />
+                  Next Day ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
                 </button>
               </div>
             )}
 
             {isSelectedDateWeekend && (
-              <div className="mb-6 p-4.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-                  <span>General appointments are available Monday to Friday only. Weekends & Public Holidays are reserved for Emergency Services. Please choose a weekday.</span>
+              <div className="mb-4 sm:mb-6 p-3.5 sm:p-4.5 bg-amber-50 border border-amber-200 rounded-xl sm:rounded-2xl text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <span>General appointments are available Monday to Friday only. Weekends & Holidays are for Emergency Services.</span>
                 </div>
                 <button
                   type="button"
@@ -878,16 +880,16 @@ function BookingContent() {
                     setBookingDate(nextDay);
                     setError(null);
                   }}
-                  className="shrink-0 px-4 py-2 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="shrink-0 px-3.5 sm:px-4 py-2 bg-[#1e3a8a] text-white hover:bg-blue-900 text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Calendar className="w-4 h-4 text-blue-200" />
-                  Pick Next Weekday ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
+                  <Calendar className="w-3.5 h-3.5 text-blue-200" />
+                  Next Weekday ({getNextWorkingDate(bookingDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
                 </button>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+              <div className="space-y-3 sm:space-y-4">
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
                   Appointment Date *
                 </label>
@@ -899,9 +901,9 @@ function BookingContent() {
                     setError(null);
                     setBookingDate(parseDateInput(e.target.value));
                   }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-[#1e3a8a]"
+                  className="w-full px-3.5 py-2.5 sm:py-3 border border-gray-300 rounded-xl text-xs sm:text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-[#1e3a8a]"
                 />
-                <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-gray-700 space-y-1">
+                <div className="p-3 sm:p-4 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-gray-700 space-y-1">
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-[#1e3a8a]">Selected Visit Date:</p>
                     {isSelectedDateToday && (
@@ -910,7 +912,7 @@ function BookingContent() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-extrabold text-gray-900">
+                  <p className="text-xs sm:text-sm font-extrabold text-gray-900">
                     {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
@@ -925,7 +927,7 @@ function BookingContent() {
                         setError(null);
                         setBookingDate(getNextWorkingDate(new Date()));
                       }}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-semibold text-gray-700 transition-colors flex items-center gap-1.5"
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/40 text-xs font-semibold text-gray-700 transition-colors flex items-center gap-1.5"
                     >
                       <Calendar className="w-3.5 h-3.5 text-[#1e3a8a]" />
                       Next Working Day ({getNextWorkingDate(new Date()).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })})
@@ -935,12 +937,12 @@ function BookingContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2 sm:mb-3">
                   Available Time Slots *
                 </label>
 
                 {isSelectedDateWeekend ? (
-                  <div className="p-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500 space-y-2">
+                  <div className="p-4 sm:p-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-500 space-y-2">
                     <p className="font-bold text-gray-700">No general appointment slots on weekends.</p>
                     <p>General clinic consultations run Monday to Friday.</p>
                     <button
@@ -956,7 +958,7 @@ function BookingContent() {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
                       <span className="block text-[11px] font-bold uppercase text-[#1e3a8a] mb-2 tracking-wide">
                         Morning Session (8:30 AM – 12:00 PM)
@@ -977,7 +979,7 @@ function BookingContent() {
                                 setError(null);
                                 setBookingTime(slot);
                               }}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all ${
+                              className={`py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs font-semibold sm:font-bold rounded-lg sm:rounded-xl border transition-all ${
                                 isDisabled
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
                                   : isSelected
@@ -1021,7 +1023,7 @@ function BookingContent() {
                                 setError(null);
                                 setBookingTime(slot);
                               }}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all ${
+                              className={`py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs font-semibold sm:font-bold rounded-lg sm:rounded-xl border transition-all ${
                                 isDisabled
                                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed line-through'
                                   : isSelected
@@ -1049,7 +1051,7 @@ function BookingContent() {
 
                 {/* Inline alerts for no available slots */}
                 {!isReschedule && !isSelectedDateWeekend && !hasAvailableTimeSlot && (
-                  <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 shadow-2xs" role="alert">
+                  <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 shadow-2xs" role="alert">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
                     <div>
                       <p className="font-bold text-amber-950">
@@ -1066,11 +1068,11 @@ function BookingContent() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
               {isReschedule ? (
                 <Link
                   href="/dashboard"
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100"
+                  className="px-3.5 sm:px-5 py-2 sm:py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100 shrink-0 text-center whitespace-nowrap"
                 >
                   Cancel
                 </Link>
@@ -1081,7 +1083,7 @@ function BookingContent() {
                     setError(null);
                     setStep(1);
                   }}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100"
+                  className="px-3.5 sm:px-5 py-2 sm:py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100 shrink-0 flex items-center justify-center gap-1 whitespace-nowrap"
                 >
                   ← Back
                 </button>
@@ -1092,7 +1094,7 @@ function BookingContent() {
                   type="button"
                   disabled={submitting || !isSelectedTimeSlotValid}
                   onClick={handleRescheduleSubmit}
-                  className={`px-8 py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
+                  className={`px-4 sm:px-8 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
                     submitting || !isSelectedTimeSlotValid
                       ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
@@ -1100,7 +1102,7 @@ function BookingContent() {
                 >
                   {submitting ? (
                     <>
-                      <LoadingSpinner size={16} /> Rescheduling…
+                      <LoadingSpinner size={14} /> Rescheduling…
                     </>
                   ) : (
                     <>Confirm Reschedule ✓</>
@@ -1134,20 +1136,31 @@ function BookingContent() {
                     setError(null);
                     setStep(3);
                   }}
-                  className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+                  className={`px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap text-center ${
                     !isSelectedTimeSlotValid
                       ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none'
                       : 'bg-[#1e3a8a] text-white hover:bg-blue-900'
                   }`}
                 >
-                  {areAllTodaySlotsPast
-                    ? 'All Today’s Slots Passed — Pick Another Day'
-                    : !hasAvailableTimeSlot
-                    ? 'No Slots Available — Change Date'
-                    : !bookingTime
-                    ? 'Select an Available Time Slot'
-                    : 'Continue to Doctor & Details'}
-                  {isSelectedTimeSlotValid && <ArrowRight className="w-4 h-4" />}
+                  <span className="hidden sm:inline">
+                    {areAllTodaySlotsPast
+                      ? 'All Today’s Slots Passed — Pick Another Day'
+                      : !hasAvailableTimeSlot
+                      ? 'No Slots Available — Change Date'
+                      : !bookingTime
+                      ? 'Select an Available Time Slot'
+                      : 'Continue to Doctor & Details'}
+                  </span>
+                  <span className="sm:hidden">
+                    {areAllTodaySlotsPast
+                      ? 'Slots Passed'
+                      : !hasAvailableTimeSlot
+                      ? 'No Slots'
+                      : !bookingTime
+                      ? 'Select Time Slot'
+                      : 'Continue'}
+                  </span>
+                  {isSelectedTimeSlotValid && <ArrowRight className="w-3.5 h-3.5 shrink-0" />}
                 </button>
               )}
             </div>
@@ -1156,20 +1169,20 @@ function BookingContent() {
 
         {/* ── STEP 3: DOCTOR & REASON (Hidden on print) ── */}
         {step === 3 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm print:hidden">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Doctor Preference & Visit Reason</h2>
-            <p className="text-xs text-gray-500 mb-6">Select a specific doctor or leave empty for auto-assignment by clinic staff.</p>
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm print:hidden">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">Doctor Preference & Visit Reason</h2>
+            <p className="text-xs text-gray-500 mb-4 sm:mb-6">Select a specific doctor or leave empty for auto-assignment by clinic staff.</p>
 
-            <div className="space-y-6 mb-8">
+            <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
                   Doctor Selection (Optional)
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                   <button
                     type="button"
                     onClick={() => setSelectedDoctorId('')}
-                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all text-left ${
+                    className={`p-3 sm:p-3.5 rounded-xl border-2 cursor-pointer transition-all text-left ${
                       selectedDoctorId === ''
                         ? 'border-[#1e3a8a] bg-blue-50/50 font-bold'
                         : 'border-gray-200 hover:border-gray-300'
@@ -1183,7 +1196,7 @@ function BookingContent() {
                       type="button"
                       key={doc.id}
                       onClick={() => setSelectedDoctorId(doc.id)}
-                      className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between text-left ${
+                      className={`p-3 sm:p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between text-left ${
                         selectedDoctorId === doc.id
                           ? 'border-[#1e3a8a] bg-blue-50/50 font-bold'
                           : 'border-gray-200 hover:border-gray-300'
@@ -1212,7 +1225,7 @@ function BookingContent() {
                   placeholder="e.g. Headache and fever for 2 days / Routine medical check"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#1e3a8a]"
+                  className="w-full px-3 sm:px-3.5 py-2 sm:py-2.5 border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#1e3a8a]"
                 />
               </div>
 
@@ -1225,19 +1238,19 @@ function BookingContent() {
                   placeholder="Any allergies, previous medications, or specific details for the doctor..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-[#1e3a8a]"
+                  className="w-full px-3 sm:px-3.5 py-2 sm:py-2.5 border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#1e3a8a]"
                 />
               </div>
             </div>
 
-            <div className="flex justify-between pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => {
                   setError(null);
                   setStep(2);
                 }}
-                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100"
+                className="px-3.5 sm:px-5 py-2 sm:py-2.5 border border-gray-300 text-gray-700 rounded-xl text-xs font-semibold hover:bg-gray-100 shrink-0 whitespace-nowrap"
               >
                 ← Back
               </button>
@@ -1245,9 +1258,18 @@ function BookingContent() {
                 type="button"
                 onClick={handleConfirmBooking}
                 disabled={submitting}
-                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="px-3.5 sm:px-6 py-2 sm:py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0 whitespace-nowrap"
               >
-                {submitting ? <LoadingSpinner size={16} /> : 'Complete & Confirm Booking ✓'}
+                {submitting ? (
+                  <>
+                    <LoadingSpinner size={14} /> Submitting…
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Complete & Confirm Booking ✓</span>
+                    <span className="sm:hidden">Confirm Booking ✓</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1257,16 +1279,16 @@ function BookingContent() {
         {step === 4 && (
           <div>
             {/* Screen Confirmation Card (Hidden on print) */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-xl text-center print:hidden">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200">
-                <Check className="w-8 h-8" />
+            <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-5 sm:p-8 shadow-xl text-center print:hidden">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-emerald-200">
+                <Check className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
-              <span className="px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-widest bg-emerald-100 text-emerald-800">
+              <span className="px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-extrabold uppercase tracking-widest bg-emerald-100 text-emerald-800">
                 {confirmedStatus === 'CONFIRMED' || confirmedStatus === 'RESCHEDULED'
                   ? 'Booking Confirmed'
                   : 'Awaiting Doctor Assignment'}
               </span>
-              <h2 className="text-2xl font-extrabold text-gray-900 mt-3">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-2 sm:mt-3">
                 {isReschedule
                   ? 'Appointment Rescheduled Successfully!'
                   : confirmedStatus === 'CONFIRMED'
@@ -1277,12 +1299,12 @@ function BookingContent() {
                 Your appointment has been registered in the UG Health Services system. Please arrive 10 minutes before your scheduled slot.
               </p>
 
-              <div className="my-6 p-4 bg-gray-50 rounded-2xl border border-gray-200 max-w-sm mx-auto">
-                <p className="text-[11px] uppercase tracking-wider text-gray-500 font-bold">Booking Reference Number</p>
-                <p className="text-2xl font-extrabold text-[#1e3a8a] tracking-wider mt-1">{confirmedReference}</p>
+              <div className="my-4 sm:my-6 p-3 sm:p-4 bg-gray-50 rounded-xl sm:rounded-2xl border border-gray-200 max-w-sm mx-auto">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-500 font-bold">Booking Reference Number</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-[#1e3a8a] tracking-wider mt-0.5">{confirmedReference}</p>
               </div>
 
-              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 max-w-md mx-auto text-left text-xs space-y-2.5 mb-8">
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl sm:rounded-2xl p-4 sm:p-5 max-w-md mx-auto text-left text-xs space-y-2 sm:space-y-2.5 mb-6 sm:mb-8">
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-semibold">Service:</span>
                   <span className="font-bold text-gray-900 truncate max-w-[200px]">{selectedService.title}</span>
@@ -1307,17 +1329,17 @@ function BookingContent() {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-3">
+              <div className="flex flex-col sm:flex-row justify-center gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-5 py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-[#1e3a8a] transition-all flex items-center gap-2 shadow-sm"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 bg-[#0F172A] text-white rounded-xl text-xs font-bold hover:bg-[#1e3a8a] transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
                   <Printer className="w-4 h-4 text-blue-200" /> Print Official Slip
                 </button>
                 <Link
                   href="/dashboard"
-                  className="px-6 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 shadow-sm"
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-2.5 bg-[#1e3a8a] text-white rounded-xl text-xs font-bold hover:bg-blue-900 shadow-sm flex items-center justify-center text-center"
                 >
                   Return to Dashboard
                 </Link>

@@ -138,7 +138,7 @@ export default function ForgotPasswordPage() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />
@@ -170,16 +170,14 @@ export default function ForgotPasswordPage() {
               const active = step === idx;
               return (
                 <div key={label} className="flex items-center gap-1.5 flex-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 transition-all duration-300 ${
-                    done ? 'bg-emerald-500 text-white' :
-                    active ? 'bg-[#0369A1] text-white ring-4 ring-[#0369A1]/20' :
-                    'bg-gray-100 text-gray-400'
-                  }`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 transition-all duration-300 ${done ? 'bg-emerald-500 text-white' :
+                      active ? 'bg-[#0369A1] text-white ring-4 ring-[#0369A1]/20' :
+                        'bg-gray-100 text-gray-400'
+                    }`}>
                     {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx}
                   </div>
-                  <span className={`text-[10px] font-bold truncate ${
-                    active ? 'text-[#0369A1]' : done ? 'text-emerald-600' : 'text-gray-400'
-                  }`}>{label}</span>
+                  <span className={`text-[10px] font-bold truncate ${active ? 'text-[#0369A1]' : done ? 'text-emerald-600' : 'text-gray-400'
+                    }`}>{label}</span>
                   {i < STEPS.length - 1 && (
                     <div className={`flex-1 h-px mx-1 ${done ? 'bg-emerald-300' : 'bg-gray-200'}`} />
                   )}

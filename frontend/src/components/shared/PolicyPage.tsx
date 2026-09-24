@@ -27,7 +27,7 @@ export default function PolicyPage({ title, breadcrumb, lastUpdated, intro, sect
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />

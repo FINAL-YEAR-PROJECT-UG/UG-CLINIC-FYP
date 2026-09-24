@@ -247,7 +247,7 @@ export default function VerifyOtpPage() {
                   value={digit}
                   onChange={(e) => handleChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-11 h-13 text-center text-xl font-bold text-[#1e3a8a] bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:bg-white transition-all"
+                  className="w-9 sm:w-11 h-11 sm:h-13 text-center text-lg sm:text-xl font-bold text-[#1e3a8a] bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:bg-white transition-all"
                 />
               ))}
             </div>
@@ -255,14 +255,17 @@ export default function VerifyOtpPage() {
             <button
               type="submit"
               disabled={verifying || digits.some((d) => d === '')}
-              className="w-full py-3 bg-[#1e3a8a] text-white font-bold text-sm rounded-xl hover:bg-blue-900 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+              className="w-full py-2.5 sm:py-3 bg-[#1e3a8a] text-white font-bold text-xs sm:text-sm rounded-xl hover:bg-blue-900 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
             >
               {verifying ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Verifying Security Code...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
                 </>
               ) : (
-                'Confirm & Authenticate Session'
+                <>
+                  <span className="hidden sm:inline">Confirm & Authenticate Session</span>
+                  <span className="sm:hidden">Confirm & Authenticate</span>
+                </>
               )}
             </button>
           </form>

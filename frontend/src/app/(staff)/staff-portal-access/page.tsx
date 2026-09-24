@@ -108,7 +108,7 @@ export default function StaffPortalAccessPage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center scale-105"
+          className="object-cover object-center scale-105 opacity-25"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/88 via-slate-900/80 to-slate-950/92 backdrop-blur-[2px]" />
       </div>
