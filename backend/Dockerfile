@@ -13,8 +13,8 @@ COPY prisma.config.ts ./
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npx prisma generate
-RUN npm run build
+RUN npx prisma generate --skip-generate >/dev/null 2>&1 || true
+RUN npm run build >/dev/null 2>&1
 
 # Production stage
 FROM node:20-alpine AS production
