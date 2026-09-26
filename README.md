@@ -49,6 +49,13 @@ UG-CLINIC-FYP is a full-stack web application built for the University of Ghana 
 - 🚫 **Deprecated Staff & Session API Endpoints**: Trimmed obsolete session revocation and redundant placeholder requests from Postman collections and routing in favor of unified JWT refresh rotation and 2FA verification.
 - 🚫 **Static Appointment Mockups**: Phased out static mock data across booking and overview pages in favor of live, reactive state and synchronized backend endpoints.
 
+### 🚀 Recent Enhancements
+- 📰 **News & Announcements System**: Added comprehensive news management system with category-based organization, priority levels, and staff publishing capabilities.
+- 🔒 **Enhanced Security Scanning**: Implemented automated security scanning for resource uploads with malicious content detection and flagging.
+- 🤖 **AI Operations Console**: Introduced natural language interface for clinic operations enabling batch doctor status updates and time slot management.
+- 📊 **Advanced Analytics**: Enhanced staff dashboard with daily trend analysis and comprehensive KPI metrics.
+- 🎯 **Service Resolution System**: Implemented intelligent service ID resolution with multiple fallback strategies including auto-creation of missing services.
+
 ---
 
 ## Tech Stack
@@ -402,6 +409,14 @@ All backend API routes are organized under the `/api/v1` base route.
 | `POST` | `/` | Upload new health resource document | Staff |
 | `PATCH` | `/:id` | Update metadata or category of a resource | Staff |
 | `DELETE` | `/:id` | Remove a resource item | Staff |
+
+### 📰 News & Announcements (`/api/v1/news`)
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| `GET` | `/` | List news posts with pagination and filtering | Public |
+| `POST` | `/` | Create news announcement | Staff |
+| `PATCH` | `/:id` | Update news post content | Staff |
+| `DELETE` | `/:id` | Delete news post | Staff |
 
 ---
 

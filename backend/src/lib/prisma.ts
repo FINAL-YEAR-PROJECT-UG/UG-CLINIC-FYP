@@ -12,7 +12,8 @@ function createPrismaClient(): PrismaClient {
   const pool =
     globalForPrisma.pool ??
     new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString:
+        process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL,
       max: 20,                    // Maximum number of connections
       idleTimeoutMillis: 30000,   // 30 seconds idle timeout
       connectionTimeoutMillis: 5000, // 5 seconds connection timeout
