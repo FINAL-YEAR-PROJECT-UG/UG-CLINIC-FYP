@@ -1,75 +1,81 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 
-// Protected booking routes that require authentication (NextAuth session)
-const PROTECTED_BOOKING_ROUTES = ['/demo-booking'];
+/**
+ * Custom proxy for route protection
+ * Since we're using custom session-based auth (not NextAuth),
+ * this proxy checks for session cookies and redirects unauthenticated users
+ */
 
-// Public routes that should never be redirected
-const PUBLIC_ROUTES = [
+const publicRoutes = [
   '/',
   '/about',
   '/services',
   '/resources',
   '/contact',
+  '/accessibility',
+  '/privacy',
+  '/terms',
   '/login',
   '/register',
   '/forgot-password',
-  '/staff-portal-access',
+  '/reset-password',
   '/verify-otp',
+  '/staff-portal-access',
+  '/demo-booking', // Allow public access to booking demo
 ];
 
-export async function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+const staffRoutes = [
+  '/staff',
+];
 
-  // Check if this is a protected booking route
-  const isProtectedBookingRoute = PROTECTED_BOOKING_ROUTES.some(route => 
-    pathname.startsWith(route)
-  );
+const studentRoutes = [
+  '/dashboard',
+];
 
-  // If not a protected route, allow access
-  if (!isProtectedBookingRoute) {
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Allow public routes without authentication
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
-  // For protected routes, check authentication
-  try {
-    const token = await getToken({ 
-      req,
-      secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production',
-    });
+  // Check for session cookie
+  const sessionCookie = request.cookies.get('connect.sid');
 
-    if (!token) {
-      // Allow request to proceed to client-side route guard (which uses Zustand auth store)
-      return NextResponse.next();
-    }
-
-    // Check if user has appropriate role for the route
-    const userRole = token.user?.role?.toUpperCase();
-
-    // Student booking route requires student role
-    if (pathname.startsWith('/demo-booking')) {
-      if (userRole !== 'STUDENT') {
-        // User is not student, redirect to appropriate route
-        const staffRoles = ['ADMIN', 'DOCTOR', 'RECEPTIONIST'];
-        if (userRole && staffRoles.includes(userRole)) {
-          return NextResponse.redirect(new URL('/staff/appointments', req.url));
-        }
-        return NextResponse.redirect(new URL('/login', req.url));
-      }
-    }
-
-    // Authenticated and has correct role - allow access
-    return NextResponse.next();
-
-  } catch (error) {
-    console.error('Proxy auth check failed:', error);
-    // On error, redirect to login for safety
-    return NextResponse.redirect(new URL('/login', req.url));
+  // If no session cookie and trying to access protected route, redirect to login
+  if (!sessionCookie) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
   }
+
+  // Check for staff routes
+  if (staffRoutes.some(route => pathname.startsWith(route))) {
+    // Staff routes need additional role checking via API
+    // This is a basic check; detailed role verification happens in API calls
+    return NextResponse.next();
+  }
+
+  // Check for student routes
+  if (studentRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  return NextResponse.next();
 }
 
-// Configure which routes the proxy should run on
 export const config = {
-  matcher: ['/demo-booking/:path*'],
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - api routes (handled by backend)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+  ],
 };

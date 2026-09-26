@@ -51,20 +51,22 @@ function LoginFormContent() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await api.post('/auth/login', {
-        username: data.username.trim(),
-        password: data.password,
-      });
+      const response = await api.post(
+        '/auth/login',
+        {
+          username: data.username.trim(),
+          password: data.password,
+        },
+        { withCredentials: true }
+      );
 
       if (response.data.success) {
-        const { user, tokens } = response.data.data;
+        const user = response.data.data?.user || response.data.user;
+        const tokens = response.data.data?.tokens || response.data.tokens || { accessToken: '', refreshToken: '' };
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
 
         if (user && normalizedUserRole === 'STUDENT') {
-          setAuth(user, {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-          });
+          setAuth(user, tokens);
           router.replace('/dashboard');
         } else {
           setError('Access denied. This login is for students only.');

@@ -129,27 +129,31 @@ export default function VerifyOtpPage() {
         response = await api.post('/staff/verify-2fa', {
           email,
           otp: codeStr,
-        });
+        }, { withCredentials: true });
       } else {
         response = await api.post('/auth/verify-otp', {
           email,
           otp: codeStr,
-        });
+        }, { withCredentials: true });
       }
 
       if (response.data.success) {
         setSuccessMsg('2FA verification successful!');
-        const data = response.data.data;
-        if (data?.tokens?.accessToken && data?.user) {
-          setAuth(data.user, {
-            accessToken: data.tokens.accessToken,
-            refreshToken: data.tokens.refreshToken ?? '',
-          });
+
+        // Session-based: user data is in response.data.data.user or response.data.user
+        const user = response.data.data?.user ?? response.data.user;
+
+        if (user) {
+          // Session cookie is already set by the backend.
+          // Populate Zustand store for UI state only (no real tokens needed).
+          setAuth(user, { accessToken: '', refreshToken: '' });
         }
+
         sessionStorage.removeItem('staffOtpDevCode');
 
         setTimeout(() => {
-          if (roleParam === 'staff' || ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(data?.user?.role)) {
+          const userRole = user?.role?.toUpperCase?.() ?? '';
+          if (roleParam === 'staff' || ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(userRole)) {
             router.push('/staff/overview');
           } else {
             router.push('/dashboard');
