@@ -62,11 +62,10 @@ function LoginFormContent() {
 
       if (response.data.success) {
         const user = response.data.data?.user || response.data.user;
-        const tokens = response.data.data?.tokens || response.data.tokens || { accessToken: '', refreshToken: '' };
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
 
         if (user && normalizedUserRole === 'STUDENT') {
-          setAuth(user, tokens);
+          setAuth(user);
           router.replace('/dashboard');
         } else {
           setError('Access denied. This login is for students only.');
