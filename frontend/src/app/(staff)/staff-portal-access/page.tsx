@@ -81,7 +81,7 @@ export default function StaffPortalAccessPage() {
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
         if (user && ['RECEPTIONIST', 'ADMIN'].includes(normalizedUserRole)) {
           // Session cookie is set by the backend — just update UI state.
-          setAuth(user, { accessToken: '', refreshToken: '' });
+          setAuth(user);
           router.push('/staff/overview');
         } else {
           setError('Access denied: Only Receptionist and Admin credentials are authorized to sign in.');

@@ -109,8 +109,7 @@ export const loginWithStore = async (data: LoginData) => {
   const response = await authApi.login(data);
   const user = response.data?.user || response.user;
   if (response.success && user) {
-    const tokens = response.data?.tokens || { accessToken: '', refreshToken: '' };
-    useAuthStore.getState().setAuth(user, tokens);
+    useAuthStore.getState().setAuth(user);
   }
   return response;
 };
@@ -119,8 +118,7 @@ export const registerWithStore = async (data: RegisterData) => {
   const response = await authApi.register(data);
   const user = response.data?.user || response.user;
   if (response.success && user) {
-    const tokens = response.data?.tokens || { accessToken: '', refreshToken: '' };
-    useAuthStore.getState().setAuth(user, tokens);
+    useAuthStore.getState().setAuth(user);
   }
   return response;
 };

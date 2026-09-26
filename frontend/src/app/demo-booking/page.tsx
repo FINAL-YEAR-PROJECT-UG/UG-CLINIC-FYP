@@ -186,7 +186,6 @@ function BookingContent() {
   // Read auth synchronously from store
   const storeAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
-  const storeTokens = useAuthStore((s) => s.tokens);
 
   const initialSnap = useAuthStore.getState();
   const initialRole = normalizeRole(initialSnap.user?.role);
@@ -258,7 +257,6 @@ function BookingContent() {
       const state = useAuthStore.getState();
       const currentUser = state.user ?? storeUser;
       const currentAuth = state.isAuthenticated || storeAuth;
-      const currentTokens = state.tokens ?? storeTokens;
       const role = normalizeRole(currentUser?.role);
 
       if (!currentAuth || !currentUser) {
@@ -289,7 +287,7 @@ function BookingContent() {
       active = false;
       if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [router, storeAuth, storeUser, storeTokens]);
+  }, [router, storeAuth, storeUser]);
 
   // Data Fetching
   const fetchDoctors = useCallback(async () => {

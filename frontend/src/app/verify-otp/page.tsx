@@ -145,8 +145,8 @@ export default function VerifyOtpPage() {
 
         if (user) {
           // Session cookie is already set by the backend.
-          // Populate Zustand store for UI state only (no real tokens needed).
-          setAuth(user, { accessToken: '', refreshToken: '' });
+          // Populate Zustand store for UI state only.
+          setAuth(user);
         }
 
         sessionStorage.removeItem('staffOtpDevCode');
