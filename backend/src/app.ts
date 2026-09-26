@@ -27,6 +27,16 @@ import startSessionCleanupJob from './jobs/sessionCleanup';
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 const isProduction = process.env.NODE_ENV === 'production';
+const databaseUrl = process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL;
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (isProduction && !process.env.STORAGE_PRISMA_DATABASE_URL) {
+  throw new Error('STORAGE_PRISMA_DATABASE_URL must be set in production');
+}
+
+if (isProduction && !sessionSecret) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
 
 // Trust proxy for reverse proxies (Railway, Vercel, Cloudflare)
 app.set('trust proxy', 1);
@@ -80,7 +90,7 @@ app.use(morgan(isProduction ? 'combined' : 'dev'));
 // Session store configuration with Postgres
 const PgSession = connectPgSimple(session);
 const pgPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: databaseUrl,
   ssl: isProduction ? { rejectUnauthorized: false } : undefined,
 });
 
@@ -97,7 +107,7 @@ const sessionStore = new PgSession({
 app.use(
   session({
     store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'ug-clinic-default-session-secret-change-in-production',
+    secret: sessionSecret || 'local-development-session-secret',
     resave: false,
     saveUninitialized: false,
     name: 'connect.sid',
