@@ -22,6 +22,7 @@ import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
 import staffRoutes from './routes/staff.routes';
 import newsRoutes from './routes/news.routes';
+import startSessionCleanupJob from './jobs/sessionCleanup';
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
@@ -157,6 +158,11 @@ app.use(errorHandler);
 if (require.main === module) {
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server listening on port ${port}`);
+
+    // Start session cleanup job in production
+    if (process.env.NODE_ENV === 'production') {
+      startSessionCleanupJob();
+    }
   });
 }
 
