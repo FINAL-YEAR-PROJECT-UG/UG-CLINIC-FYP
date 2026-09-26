@@ -2,14 +2,10 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
 import axios from "axios";
-import type { JWT } from "next-auth/jwt";
-import type { Session } from "next-auth";
 
 // Extend NextAuth types
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
-    refreshToken?: string;
     user?: {
       id: string;
       email: string;
@@ -32,15 +28,11 @@ declare module "next-auth" {
     program?: string;
     role: string;
     isActive: boolean;
-    accessToken: string;
-    refreshToken: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
     user?: {
       id: string;
       email: string;
@@ -70,18 +62,20 @@ const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          const res = await axios.post(`${getServerApiBaseUrl()}/auth/login`, {
-            username: credentials?.username,
-            password: credentials?.password,
-          });
+          const res = await axios.post(
+            `${getServerApiBaseUrl()}/auth/login`,
+            {
+              username: credentials?.username,
+              password: credentials?.password,
+            },
+            {
+              withCredentials: true,
+            }
+          );
 
           if (res.data.success) {
-            const { user, tokens } = res.data.data;
-            return {
-              ...user,
-              accessToken: tokens.accessToken,
-              refreshToken: tokens.refreshToken,
-            };
+            const user = res.data.data?.user || res.data.user;
+            return user;
           }
           return null;
         } catch (error) {
@@ -99,16 +93,12 @@ const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.user = user;
-        token.accessToken = user.accessToken;
-        token.refreshToken = user.refreshToken;
       }
       return token;
     },
     async session({ session, token }) {
       if (token.user) {
         session.user = token.user as any;
-        session.accessToken = token.accessToken;
-        session.refreshToken = token.refreshToken;
       }
       return session;
     },

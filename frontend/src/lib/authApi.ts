@@ -24,6 +24,17 @@ export interface LoginData {
 export interface AuthResponse {
   success: boolean;
   message: string;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    studentId?: string;
+    phone?: string;
+    program?: string;
+    role: string;
+    isActive: boolean;
+  };
   data?: {
     user: {
       id: string;
@@ -36,7 +47,7 @@ export interface AuthResponse {
       role: string;
       isActive: boolean;
     };
-    tokens: {
+    tokens?: {
       accessToken: string;
       refreshToken: string;
     };
@@ -45,88 +56,80 @@ export interface AuthResponse {
 
 export const authApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/register', data);
+    const response = await api.post<AuthResponse>('/auth/register', data, { withCredentials: true });
     return response.data;
   },
 
   login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login', data);
+    const response = await api.post<AuthResponse>('/auth/login', data, { withCredentials: true });
     return response.data;
   },
 
-  logout: async (refreshToken: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string }>('/auth/logout', {
-      refreshToken,
-    });
+  logout: async (_refreshToken?: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post<{ success: boolean; message: string }>('/auth/logout', {}, { withCredentials: true });
     return response.data;
   },
 
   refreshToken: async (
-    refreshToken: string
+    _refreshToken?: string
   ): Promise<{
     success: boolean;
     message: string;
-    data?: {
-      tokens: {
-        accessToken: string;
-        refreshToken: string;
-      };
-    };
   }> => {
-    const response = await api.post('/auth/refresh', { refreshToken });
-    return response.data;
+    return { success: true, message: 'Sessions do not require refresh tokens' };
   },
 
   getProfile: async () => {
-    const response = await api.get('/auth/profile');
+    const response = await api.get('/auth/profile', { withCredentials: true });
     return response.data;
   },
 
   sendOTP: async (data: { email: string; studentId: string; method?: string }): Promise<{ success: boolean; message: string; devCode?: string }> => {
-    const response = await api.post<{ success: boolean; message: string; devCode?: string }>('/auth/send-otp', data);
+    const response = await api.post<{ success: boolean; message: string; devCode?: string }>('/auth/send-otp', data, { withCredentials: true });
     return response.data;
   },
 
   checkAccount: async (data: { email: string; studentId: string }): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string }>('/auth/check-account', data);
+    const response = await api.post<{ success: boolean; message: string }>('/auth/check-account', data, { withCredentials: true });
     return response.data;
   },
 
   verifyOTP: async (data: { email: string; otp: string }): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string }>('/auth/verify-otp', data);
+    const response = await api.post<{ success: boolean; message: string }>('/auth/verify-otp', data, { withCredentials: true });
     return response.data;
   },
 
   loginWithOTP: async (data: { email: string; studentId: string; otp: string; rememberMe?: boolean }): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/login-otp', data);
+    const response = await api.post<AuthResponse>('/auth/login-otp', data, { withCredentials: true });
     return response.data;
   },
 };
 
 export const loginWithStore = async (data: LoginData) => {
   const response = await authApi.login(data);
-  if (response.success && response.data) {
-    useAuthStore.getState().setAuth(response.data.user, response.data.tokens);
+  const user = response.data?.user || response.user;
+  if (response.success && user) {
+    const tokens = response.data?.tokens || { accessToken: '', refreshToken: '' };
+    useAuthStore.getState().setAuth(user, tokens);
   }
   return response;
 };
 
 export const registerWithStore = async (data: RegisterData) => {
   const response = await authApi.register(data);
-  if (response.success && response.data) {
-    useAuthStore.getState().setAuth(response.data.user, response.data.tokens);
+  const user = response.data?.user || response.user;
+  if (response.success && user) {
+    const tokens = response.data?.tokens || { accessToken: '', refreshToken: '' };
+    useAuthStore.getState().setAuth(user, tokens);
   }
   return response;
 };
 
 export const logoutWithStore = async () => {
-  const { tokens, clearAuth } = useAuthStore.getState();
-  if (tokens?.refreshToken) {
-    try {
-      await authApi.logout(tokens.refreshToken);
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-    }
+  try {
+    await authApi.logout();
+  } catch (error) {
+    console.error('Logout API call failed:', error);
   }
-  clearAuth();
+  useAuthStore.getState().clearAuth();
 };

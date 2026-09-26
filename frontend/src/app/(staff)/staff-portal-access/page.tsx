@@ -58,10 +58,10 @@ export default function StaffPortalAccessPage() {
       const response = await api.post('/staff/login', {
         email: data.email.trim(),
         password: data.password,
-      });
+      }, { withCredentials: true });
 
       if (response.data.success) {
-        const { user, tokens, requires2FA: require2FAVal } = response.data.data;
+        const { user, requires2FA: require2FAVal } = response.data.data ?? response.data;
         const require2FA = require2FAVal ?? response.data.requires2FA ?? false;
 
         if (require2FA) {
@@ -80,10 +80,8 @@ export default function StaffPortalAccessPage() {
 
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
         if (user && ['RECEPTIONIST', 'ADMIN'].includes(normalizedUserRole)) {
-          setAuth(user, {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-          });
+          // Session cookie is set by the backend — just update UI state.
+          setAuth(user, { accessToken: '', refreshToken: '' });
           router.push('/staff/overview');
         } else {
           setError('Access denied: Only Receptionist and Admin credentials are authorized to sign in.');

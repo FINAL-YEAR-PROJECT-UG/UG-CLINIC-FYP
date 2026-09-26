@@ -18,8 +18,8 @@ export default function AuthSyncProvider() {
     } else if (status === "authenticated" && session?.user) {
       const user = session.user as any;
       setAuth(user, {
-        accessToken: session.accessToken as string,
-        refreshToken: session.refreshToken as string,
+        accessToken: (session as any).accessToken || '',
+        refreshToken: (session as any).refreshToken || '',
       });
       setLoading(false);
     } else if (status === "unauthenticated") {

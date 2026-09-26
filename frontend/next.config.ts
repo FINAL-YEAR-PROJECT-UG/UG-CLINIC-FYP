@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  turbopack: {},
   // Standalone output: required for Docker/Railway deployment.
   // The Dockerfile copies .next/standalone into the production image.
   // Vercel safely ignores this setting.
