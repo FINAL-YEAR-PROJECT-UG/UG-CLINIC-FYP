@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Verify Staff 2FA'
 method: POST
 url: '{{baseUrl}}/api/staff/verify-2fa'
 order: 3000

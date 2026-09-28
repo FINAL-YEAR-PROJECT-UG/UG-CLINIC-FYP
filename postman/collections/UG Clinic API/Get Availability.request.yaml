@@ -1,6 +1,6 @@
 $kind: http-request
 method: GET
-url: '{{baseUrl}}/api/appointments/availability'
+url: '{{baseUrl}}/api/appointments/availability?date={{appointmentDate}}&serviceId={{serviceId}}'
 order: 8000
 headers:
   - key: Authorization

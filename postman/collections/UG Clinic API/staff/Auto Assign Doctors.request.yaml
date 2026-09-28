@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Auto Assign Doctors'
 method: POST
 url: '{{baseUrl}}/api/staff/auto-assign-doctors'
 order: 15000

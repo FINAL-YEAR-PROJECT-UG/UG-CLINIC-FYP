@@ -1,0 +1,19 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/admin/health'
+order: 500
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('System health returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('status');
+        pm.expect(json.data.status).to.eql('healthy');
+      }

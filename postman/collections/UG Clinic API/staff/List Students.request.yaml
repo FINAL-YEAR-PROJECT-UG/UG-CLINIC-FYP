@@ -1,7 +1,6 @@
 $kind: http-request
-name: 'List Students'
 method: GET
-url: '{{baseUrl}}/api/staff/students'
+url: '{{baseUrl}}/api/staff/students?query=&page=1&pageSize=25'
 order: 9000
 headers:
   - key: Authorization

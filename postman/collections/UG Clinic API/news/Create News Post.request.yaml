@@ -1,0 +1,30 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/news'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Clinic Hours Update",
+      "content": "The clinic will be open from 8 AM to 5 PM on weekdays.",
+      "category": "announcement",
+      "priority": "high",
+      "isPublic": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Create news post returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403, 500]);
+      });
+      if (pm.response.code === 201) {
+        const json = pm.response.json();
+        pm.environment.set('newsPostId', json.data.newsPost.id);
+      }

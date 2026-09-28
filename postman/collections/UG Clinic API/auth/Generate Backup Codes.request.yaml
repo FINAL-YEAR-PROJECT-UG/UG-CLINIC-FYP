@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Generate Backup Codes'
 method: POST
 url: '{{baseUrl}}/api/auth/generate-backup-codes'
 order: 10500

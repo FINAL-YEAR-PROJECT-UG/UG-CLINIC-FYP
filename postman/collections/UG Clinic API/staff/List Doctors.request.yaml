@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'List Doctors'
 method: GET
 url: '{{baseUrl}}/api/staff/doctors'
 order: 12000

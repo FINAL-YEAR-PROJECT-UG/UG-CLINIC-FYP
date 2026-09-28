@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Logout Student'
 method: POST
 url: '{{baseUrl}}/api/auth/logout'
 order: 4500

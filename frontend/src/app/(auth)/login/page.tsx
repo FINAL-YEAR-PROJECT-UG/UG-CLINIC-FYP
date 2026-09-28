@@ -8,7 +8,7 @@ import { Loader2, ShieldCheck, ArrowRight, Lock, Eye, EyeOff } from '@/component
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import api from '@/lib/api';
+import { getSession, signIn } from 'next-auth/react';
 import UGLogo from '@/components/shared/UGLogo';
 import { useAuthStore } from '@/stores/authStore';
 import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
@@ -47,30 +47,39 @@ function LoginFormContent() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await api.post(
-        '/auth/login',
-        {
-          username: data.username.trim(),
-          password: data.password,
-        },
-        { withCredentials: true }
-      );
+      const result = await signIn('credentials', {
+        email: data.username.trim(),
+        password: data.password,
+        redirect: false,
+      });
 
-      if (response.data.success) {
-        const user = response.data.data?.user || response.data.user;
-        const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
+      if (result?.error) {
+        setError('Login failed. Please verify your credentials.');
+        return;
+      }
 
-        if (user && normalizedUserRole === 'STUDENT') {
-          setAuth(user);
-          router.replace('/dashboard');
-        } else {
-          setError('Access denied. This login is for students only.');
-        }
+      const session = await getSession();
+      const user = session?.user;
+      const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
+
+      if (user && normalizedUserRole === 'STUDENT') {
+        setAuth({
+          id: user.id,
+          email: user.email ?? data.username.trim(),
+          firstName: user.firstName ?? '',
+          lastName: user.lastName ?? '',
+          studentId: user.studentId,
+          phone: user.phone,
+          program: user.program,
+          role: user.role ?? '',
+          isActive: user.isActive ?? false,
+        });
+        router.replace('/dashboard');
       } else {
-        setError(response.data.message || 'Login failed. Please verify your credentials.');
+        setError('Access denied. This login is for students only.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred during login. Please try again.');
+      setError(err.message || 'An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }

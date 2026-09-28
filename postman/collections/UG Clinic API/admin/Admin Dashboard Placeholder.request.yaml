@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Admin Dashboard Placeholder'
 method: GET
 url: '{{baseUrl}}/api/admin/dashboard'
 order: 1000

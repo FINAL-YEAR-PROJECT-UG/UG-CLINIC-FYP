@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Update Resource'
 method: PATCH
 url: '{{baseUrl}}/api/resources/{{resourceId}}'
 order: 4000

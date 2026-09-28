@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Set Security Questions'
 method: POST
 url: '{{baseUrl}}/api/auth/security-questions'
 order: 9500

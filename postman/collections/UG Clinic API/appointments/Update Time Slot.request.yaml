@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Update Time Slot'
 method: PATCH
 url: '{{baseUrl}}/api/appointments/timeslot/{{timeSlotId}}'
 order: 6000

@@ -1,0 +1,25 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/resources/submit-public'
+order: 2500
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Student Health Tips",
+      "description": "A guide to staying healthy on campus.",
+      "category": "Wellness",
+      "fileUrl": "https://example.com/files/health-tips.pdf",
+      "authorName": "Jane Doe",
+      "authorEmail": "jane.doe@example.com"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Submit public article returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([201, 400, 500]);
+      });

@@ -18,8 +18,6 @@ scripts:
       pm.test('Refresh returns expected outcome', function () {
         pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 500]);
       });
-      if (pm.response.code === 200) {
-        const json = pm.response.json();
-        pm.environment.set('accessToken', json.data.tokens.accessToken);
-        pm.environment.set('refreshToken', json.data.tokens.refreshToken);
-      }
+      // Note: This API uses session-based auth (cookies), not JWT tokens.
+      // The /api/auth/refresh endpoint does not exist in this backend.
+      // This request is kept as a placeholder only.

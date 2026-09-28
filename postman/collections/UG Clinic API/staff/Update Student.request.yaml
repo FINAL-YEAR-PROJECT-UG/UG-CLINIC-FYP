@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Update Student'
 method: PATCH
 url: '{{baseUrl}}/api/staff/students/{{studentIdOrUserId}}'
 order: 11000

@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Reschedule Appointment'
 method: PATCH
 url: '{{baseUrl}}/api/appointments/{{appointmentId}}/reschedule'
 order: 4000

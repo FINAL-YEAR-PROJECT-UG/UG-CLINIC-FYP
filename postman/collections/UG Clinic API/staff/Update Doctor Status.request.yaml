@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Update Doctor Status'
 method: PATCH
 url: '{{baseUrl}}/api/staff/doctors/status'
 order: 13000

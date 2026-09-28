@@ -1,5 +1,6 @@
 import api from './api';
 import { useAuthStore } from '../stores/authStore';
+import { signOut } from 'next-auth/react';
 
 export interface RegisterData {
   email: string;
@@ -129,5 +130,6 @@ export const logoutWithStore = async () => {
   } catch (error) {
     console.error('Logout API call failed:', error);
   }
+  await signOut({ redirect: false });
   useAuthStore.getState().clearAuth();
 };

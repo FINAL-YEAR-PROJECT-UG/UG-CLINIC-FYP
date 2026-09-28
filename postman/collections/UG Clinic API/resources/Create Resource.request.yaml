@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Create Resource'
 method: POST
 url: '{{baseUrl}}/api/resources'
 order: 3000

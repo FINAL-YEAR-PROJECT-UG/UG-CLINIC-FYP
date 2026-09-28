@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Verify Backup Code'
 method: POST
 url: '{{baseUrl}}/api/auth/verify-backup-code'
 order: 11000

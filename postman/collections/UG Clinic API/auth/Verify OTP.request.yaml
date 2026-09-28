@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Verify OTP'
 method: POST
 url: '{{baseUrl}}/api/auth/verify-otp'
 order: 8500

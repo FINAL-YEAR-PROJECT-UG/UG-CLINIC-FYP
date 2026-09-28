@@ -1,0 +1,26 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/appointments/timeslots?date={{appointmentDate}}&serviceId={{serviceId}}'
+order: 8500
+headers:
+  - key: Authorization
+    value: 'Bearer {{accessToken}}'
+queryParams:
+  - key: date
+    value: '{{appointmentDate}}'
+  - key: serviceId
+    value: '{{serviceId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Get time slots returns expected outcome', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 500]);
+      });
+      if (pm.response.code === 200) {
+        const json = pm.response.json();
+        pm.expect(json.data).to.have.property('timeSlots');
+        if (json.data.timeSlots.length > 0) {
+          pm.environment.set('timeSlotId', json.data.timeSlots[0].id);
+        }
+      }

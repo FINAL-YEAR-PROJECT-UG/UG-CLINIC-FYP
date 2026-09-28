@@ -9,16 +9,15 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
-/** Resolve the configured backend URL, with a local-development fallback. */
+/** Browser requests go through Vercel so backend session cookies stay same-origin. */
 export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return '/api/backend';
+  }
+
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
   if (configuredUrl) {
     return configuredUrl.replace(/\/+$/, "");
-  }
-
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname } = window.location;
-    return `${protocol}//${hostname}:3005/api`;
   }
   return 'http://localhost:3005/api';
 }

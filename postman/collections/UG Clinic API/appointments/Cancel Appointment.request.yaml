@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Cancel Appointment'
 method: PATCH
 url: '{{baseUrl}}/api/appointments/{{appointmentId}}/cancel'
 order: 7000

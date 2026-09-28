@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
- * Custom proxy for route protection
- * Since we're using custom session-based auth (not NextAuth),
- * this proxy checks for session cookies and redirects unauthenticated users
+ * Protect private pages using NextAuth sessions, with Express sessions retained for staff login.
  */
 
 const publicRoutes = [
@@ -33,7 +32,7 @@ const studentRoutes = [
   '/dashboard',
 ];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes without authentication
@@ -41,26 +40,26 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for session cookie
-  const sessionCookie = request.cookies.get('connect.sid');
+  const [token, sessionCookie] = await Promise.all([
+    getToken({ req: request, secret: process.env.NEXTAUTH_SECRET }),
+    Promise.resolve(request.cookies.get('connect.sid')),
+  ]);
 
-  // If no session cookie and trying to access protected route, redirect to login
-  if (!sessionCookie) {
+  if (!token && !sessionCookie) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Check for staff routes
-  if (staffRoutes.some(route => pathname.startsWith(route))) {
-    // Staff routes need additional role checking via API
-    // This is a basic check; detailed role verification happens in API calls
-    return NextResponse.next();
+  const userRole = token?.user?.role?.toUpperCase();
+
+  if (staffRoutes.some(route => pathname.startsWith(route)) && token &&
+      !['ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(userRole ?? '')) {
+    return NextResponse.redirect(new URL('/staff-portal-access', request.url));
   }
 
-  // Check for student routes
-  if (studentRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next();
+  if (studentRoutes.some(route => pathname.startsWith(route)) && token && userRole !== 'STUDENT') {
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();

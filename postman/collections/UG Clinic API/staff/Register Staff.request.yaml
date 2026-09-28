@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Register Staff'
 method: POST
 url: '{{baseUrl}}/api/staff/register'
 order: 1000

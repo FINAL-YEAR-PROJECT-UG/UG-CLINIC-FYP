@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Check Account'
 method: POST
 url: '{{baseUrl}}/api/auth/check-account'
 order: 2500

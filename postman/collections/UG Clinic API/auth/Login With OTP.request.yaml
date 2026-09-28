@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Login With OTP'
 method: POST
 url: '{{baseUrl}}/api/auth/login-otp'
 order: 4200

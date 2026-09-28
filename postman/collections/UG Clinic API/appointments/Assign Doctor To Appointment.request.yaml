@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Assign Doctor To Appointment'
 method: PATCH
 url: '{{baseUrl}}/api/appointments/{{appointmentId}}/assign'
 order: 3000

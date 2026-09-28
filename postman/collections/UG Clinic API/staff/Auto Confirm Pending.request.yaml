@@ -1,5 +1,4 @@
 $kind: http-request
-name: 'Auto Confirm Pending'
 method: POST
 url: '{{baseUrl}}/api/staff/auto-confirm-pending'
 order: 16000
