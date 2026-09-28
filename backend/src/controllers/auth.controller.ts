@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password';
-import { generateTokenPair, verifyRefreshToken, TokenPayload } from '../utils/jwt';
 import {
   isValidStudentId,
   validatePhoneNumber,
@@ -143,30 +142,12 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
-    // Generate tokens
-    const payload: TokenPayload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    };
-    const tokens = generateTokenPair(payload);
-
-    // Store refresh token in database
-    const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    await prisma.refreshToken.create({
-      data: {
-        token: tokens.refreshToken,
-        userId: user.id,
-        expiresAt: refreshTokenExpiry,
-      },
-    });
-
     res.status(201).json({
       success: true,
       message: 'Registration successful',
+      user,
       data: {
         user,
-        tokens,
       },
     });
   } catch (error) {
@@ -288,88 +269,32 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    // Generate tokens
-    const payload: TokenPayload = {
+    const sessionUser = {
+      id: user.id,
       userId: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      studentId: user.studentId,
+      phone: user.phone,
+      program: user.program,
       role: user.role,
+      isActive: user.isActive,
     };
-    let tokens = generateTokenPair(payload);
 
-    // Store refresh token in database
-    const refreshTokenExpiry = rememberMe
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for remember me
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days default
+    req.session.user = sessionUser;
 
-    // Clean up expired refresh tokens for this user first
-    await prisma.refreshToken.deleteMany({
-      where: {
-        userId: user.id,
-        expiresAt: { lt: new Date() },
-      },
-    });
-
-    // Enforce max sessions - revoke oldest active tokens if over limit
-    const activeTokens = await prisma.refreshToken.findMany({
-      where: {
-        userId: user.id,
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    const sessionLimit = Math.max(1, user.maxSessions || 3);
-    if (activeTokens.length >= sessionLimit) {
-      const toRevoke = activeTokens.slice(0, activeTokens.length - sessionLimit + 1);
-      if (toRevoke.length > 0) {
-        await prisma.refreshToken.updateMany({
-          where: { id: { in: toRevoke.map(t => t.id) } },
-          data: { revokedAt: new Date() },
-        });
-      }
-    }
-
-    // Create refresh token with retry for unique constraint collisions
-    let attempts = 0;
-    let stored = false;
-    while (attempts < 3 && !stored) {
-      try {
-        await prisma.refreshToken.create({
-          data: {
-            token: tokens.refreshToken,
-            userId: user.id,
-            expiresAt: refreshTokenExpiry,
-          },
-        });
-        stored = true;
-      } catch (createError: any) {
-        if (createError?.code === 'P2002' && attempts < 2) {
-          attempts++;
-          tokens = generateTokenPair(payload);
-          await new Promise(r => setTimeout(r, 10));
-        } else {
-          throw createError;
-        }
-      }
-    }
+    // Persist session to Postgres before responding so subsequent requests are authenticated
+    await new Promise<void>((resolve, reject) =>
+      req.session.save((err) => (err ? reject(err) : resolve()))
+    );
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      user: sessionUser,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          studentId: user.studentId,
-          phone: user.phone,
-          program: user.program,
-          role: user.role,
-          isActive: user.isActive,
-        },
-        tokens,
+        user: sessionUser,
       },
     });
   } catch (error) {
@@ -390,112 +315,33 @@ export const login = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refresh token is required',
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destroy error during logout:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'An error occurred during logout',
+          });
+        }
+        res.clearCookie('connect.sid');
+        return res.status(200).json({
+          success: true,
+          message: 'Logout successful',
+        });
+      });
+    } else {
+      res.clearCookie('connect.sid');
+      return res.status(200).json({
+        success: true,
+        message: 'Logout successful',
       });
     }
-
-    // Revoke the refresh token
-    await prisma.refreshToken.updateMany({
-      where: { token: refreshToken },
-      data: { revokedAt: new Date() },
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Logout successful',
-    });
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({
       success: false,
       message: 'An error occurred during logout',
-    });
-  }
-};
-
-export const refreshToken = async (req: Request, res: Response) => {
-  try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refresh token is required',
-      });
-    }
-
-    // Check if refresh token exists and is not revoked
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-      include: { user: true },
-    });
-
-    if (!storedToken) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid refresh token',
-      });
-    }
-
-    if (storedToken.revokedAt) {
-      return res.status(401).json({
-        success: false,
-        message: 'Refresh token has been revoked',
-      });
-    }
-
-    if (storedToken.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Refresh token has expired',
-      });
-    }
-
-    // Verify the token
-    const payload = verifyRefreshToken(refreshToken);
-
-    // Create clean payload without exp property for new tokens
-    const cleanPayload: TokenPayload = {
-      userId: payload.userId,
-      email: payload.email,
-      role: payload.role,
-    };
-
-    // Generate new token pair
-    const newTokens = generateTokenPair(cleanPayload);
-
-    // Revoke old refresh token and create new one
-    await prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { revokedAt: new Date() },
-    });
-
-    const newRefreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await prisma.refreshToken.create({
-      data: {
-        token: newTokens.refreshToken,
-        userId: storedToken.userId,
-        expiresAt: newRefreshTokenExpiry,
-      },
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Token refreshed successfully',
-      data: {
-        tokens: newTokens,
-      },
-    });
-  } catch (error) {
-    console.error('Token refresh error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred during token refresh',
     });
   }
 };
@@ -567,88 +413,32 @@ export const loginWithOTP = async (req: Request, res: Response) => {
       },
     });
 
-    // Generate tokens
-    const payload: TokenPayload = {
+    const sessionUser = {
+      id: user.id,
       userId: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      studentId: user.studentId,
+      phone: user.phone,
+      program: user.program,
       role: user.role,
+      isActive: user.isActive,
     };
-    let tokens = generateTokenPair(payload);
 
-    // Store refresh token in database
-    const refreshTokenExpiry = rememberMe
-      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days for remember me
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days default
+    req.session.user = sessionUser;
 
-    // Clean up expired refresh tokens for this user first
-    await prisma.refreshToken.deleteMany({
-      where: {
-        userId: user.id,
-        expiresAt: { lt: new Date() },
-      },
-    });
-
-    // Enforce max sessions - revoke oldest active tokens if over limit
-    const activeTokens = await prisma.refreshToken.findMany({
-      where: {
-        userId: user.id,
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    const sessionLimit = Math.max(1, user.maxSessions || 3);
-    if (activeTokens.length >= sessionLimit) {
-      const toRevoke = activeTokens.slice(0, activeTokens.length - sessionLimit + 1);
-      if (toRevoke.length > 0) {
-        await prisma.refreshToken.updateMany({
-          where: { id: { in: toRevoke.map(t => t.id) } },
-          data: { revokedAt: new Date() },
-        });
-      }
-    }
-
-    // Create refresh token with retry for unique constraint collisions
-    let attempts = 0;
-    let stored = false;
-    while (attempts < 3 && !stored) {
-      try {
-        await prisma.refreshToken.create({
-          data: {
-            token: tokens.refreshToken,
-            userId: user.id,
-            expiresAt: refreshTokenExpiry,
-          },
-        });
-        stored = true;
-      } catch (createError: any) {
-        if (createError?.code === 'P2002' && attempts < 2) {
-          attempts++;
-          tokens = generateTokenPair(payload);
-          await new Promise(r => setTimeout(r, 10));
-        } else {
-          throw createError;
-        }
-      }
-    }
+    // Persist session to Postgres before responding
+    await new Promise<void>((resolve, reject) =>
+      req.session.save((err) => (err ? reject(err) : resolve()))
+    );
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
+      user: sessionUser,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          studentId: user.studentId,
-          phone: user.phone,
-          program: user.program,
-          role: user.role,
-          isActive: user.isActive,
-        },
-        tokens,
+        user: sessionUser,
       },
     });
   } catch (error) {

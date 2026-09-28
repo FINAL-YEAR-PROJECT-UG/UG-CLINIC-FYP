@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NextAuthProvider from "@/components/providers/NextAuthProvider";
-import AuthSyncProvider from "@/components/providers/AuthSyncProvider";
 import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvider";
 import NavigationProgress from "@/components/providers/NavigationProgress";
 import PageTransition from "@/components/providers/PageTransition";
@@ -51,14 +49,11 @@ export default function RootLayout({
       <body className="min-h-screen">
         <ServiceWorkerProvider />
         <NavigationProgress />
-        <NextAuthProvider>
-          <AuthSyncProvider />
-          <SessionTimeoutProvider>
-            <PageTransition>
-              {children}
-            </PageTransition>
-          </SessionTimeoutProvider>
-        </NextAuthProvider>
+        <SessionTimeoutProvider>
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </SessionTimeoutProvider>
       </body>
     </html>
   );

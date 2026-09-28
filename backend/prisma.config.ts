@@ -8,6 +8,6 @@ export default defineConfig({
     seed: "npm run prisma:seed",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["STORAGE_PRISMA_DATABASE_URL"] ?? process.env["DATABASE_URL"],
   },
 });

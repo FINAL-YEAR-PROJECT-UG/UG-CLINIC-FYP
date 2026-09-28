@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticateSession } from '../middleware/sessionAuth';
 import {
   getNewsPosts,
   createNewsPost,
@@ -10,8 +10,8 @@ import {
 const router = Router();
 
 router.get('/', getNewsPosts);
-router.post('/', authenticate, createNewsPost);
-router.put('/:id', authenticate, updateNewsPost);
-router.delete('/:id', authenticate, deleteNewsPost);
+router.post('/', authenticateSession, createNewsPost);
+router.put('/:id', authenticateSession, updateNewsPost);
+router.delete('/:id', authenticateSession, deleteNewsPost);
 
 export default router;

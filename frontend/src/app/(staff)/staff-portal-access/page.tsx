@@ -58,10 +58,10 @@ export default function StaffPortalAccessPage() {
       const response = await api.post('/staff/login', {
         email: data.email.trim(),
         password: data.password,
-      });
+      }, { withCredentials: true });
 
       if (response.data.success) {
-        const { user, tokens, requires2FA: require2FAVal } = response.data.data;
+        const { user, requires2FA: require2FAVal } = response.data.data ?? response.data;
         const require2FA = require2FAVal ?? response.data.requires2FA ?? false;
 
         if (require2FA) {
@@ -80,10 +80,8 @@ export default function StaffPortalAccessPage() {
 
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
         if (user && ['RECEPTIONIST', 'ADMIN'].includes(normalizedUserRole)) {
-          setAuth(user, {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-          });
+          // Session cookie is set by the backend — just update UI state.
+          setAuth(user);
           router.push('/staff/overview');
         } else {
           setError('Access denied: Only Receptionist and Admin credentials are authorized to sign in.');
@@ -108,7 +106,7 @@ export default function StaffPortalAccessPage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center scale-105"
+          className="object-cover object-center scale-105 opacity-25"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/88 via-slate-900/80 to-slate-950/92 backdrop-blur-[2px]" />
       </div>

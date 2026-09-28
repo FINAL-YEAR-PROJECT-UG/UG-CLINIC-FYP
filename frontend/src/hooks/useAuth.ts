@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { getErrorMessage } from '../lib/utils';
 
 export const useAuth = () => {
-  const { user, tokens, isAuthenticated, isLoading, clearAuth, setLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading, clearAuth, setLoading } = useAuthStore();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +64,6 @@ export const useAuth = () => {
 
   return {
     user,
-    tokens,
     isAuthenticated,
     isLoading,
     error,

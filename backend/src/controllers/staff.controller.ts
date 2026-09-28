@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { hashPassword, comparePassword } from '../utils/password';
-import { generateTokenPair, verifyAccessToken, TokenPayload } from '../utils/jwt';
 import { issueStaffLoginOtp } from '../services/otp.service';
 import crypto from 'crypto';
 
@@ -165,24 +164,35 @@ export const staffLogin = async (req: Request, res: Response) => {
       }
     }
 
-    const tokens = await createSession(user, ipAddress, userAgent);
+    await createSession(user, ipAddress, userAgent);
+
+    const sessionUser = {
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      studentId: user.studentId,
+      phone: user.phone,
+      program: user.program,
+      isActive: user.isActive,
+    };
+
+    // Attach user to express-session (stored in Postgres via connect-pg-simple)
+    if (req.session) {
+      req.session.user = sessionUser;
+      await new Promise<void>((resolve, reject) =>
+        req.session.save((err) => (err ? reject(err) : resolve()))
+      );
+    }
 
     res.status(200).json({
       success: true,
       message: 'Staff login successful',
+      user: sessionUser,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          studentId: user.studentId,
-          phone: user.phone,
-          program: user.program,
-          isActive: user.isActive,
-        },
-        tokens,
+        user: sessionUser,
       },
     });
   } catch (error: any) {
@@ -276,27 +286,35 @@ export const verify2FA = async (req: Request, res: Response) => {
       data: { usedAt: new Date() },
     });
 
-    const tokens = await createSession(user, ipAddress, userAgent);
+    await createSession(user, ipAddress, userAgent);
+
+    const sessionUser = {
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      studentId: user.studentId,
+      phone: user.phone,
+      program: user.program,
+      isActive: user.isActive,
+    };
+
+    // Attach user to express-session (stored in Postgres via connect-pg-simple)
+    if (req.session) {
+      req.session.user = sessionUser;
+      await new Promise<void>((resolve, reject) =>
+        req.session.save((err) => (err ? reject(err) : resolve()))
+      );
+    }
 
     res.status(200).json({
       success: true,
       message: 'Staff login successful',
+      user: sessionUser,
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          studentId: user.studentId,
-          phone: user.phone,
-          program: user.program,
-          isActive: user.isActive,
-        },
-        tokens: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        },
+        user: sessionUser,
       },
     });
   } catch (error) {
@@ -413,15 +431,7 @@ const createSession = async (user: any, ipAddress: string, userAgent: string) =>
     },
   });
 
-  const payload: TokenPayload = {
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-  };
-
-  const tokens = generateTokenPair(payload);
-
-  return { ...tokens, sessionToken };
+  return { sessionToken };
 };
 
 export const updateSessionActivity = async (req: Request, res: Response) => {

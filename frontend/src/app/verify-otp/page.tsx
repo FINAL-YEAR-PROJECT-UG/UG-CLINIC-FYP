@@ -129,27 +129,31 @@ export default function VerifyOtpPage() {
         response = await api.post('/staff/verify-2fa', {
           email,
           otp: codeStr,
-        });
+        }, { withCredentials: true });
       } else {
         response = await api.post('/auth/verify-otp', {
           email,
           otp: codeStr,
-        });
+        }, { withCredentials: true });
       }
 
       if (response.data.success) {
         setSuccessMsg('2FA verification successful!');
-        const data = response.data.data;
-        if (data?.tokens?.accessToken && data?.user) {
-          setAuth(data.user, {
-            accessToken: data.tokens.accessToken,
-            refreshToken: data.tokens.refreshToken ?? '',
-          });
+
+        // Session-based: user data is in response.data.data.user or response.data.user
+        const user = response.data.data?.user ?? response.data.user;
+
+        if (user) {
+          // Session cookie is already set by the backend.
+          // Populate Zustand store for UI state only.
+          setAuth(user);
         }
+
         sessionStorage.removeItem('staffOtpDevCode');
 
         setTimeout(() => {
-          if (roleParam === 'staff' || ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(data?.user?.role)) {
+          const userRole = user?.role?.toUpperCase?.() ?? '';
+          if (roleParam === 'staff' || ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(userRole)) {
             router.push('/staff/overview');
           } else {
             router.push('/dashboard');
@@ -247,7 +251,7 @@ export default function VerifyOtpPage() {
                   value={digit}
                   onChange={(e) => handleChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-11 h-13 text-center text-xl font-bold text-[#1e3a8a] bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:bg-white transition-all"
+                  className="w-9 sm:w-11 h-11 sm:h-13 text-center text-lg sm:text-xl font-bold text-[#1e3a8a] bg-gray-50 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:bg-white transition-all"
                 />
               ))}
             </div>
@@ -255,14 +259,17 @@ export default function VerifyOtpPage() {
             <button
               type="submit"
               disabled={verifying || digits.some((d) => d === '')}
-              className="w-full py-3 bg-[#1e3a8a] text-white font-bold text-sm rounded-xl hover:bg-blue-900 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+              className="w-full py-2.5 sm:py-3 bg-[#1e3a8a] text-white font-bold text-xs sm:text-sm rounded-xl hover:bg-blue-900 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
             >
               {verifying ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Verifying Security Code...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
                 </>
               ) : (
-                'Confirm & Authenticate Session'
+                <>
+                  <span className="hidden sm:inline">Confirm & Authenticate Session</span>
+                  <span className="sm:hidden">Confirm & Authenticate</span>
+                </>
               )}
             </button>
           </form>

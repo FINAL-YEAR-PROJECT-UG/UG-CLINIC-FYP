@@ -20,7 +20,7 @@ import {
   validate2FA,
   validateResend2FA,
 } from '../validators/staff.validator';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticateSession, authorize } from '../middleware/sessionAuth';
 
 const router = Router();
 
@@ -30,19 +30,19 @@ router.post('/verify-2fa', validate2FA, verify2FA);
 router.post('/resend-2fa', validateResend2FA, resendStaff2FA);
 
 // Student record management (staff-only)
-router.get('/students', authenticate, authorize('RECEPTIONIST', 'ADMIN'), listStudents);
-router.get('/students/:id', authenticate, authorize('RECEPTIONIST', 'ADMIN'), getStudent);
-router.get('/students/:id/history', authenticate, authorize('RECEPTIONIST', 'ADMIN'), getStudentHistory);
-router.patch('/students/:id', authenticate, authorize('RECEPTIONIST', 'ADMIN'), updateStudent);
+router.get('/students', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), listStudents);
+router.get('/students/:id', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), getStudent);
+router.get('/students/:id/history', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), getStudentHistory);
+router.patch('/students/:id', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), updateStudent);
 
 // Doctor management & availability status (staff-only)
-router.get('/doctors', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), listDoctors);
-router.patch('/doctors/status', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), updateDoctorStatus);
-router.patch('/doctors/batch-status', authenticate, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), batchUpdateDoctorStatuses);
+router.get('/doctors', authenticateSession, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), listDoctors);
+router.patch('/doctors/status', authenticateSession, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), updateDoctorStatus);
+router.patch('/doctors/batch-status', authenticateSession, authorize('RECEPTIONIST', 'DOCTOR', 'ADMIN'), batchUpdateDoctorStatuses);
 
 // Staff operations automation (staff-only)
-router.post('/auto-assign-doctors', authenticate, authorize('RECEPTIONIST', 'ADMIN'), autoAssignDoctors);
-router.post('/auto-confirm-pending', authenticate, authorize('RECEPTIONIST', 'ADMIN'), autoConfirmPending);
+router.post('/auto-assign-doctors', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), autoAssignDoctors);
+router.post('/auto-confirm-pending', authenticateSession, authorize('RECEPTIONIST', 'ADMIN'), autoConfirmPending);
 
 
 export default router;

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticateSession } from '../middleware/sessionAuth';
 import {
   getAvailability,
   getMyAppointments,
@@ -18,49 +18,49 @@ import {
 
 const router = Router();
 
-router.get('/availability', authenticate, getAvailability);
-router.get('/', authenticate, getMyAppointments);
-router.get('/staff/dashboard', authenticate, getStaffDashboard);
-router.get('/timeslots', authenticate, (req, res, next) => {
+router.get('/availability', authenticateSession, getAvailability);
+router.get('/', authenticateSession, getMyAppointments);
+router.get('/staff/dashboard', authenticateSession, getStaffDashboard);
+router.get('/timeslots', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, getTimeSlots);
 
-router.patch('/timeslots/batch', authenticate, (req, res, next) => {
+router.patch('/timeslots/batch', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
 }, batchUpdateTimeSlots);
 
 
 // Staff management endpoints
-router.get('/staff/all', authenticate, (req, res, next) => {
+router.get('/staff/all', authenticateSession, (req, res, next) => {
   // only staff roles allowed
   (req as any).user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
 }, getAllAppointments);
 
-router.patch('/:id/assign', authenticate, (req, res, next) => {
+router.patch('/:id/assign', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, assignDoctorToAppointment);
 
-router.patch('/:id/assign-doctor', authenticate, (req, res, next) => {
+router.patch('/:id/assign-doctor', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, assignDoctorToAppointment);
 
-router.patch('/:id/reschedule', authenticate, (req, res, next) => {
+router.patch('/:id/reschedule', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, rescheduleAppointment);
 
-router.patch('/:id/status', authenticate, (req, res, next) => {
+router.patch('/:id/status', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
 }, updateAppointmentStatus);
 
-router.post('/:id/staff-cancel', authenticate, (req, res, next) => {
+router.post('/:id/staff-cancel', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, cancelAppointment);
 
 // TimeSlot management for marking slots booked/free
-router.patch('/timeslot/:id', authenticate, (req, res, next) => {
+router.patch('/timeslot/:id', authenticateSession, (req, res, next) => {
   (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
 }, updateTimeSlot);
-router.post('/', authenticate, createAppointment);
-router.patch('/:id/cancel', authenticate, cancelAppointment);
+router.post('/', authenticateSession, createAppointment);
+router.patch('/:id/cancel', authenticateSession, cancelAppointment);
 
 export default router;

@@ -11,12 +11,22 @@ export interface AuthRequest extends Request {
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    // Check session first
+    if (req.session && req.session.user) {
+      req.user = {
+        userId: req.session.user.userId || req.session.user.id,
+        email: req.session.user.email,
+        role: req.session.user.role,
+      };
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'Access token is required',
+        message: 'Unauthorized: No active session',
       });
     }
 
@@ -35,14 +45,16 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
 export const authorize = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
+    const user = req.user || req.session?.user;
+
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Unauthorized',
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(user.role)) {
       return res.status(403).json({
         success: false,
         message: 'Forbidden: Insufficient permissions',

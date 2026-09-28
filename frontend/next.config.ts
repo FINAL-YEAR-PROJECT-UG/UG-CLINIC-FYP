@@ -2,8 +2,11 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  // Only use standalone tracing in production builds to avoid dev tracing overhead
-  ...(process.env.NODE_ENV === "production" ? { output: "standalone" } : {}),
+  turbopack: {},
+  // Standalone output: required for Docker/Railway deployment.
+  // The Dockerfile copies .next/standalone into the production image.
+  // Vercel safely ignores this setting.
+  output: "standalone",
 
   // CDN Configuration for asset delivery
   // Set CDN_URL environment variable to enable CDN (e.g., https://cdn.example.com)
@@ -11,7 +14,13 @@ const nextConfig: NextConfig = {
 
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3001", "127.0.0.1:3001"],
+      allowedOrigins: [
+        "localhost:3001",
+        "127.0.0.1:3001",
+        // Allow Vercel preview & production deployments
+        process.env.VERCEL_URL ?? "",
+        process.env.NEXT_PUBLIC_APP_URL ?? "",
+      ].filter(Boolean),
     },
     // Tree-shake and selectively load massive icon and UI libraries for instant compilation
     optimizePackageImports: [
@@ -40,7 +49,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   poweredByHeader: false,
   devIndicators: false,
-  turbopack: {},
 
   // ── HTTP response headers ────────────────────────────────────────────────────
   // These cache-control directives make the browser and CDN cache static

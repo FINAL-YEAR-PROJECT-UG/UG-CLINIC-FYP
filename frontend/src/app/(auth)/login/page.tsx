@@ -51,20 +51,21 @@ function LoginFormContent() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await api.post('/auth/login', {
-        username: data.username.trim(),
-        password: data.password,
-      });
+      const response = await api.post(
+        '/auth/login',
+        {
+          username: data.username.trim(),
+          password: data.password,
+        },
+        { withCredentials: true }
+      );
 
       if (response.data.success) {
-        const { user, tokens } = response.data.data;
+        const user = response.data.data?.user || response.data.user;
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
 
         if (user && normalizedUserRole === 'STUDENT') {
-          setAuth(user, {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-          });
+          setAuth(user);
           router.replace('/dashboard');
         } else {
           setError('Access denied. This login is for students only.');
@@ -89,7 +90,7 @@ function LoginFormContent() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center scale-105"
+          className="object-cover object-center scale-105 opacity-25"
         />
         {/* Multi-layer gradient mask: creates a rich cinematic dark theme with 100% text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B1221]/80 via-[#0F172A]/75 to-[#0B1221]/90 backdrop-blur-[2px]" />
@@ -258,7 +259,7 @@ function LoginFormContent() {
                 type="submit"
                 disabled={isLoading}
                 className="
-                  w-full py-3.5 rounded-xl font-bold text-sm text-white
+                  w-full py-2.5 sm:py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white
                   bg-gradient-to-r from-[#0F172A] via-[#1e3a8a] to-[#2563EB]
                   shadow-[0_4px_16px_rgba(15,23,42,0.30)]
                   hover:shadow-[0_8px_24px_rgba(30,58,138,0.40)]

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticateSession } from '../middleware/sessionAuth';
 import {
   listResourcesForStaff,
   createResource,
@@ -41,10 +41,10 @@ router.get('/', async (_req, res) => {
 router.post('/submit-public', submitPublicArticle);
 
 // Staff management endpoints (Receptionist, Doctor, Admin)
-router.get('/staff', authenticate, listResourcesForStaff);
-router.post('/', authenticate, createResource);
-router.patch('/:id', authenticate, updateResource);
-router.patch('/:id/review', authenticate, reviewResourceSubmission);
-router.delete('/:id', authenticate, deleteResource);
+router.get('/staff', authenticateSession, listResourcesForStaff);
+router.post('/', authenticateSession, createResource);
+router.patch('/:id', authenticateSession, updateResource);
+router.patch('/:id/review', authenticateSession, reviewResourceSubmission);
+router.delete('/:id', authenticateSession, deleteResource);
 
 export default router;

@@ -84,3 +84,10 @@ Thumbs.db
 clinic images/
 backend/.env.example
 .gitignore
+
+
+BACKEND_CONTROLLERS_EXPORT.md
+BACKEND_CONTROLLERS_FULL_CODE.md
+~$FENSE_DOCUMENT.md
+DEFENSE_DOCUMENT.md
+DEFENSE_DOCUMENT.tex

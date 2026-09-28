@@ -148,18 +148,7 @@ export const validateRefreshToken = [
 ];
 
 export const validateLogout = [
-  body('refreshToken')
-    .notEmpty()
-    .withMessage('Refresh token is required'),
-  (req: any, res: any, next: any) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array(),
-      });
-    }
+  (_req: any, _res: any, next: any) => {
     next();
   },
 ];

@@ -201,7 +201,7 @@ export default function ContactPageClient() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />
@@ -260,190 +260,190 @@ export default function ContactPageClient() {
 
       {/* ── Ways to Reach Us / Get in Touch ── */}
       <div className="relative">
-          {/* Main Grid: Ways to Get in Touch */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center mb-12">
-              <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
-                Get In Touch
-              </span>
-              <h2 className="text-3xl font-extrabold text-[#0B1221]">Ways to Reach Us</h2>
-              <p className="text-sm text-[#6B7A8D] mt-2">Multiple channels to access support and consultation.</p>
-            </div>
+        {/* Main Grid: Ways to Get in Touch */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
+              Get In Touch
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#0B1221]">Ways to Reach Us</h2>
+            <p className="text-sm text-[#6B7A8D] mt-2">Multiple channels to access support and consultation.</p>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {ways.map((w) => {
-                const Icon = w.icon;
-                return (
-                  <div
-                    key={w.title}
-                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 flex flex-col justify-between"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {ways.map((w) => {
+              const Icon = w.icon;
+              return (
+                <div
+                  key={w.title}
+                  className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-[#F5F7FB] border border-[#DDE3EE] flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border mb-2 ${w.badgeColor}`}>
+                      {w.title}
+                    </span>
+                    <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{w.title}</h3>
+                    <div className="space-y-1 text-xs text-[#6B7A8D] mb-4">
+                      {w.lines.map((l) => (
+                        <p key={l}>{l}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <a
+                    href={w.href}
+                    target={w.href.startsWith('http') ? '_blank' : undefined}
+                    rel={w.href.startsWith('http') ? 'noreferrer' : undefined}
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] shadow-xs hover:shadow-md transition-all duration-200"
                   >
-                    <div>
-                      <div className="w-12 h-12 rounded-xl bg-[#F5F7FB] border border-[#DDE3EE] flex items-center justify-center mb-4 text-[#1e3a8a] shadow-xs">
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border mb-2 ${w.badgeColor}`}>
-                        {w.title}
-                      </span>
-                      <h3 className="font-extrabold text-[#0B1221] text-base mb-2">{w.title}</h3>
-                      <div className="space-y-1 text-xs text-[#6B7A8D] mb-4">
-                        {w.lines.map((l) => (
-                          <p key={l}>{l}</p>
-                        ))}
-                      </div>
-                    </div>
+                    {w.cta}
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-                    <a
-                      href={w.href}
-                      target={w.href.startsWith('http') ? '_blank' : undefined}
-                      rel={w.href.startsWith('http') ? 'noreferrer' : undefined}
-                      className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] shadow-xs hover:shadow-md transition-all duration-200"
-                    >
-                      {w.cta}
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+        {/* Form + Map & Hours Section */}
+        <section id="contact-form" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Form */}
+            <div className="lg:col-span-7 bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-8 shadow-sm">
+              <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs">
+                Direct Messaging
+              </span>
+              <h2 className="text-2xl font-extrabold text-[#0B1221] mb-2">Send Us a Direct Message</h2>
+              <p className="text-xs text-[#6B7A8D] mb-6">
+                Fill out the form below. We typically respond within 24 business hours.
+              </p>
 
-          {/* Form + Map & Hours Section */}
-          <section id="contact-form" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Column: Form */}
-              <div className="lg:col-span-7 bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-8 shadow-sm">
-                <span className="inline-block bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 mb-3 shadow-xs">
-                  Direct Messaging
-                </span>
-                <h2 className="text-2xl font-extrabold text-[#0B1221] mb-2">Send Us a Direct Message</h2>
-                <p className="text-xs text-[#6B7A8D] mb-6">
-                  Fill out the form below. We typically respond within 24 business hours.
-                </p>
-
-                {submitted ? (
-                  <div className="p-8 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-center space-y-3 animate-[scaleIn_200ms_ease]">
-                    <CheckCircle2 className="h-12 w-12 text-emerald-600 mx-auto" />
-                    <h3 className="text-lg font-bold text-emerald-900">Message Received!</h3>
-                    <p className="text-xs text-emerald-700 max-w-md mx-auto">
-                      Thank you for contacting the UG Student Clinic. Our team has received your enquiry and will respond via email shortly.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setSubmitted(false)}
-                      className="mt-2 text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
-                    >
-                      Send another message
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Full Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          required
-                          type="text"
-                          placeholder="e.g. Ama Mensah"
-                          value={form.name}
-                          onChange={set('name')}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Student ID (optional)
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 10928374"
-                          value={form.studentId}
-                          onChange={set('studentId')}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Email Address <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          required
-                          type="email"
-                          placeholder="your.email@st.ug.edu.gh"
-                          value={form.email}
-                          onChange={set('email')}
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          placeholder="+233 24 000 0000"
-                          value={form.phone}
-                          onChange={set('phone')}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Department
-                        </label>
-                        <select
-                          value={form.department}
-                          onChange={set('department')}
-                          className={`${inputClass} cursor-pointer`}
-                        >
-                          <option>General Medicine</option>
-                          <option>Mental Health & Counseling</option>
-                          <option>Sexual & Reproductive Health</option>
-                          <option>Student Wellness</option>
-                          <option>Pharmacy & Prescriptions</option>
-                          <option>Administration / Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                          Subject <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          required
-                          type="text"
-                          placeholder="Reason for contacting"
-                          value={form.subject}
-                          onChange={set('subject')}
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
-
+              {submitted ? (
+                <div className="p-8 bg-emerald-50/90 border border-emerald-200 rounded-2xl text-center space-y-3 animate-[scaleIn_200ms_ease]">
+                  <CheckCircle2 className="h-12 w-12 text-emerald-600 mx-auto" />
+                  <h3 className="text-lg font-bold text-emerald-900">Message Received!</h3>
+                  <p className="text-xs text-emerald-700 max-w-md mx-auto">
+                    Thank you for contacting the UG Student Clinic. Our team has received your enquiry and will respond via email shortly.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSubmitted(false)}
+                    className="mt-2 text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
+                  >
+                    Send another message
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-[#0B1221] mb-1">
-                        Message <span className="text-red-500">*</span>
+                        Full Name <span className="text-red-500">*</span>
                       </label>
-                      <textarea
+                      <input
                         required
-                        rows={4}
-                        placeholder="Provide as much detail as possible..."
-                        value={form.message}
-                        onChange={set('message')}
-                        className={`${inputClass} resize-none`}
+                        type="text"
+                        placeholder="e.g. Ama Mensah"
+                        value={form.name}
+                        onChange={set('name')}
+                        className={inputClass}
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                        Student ID (optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 10928374"
+                        value={form.studentId}
+                        onChange={set('studentId')}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        required
+                        type="email"
+                        placeholder="your.email@st.ug.edu.gh"
+                        value={form.email}
+                        onChange={set('email')}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+233 24 000 0000"
+                        value={form.phone}
+                        onChange={set('phone')}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                        Department
+                      </label>
+                      <select
+                        value={form.department}
+                        onChange={set('department')}
+                        className={`${inputClass} cursor-pointer`}
+                      >
+                        <option>General Medicine</option>
+                        <option>Mental Health & Counseling</option>
+                        <option>Sexual & Reproductive Health</option>
+                        <option>Student Wellness</option>
+                        <option>Pharmacy & Prescriptions</option>
+                        <option>Administration / Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                        Subject <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="Reason for contacting"
+                        value={form.subject}
+                        onChange={set('subject')}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#0B1221] mb-1">
+                      Message <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      rows={4}
+                      placeholder="Provide as much detail as possible..."
+                      value={form.message}
+                      onChange={set('message')}
+                      className={`${inputClass} resize-none`}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="
                         w-full py-3 rounded-xl font-bold text-xs text-white
                         bg-gradient-to-r from-[#0F172A] to-[#1e3a8a]
                         shadow-[0_4px_14px_rgba(15,23,42,0.25)]
@@ -453,248 +453,248 @@ export default function ContactPageClient() {
                         flex items-center justify-center gap-2
                         disabled:opacity-50
                       "
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" /> Sending Message...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" /> Send Direct Message
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Sending Message...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" /> Send Direct Message
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Right Column: Location & Hours */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Location & Maps */}
+              <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-6 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#1e3a8a]">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-[#0B1221] text-base leading-tight">Clinic Location</h3>
+                      <p className="text-[11px] text-[#6B7A8D]">UG Health Services & Student Clinic</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyAddress}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0369A1] hover:underline bg-blue-50/80 px-2.5 py-1 rounded-lg border border-blue-100 transition-colors"
+                  >
+                    <Copy className="h-3 w-3" /> {copied ? 'Copied!' : 'Copy GPS'}
+                  </button>
+                </div>
+
+                {/* ── Interactive Google Maps Preview Frame ── */}
+                <div className="relative w-full h-56 rounded-2xl overflow-hidden border border-[#DDE3EE] mb-4 group shadow-inner">
+                  <iframe
+                    src="https://maps.google.com/maps?q=5.647073840821125,-0.18719175546379127&z=17&output=embed"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="University of Ghana Student Clinic Google Map Preview"
+                    className="w-full h-full object-cover filter contrast-[1.02]"
+                  />
+
+                  {/* Hover indicator link */}
+                  <a
+                    href="https://www.google.com/maps?q=5.647073840821125,-0.18719175546379127"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0F172A]/90 hover:bg-[#1e3a8a] text-white backdrop-blur-md shadow-md transition-all duration-200"
+                  >
+                    <Navigation className="w-3.5 h-3.5" /> Full Map ↗
+                  </a>
+                </div>
+
+                <p className="text-xs text-[#4B5A6E] leading-relaxed mb-4 flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-[#0369A1] shrink-0 mt-0.5" />
+                  <span>{CLINIC_ADDRESS}</span>
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <a
+                    href="https://www.google.com/maps?q=5.647073840821125,-0.18719175546379127"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all"
+                  >
+                    <Navigation className="h-4 w-4" /> Get Directions in Google Maps ↗
+                  </a>
+                  <button
+                    type="button"
+                    onClick={copyAddress}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#F5F7FB] hover:bg-blue-50 text-[#1e3a8a] border border-[#DDE3EE] hover:border-[#0369A1] transition-all"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> {copied ? 'Copied!' : 'Copy GPS'}
+                  </button>
+                </div>
               </div>
 
-              {/* Right Column: Location & Hours */}
-              <div className="lg:col-span-5 space-y-6">
-                {/* Location & Maps */}
-                <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-6 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#1e3a8a]">
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-[#0B1221] text-base leading-tight">Clinic Location</h3>
-                        <p className="text-[11px] text-[#6B7A8D]">UG Health Services & Student Clinic</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={copyAddress}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0369A1] hover:underline bg-blue-50/80 px-2.5 py-1 rounded-lg border border-blue-100 transition-colors"
-                    >
-                      <Copy className="h-3 w-3" /> {copied ? 'Copied!' : 'Copy GPS'}
-                    </button>
-                  </div>
-
-                  {/* ── Interactive Google Maps Preview Frame ── */}
-                  <div className="relative w-full h-56 rounded-2xl overflow-hidden border border-[#DDE3EE] mb-4 group shadow-inner">
-                    <iframe
-                      src="https://maps.google.com/maps?q=5.647073840821125,-0.18719175546379127&z=17&output=embed"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen={false}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="University of Ghana Student Clinic Google Map Preview"
-                      className="w-full h-full object-cover filter contrast-[1.02]"
-                    />
-                    
-                    {/* Hover indicator link */}
-                    <a
-                      href="https://www.google.com/maps?q=5.647073840821125,-0.18719175546379127"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0F172A]/90 hover:bg-[#1e3a8a] text-white backdrop-blur-md shadow-md transition-all duration-200"
-                    >
-                      <Navigation className="w-3.5 h-3.5" /> Full Map ↗
-                    </a>
-                  </div>
-
-                  <p className="text-xs text-[#4B5A6E] leading-relaxed mb-4 flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-[#0369A1] shrink-0 mt-0.5" />
-                    <span>{CLINIC_ADDRESS}</span>
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <a
-                      href="https://www.google.com/maps?q=5.647073840821125,-0.18719175546379127"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#0F172A] to-[#1e3a8a] text-white shadow-sm hover:shadow-md hover:-translate-y-px transition-all"
-                    >
-                      <Navigation className="h-4 w-4" /> Get Directions in Google Maps ↗
-                    </a>
-                    <button
-                      type="button"
-                      onClick={copyAddress}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#F5F7FB] hover:bg-blue-50 text-[#1e3a8a] border border-[#DDE3EE] hover:border-[#0369A1] transition-all"
-                    >
-                      <Copy className="h-3.5 w-3.5" /> {copied ? 'Copied!' : 'Copy GPS'}
-                    </button>
-                  </div>
+              {/* Operating Hours Table */}
+              <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="h-5 w-5 text-[#1e3a8a]" />
+                  <h3 className="font-extrabold text-[#0B1221] text-base">Working Hours</h3>
                 </div>
 
-                {/* Operating Hours Table */}
-                <div className="bg-white/92 backdrop-blur-md border border-white/80 rounded-3xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Clock className="h-5 w-5 text-[#1e3a8a]" />
-                    <h3 className="font-extrabold text-[#0B1221] text-base">Working Hours</h3>
-                  </div>
-
-                  <div className="space-y-2">
-                    {hours.map((h) => {
-                      const badge = statusBadge[h.status];
-                      return (
-                        <div
-                          key={h.day}
-                          className="flex items-center justify-between text-xs py-1.5 border-b border-[#F0F3F9] last:border-0"
-                        >
-                          <span className="font-semibold text-[#0B1221]">{h.day}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#6B7A8D]">{h.time}</span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.text}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                              {badge.label}
-                            </span>
-                          </div>
+                <div className="space-y-2">
+                  {hours.map((h) => {
+                    const badge = statusBadge[h.status];
+                    return (
+                      <div
+                        key={h.day}
+                        className="flex items-center justify-between text-xs py-1.5 border-b border-[#F0F3F9] last:border-0"
+                      >
+                        <span className="font-semibold text-[#0B1221]">{h.day}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#6B7A8D]">{h.time}</span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${badge.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                            {badge.label}
+                          </span>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Campus Landmark Card */}
+              <div className="relative rounded-3xl overflow-hidden shadow-md border border-[#DDE3EE] group">
+                <div className="relative h-44 w-full">
+                  <Image
+                    src={ugEntranceBg}
+                    alt="University of Ghana Main Campus Entrance"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 40vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/90 via-[#0F172A]/40 to-transparent" />
+                  <div className="absolute bottom-3.5 left-4 right-4 text-white">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-200 bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                      Campus Landmark
+                    </span>
+                    <h4 className="text-sm font-extrabold mt-1">Main Gate Access</h4>
+                    <p className="text-[11px] text-blue-100/90 leading-tight">
+                      Located along the main campus artery, easily accessible from all student halls.
+                    </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                {/* Campus Landmark Card */}
-                <div className="relative rounded-3xl overflow-hidden shadow-md border border-[#DDE3EE] group">
-                  <div className="relative h-44 w-full">
-                    <Image
-                      src={ugEntranceBg}
-                      alt="University of Ghana Main Campus Entrance"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 40vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A]/90 via-[#0F172A]/40 to-transparent" />
-                    <div className="absolute bottom-3.5 left-4 right-4 text-white">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-200 bg-white/15 px-2 py-0.5 rounded-md backdrop-blur-xs">
-                        Campus Landmark
-                      </span>
-                      <h4 className="text-sm font-extrabold mt-1">Main Gate Access</h4>
-                      <p className="text-[11px] text-blue-100/90 leading-tight">
-                        Located along the main campus artery, easily accessible from all student halls.
+        {/* Department Directory */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center mb-12">
+            <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
+              Directory
+            </span>
+            <h2 className="text-3xl font-extrabold text-[#0B1221]">Contact a Specific Department</h2>
+            <p className="text-sm text-[#6B7A8D] mt-2">Direct lines to specialized clinic divisions.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {departments.map((d) => {
+              const Icon = d.icon;
+              return (
+                <div
+                  key={d.name}
+                  className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-10 h-10 bg-[#F5F7FB] border border-[#DDE3EE] rounded-xl flex items-center justify-center text-[#1e3a8a] mb-3 shadow-xs">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-extrabold text-[#0B1221] text-base mb-1">{d.name}</h3>
+                    <p className="text-xs text-[#6B7A8D] mb-4">{d.location}</p>
+
+                    <div className="space-y-1.5 text-xs text-[#4B5A6E] mb-4 pt-3 border-t border-[#EEF1F8]">
+                      <p className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-[#0369A1]" /> {d.phone}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-[#0369A1]" /> {d.email}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-[#0369A1]" /> {d.hours}
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </section>
 
-          {/* Department Directory */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                  <div className="flex gap-2">
+                    <a
+                      href={`mailto:${d.email}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-[#F5F7FB] text-[#1e3a8a] border border-[#DDE3EE] hover:bg-blue-50 hover:border-[#0369A1] transition-all"
+                    >
+                      Email Unit
+                    </a>
+                    {d.mapUrl && (
+                      <a
+                        href={d.mapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-[#0F172A] text-white hover:bg-[#1e3a8a] transition-all"
+                        title="View Location on Google Maps"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* FAQs */}
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
-                Directory
+                FAQ
               </span>
-              <h2 className="text-3xl font-extrabold text-[#0B1221]">Contact a Specific Department</h2>
-              <p className="text-sm text-[#6B7A8D] mt-2">Direct lines to specialized clinic divisions.</p>
+              <h2 className="text-3xl font-extrabold text-[#0B1221]">Frequently Asked Questions</h2>
+              <p className="text-sm text-[#6B7A8D] mt-2">Quick answers to common questions about clinic contacts.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {departments.map((d) => {
-                const Icon = d.icon;
+            <div className="space-y-3">
+              {faqs.map((faq, idx) => {
+                const open = openFaq === idx;
                 return (
                   <div
-                    key={d.name}
-                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl p-6 shadow-sm hover:shadow-[0_16px_40px_-8px_rgba(15,23,42,0.16)] hover:-translate-y-1 hover:border-blue-200 transition-all duration-300 flex flex-col justify-between"
+                    key={faq.q}
+                    className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl overflow-hidden shadow-xs transition-all"
                   >
-                    <div>
-                      <div className="w-10 h-10 bg-[#F5F7FB] border border-[#DDE3EE] rounded-xl flex items-center justify-center text-[#1e3a8a] mb-3 shadow-xs">
-                        <Icon className="w-5 h-5" />
+                    <button
+                      onClick={() => setOpenFaq(open ? null : idx)}
+                      className="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-[#0B1221] hover:text-[#0369A1] transition-colors"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7A8D] transition-transform duration-200 ${open ? 'rotate-180 text-[#0369A1]' : ''}`} />
+                    </button>
+                    {open && (
+                      <div className="px-5 pb-5 text-xs text-[#4B5A6E] leading-relaxed border-t border-gray-100 pt-3 animate-[slideDown_150ms_ease]">
+                        {faq.a}
                       </div>
-                      <h3 className="font-extrabold text-[#0B1221] text-base mb-1">{d.name}</h3>
-                      <p className="text-xs text-[#6B7A8D] mb-4">{d.location}</p>
-
-                      <div className="space-y-1.5 text-xs text-[#4B5A6E] mb-4 pt-3 border-t border-[#EEF1F8]">
-                        <p className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-[#0369A1]" /> {d.phone}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-[#0369A1]" /> {d.email}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 text-[#0369A1]" /> {d.hours}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <a
-                        href={`mailto:${d.email}`}
-                        className="flex-1 inline-flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold bg-[#F5F7FB] text-[#1e3a8a] border border-[#DDE3EE] hover:bg-blue-50 hover:border-[#0369A1] transition-all"
-                      >
-                        Email Unit
-                      </a>
-                      {d.mapUrl && (
-                        <a
-                          href={d.mapUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-[#0F172A] text-white hover:bg-[#1e3a8a] transition-all"
-                          title="View Location on Google Maps"
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-          </section>
-
-          {/* FAQs */}
-          <section className="py-16">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <span className="inline-block bg-white/95 text-[#1e3a8a] text-xs font-bold px-3.5 py-1.5 rounded-full border border-blue-100 shadow-xs mb-3 backdrop-blur-sm">
-                  FAQ
-                </span>
-                <h2 className="text-3xl font-extrabold text-[#0B1221]">Frequently Asked Questions</h2>
-                <p className="text-sm text-[#6B7A8D] mt-2">Quick answers to common questions about clinic contacts.</p>
-              </div>
-
-              <div className="space-y-3">
-                {faqs.map((faq, idx) => {
-                  const open = openFaq === idx;
-                  return (
-                    <div
-                      key={faq.q}
-                      className="bg-white/92 backdrop-blur-md border border-white/80 rounded-2xl overflow-hidden shadow-xs transition-all"
-                    >
-                      <button
-                        onClick={() => setOpenFaq(open ? null : idx)}
-                        className="w-full p-5 text-left flex items-center justify-between font-bold text-sm text-[#0B1221] hover:text-[#0369A1] transition-colors"
-                      >
-                        <span>{faq.q}</span>
-                        <ChevronDown className={`w-4 h-4 text-[#6B7A8D] transition-transform duration-200 ${open ? 'rotate-180 text-[#0369A1]' : ''}`} />
-                      </button>
-                      {open && (
-                        <div className="px-5 pb-5 text-xs text-[#4B5A6E] leading-relaxed border-t border-gray-100 pt-3 animate-[slideDown_150ms_ease]">
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+          </div>
+        </section>
       </div>
 
       <Footer />

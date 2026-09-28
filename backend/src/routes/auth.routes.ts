@@ -3,7 +3,6 @@ import {
   register,
   login,
   logout,
-  refreshToken,
   getProfile,
   loginWithOTP,
   checkAccount,
@@ -11,11 +10,10 @@ import {
 import {
   validateRegistration,
   validateLogin,
-  validateRefreshToken,
   validateLogout,
   validateCheckAccount,
 } from '../validators/auth.validator';
-import { authenticate } from '../middleware/auth';
+import { authenticateSession } from '../middleware/sessionAuth';
 import {
   forgotPassword,
   resetPassword,
@@ -46,8 +44,7 @@ router.post('/register', validateRegistration, register);
 router.post('/check-account', validateCheckAccount, checkAccount);
 router.post('/login', validateLogin, login);
 router.post('/logout', validateLogout, logout);
-router.post('/refresh', validateRefreshToken, refreshToken);
-router.get('/profile', authenticate, getProfile);
+router.get('/profile', authenticateSession, getProfile);
 router.post('/login-otp', loginWithOTP);
 
 router.post('/forgot-password', validateForgotPassword, forgotPassword);
@@ -55,10 +52,10 @@ router.post('/reset-password', validateResetPassword, resetPassword);
 router.post('/send-otp', validateSendOTP, sendOTP);
 router.post('/verify-otp', validateVerifyOTP, verifyOTP);
 router.post('/reset-password-otp', validateResetPasswordWithOTP, resetPasswordWithOTP);
-router.post('/security-questions', authenticate, validateSetSecurityQuestions, setSecurityQuestions);
+router.post('/security-questions', authenticateSession, validateSetSecurityQuestions, setSecurityQuestions);
 router.post('/verify-security-questions', validateVerifySecurityQuestions, verifySecurityQuestions);
-router.post('/generate-backup-codes', authenticate, generateBackupCodes);
+router.post('/generate-backup-codes', authenticateSession, generateBackupCodes);
 router.post('/verify-backup-code', validateVerifyBackupCode, verifyBackupCode);
-router.post('/change-password', authenticate, validateChangePassword, changePassword);
+router.post('/change-password', authenticateSession, validateChangePassword, changePassword);
 
 export default router;

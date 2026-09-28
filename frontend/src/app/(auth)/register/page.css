@@ -461,3 +461,25 @@
 .register-reveal-btn:hover {
   color: #4B5563;
 }
+
+@media (max-width: 640px) {
+  .register-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .register-submit-button {
+    padding: 10px 18px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .register-input {
+    padding: 8px 10px 8px 36px;
+    font-size: 13px;
+  }
+  .register-input-icon {
+    left: 10px;
+  }
+  .register-card-title {
+    font-size: 18px;
+  }
+}
