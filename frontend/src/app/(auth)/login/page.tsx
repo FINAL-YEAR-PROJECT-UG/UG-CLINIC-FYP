@@ -152,7 +152,7 @@ function LoginFormContent() {
             p-8 sm:p-9
             animate-[scaleIn_260ms_cubic-bezier(0.4,0,0.2,1)_both]
           ">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
               {/* Error Alert */}
               {error && (
                 <div
@@ -179,7 +179,7 @@ function LoginFormContent() {
                 <input
                   id="username"
                   type="text"
-                  autoComplete="username"
+                  autoComplete="off"
                   placeholder="Enter your student ID or email"
                   disabled={isLoading}
                   className="
@@ -218,7 +218,7 @@ function LoginFormContent() {
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     placeholder="Enter your password"
                     disabled={isLoading}
                     className="

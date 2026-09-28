@@ -137,7 +137,7 @@ export default function StaffPortalAccessPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
             {error && (
               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300 font-medium">
                 {error}
@@ -150,7 +150,7 @@ export default function StaffPortalAccessPage() {
               </label>
               <input
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 placeholder="Enter your staff email"
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -165,7 +165,7 @@ export default function StaffPortalAccessPage() {
               </label>
               <input
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 placeholder="••••••••"
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
