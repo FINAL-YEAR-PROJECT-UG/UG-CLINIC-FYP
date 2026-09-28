@@ -175,11 +175,11 @@ function BookingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const rescheduleId = searchParams.get('rescheduleId');
-  const queryServiceId = searchParams.get('serviceId');
-  const queryDate = searchParams.get('date');
-  const queryTime = searchParams.get('time');
-  const queryReason = searchParams.get('reason');
+  const rescheduleId = searchParams?.get('rescheduleId') ?? '';
+  const queryServiceId = searchParams?.get('serviceId') ?? '';
+  const queryDate = searchParams?.get('date') ?? '';
+  const queryTime = searchParams?.get('time') ?? '';
+  const queryReason = searchParams?.get('reason') ?? '';
 
   const isReschedule = Boolean(rescheduleId);
 
