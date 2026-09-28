@@ -11,14 +11,9 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
 
 /** Resolve the configured backend URL, with a local-development fallback. */
 export function getApiBaseUrl(): string {
-<<<<<<< HEAD
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
   if (configuredUrl) {
     return configuredUrl.replace(/\/+$/, "");
-=======
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
->>>>>>> cfd6e2a33c7a8f11ffe1bda1b77cd3b342c02f92
   }
 
   if (typeof window !== 'undefined') {
