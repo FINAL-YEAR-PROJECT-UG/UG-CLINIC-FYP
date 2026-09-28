@@ -45,10 +45,6 @@ export default function StaffPortalAccessPage() {
     formState: { errors },
   } = useForm<StaffLoginFormData>({
     resolver: zodResolver(staffLoginSchema),
-    defaultValues: {
-      email: 'emmanueloteng.k@gmail.com',
-      password: 'Password123!',
-    },
   });
 
   const onSubmit = async (data: StaffLoginFormData) => {
@@ -155,7 +151,7 @@ export default function StaffPortalAccessPage() {
               <input
                 type="email"
                 autoComplete="email"
-                placeholder="staff@ug.edu.gh"
+                placeholder="Enter your staff email"
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 {...register('email')}

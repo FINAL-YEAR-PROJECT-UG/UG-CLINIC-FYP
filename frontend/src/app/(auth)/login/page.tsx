@@ -41,10 +41,6 @@ function LoginFormContent() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: 'student@st.ug.edu.gh',
-      password: 'Password123!',
-    },
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -184,7 +180,7 @@ function LoginFormContent() {
                   id="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="e.g. 10928374 or student@st.ug.edu.gh"
+                  placeholder="Enter your student ID or email"
                   disabled={isLoading}
                   className="
                     w-full px-4 py-3 border-[1.5px] border-[#DDE3EE] bg-white text-[#0B1221]
