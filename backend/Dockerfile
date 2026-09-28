@@ -7,6 +7,7 @@ RUN apk add --no-cache libc6-compat openssl
 
 COPY package*.json ./
 COPY prisma ./prisma
+COPY src ./src
 COPY prisma.config.ts ./
 COPY tsconfig.json ./
 
