@@ -9,13 +9,18 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
-/** Resolve API URL: same hostname as the browser, backend on port 3005. */
+/** Resolve the configured backend URL, with a local-development fallback. */
 export function getApiBaseUrl(): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/+$/, "");
+  }
+
   if (typeof window !== 'undefined') {
     const { protocol, hostname } = window.location;
     return `${protocol}//${hostname}:3005/api`;
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005/api';
+  return 'http://localhost:3005/api';
 }
 
 const api: AxiosInstance = axios.create({
