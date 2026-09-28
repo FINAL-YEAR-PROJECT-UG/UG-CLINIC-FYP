@@ -5,6 +5,8 @@ import SessionTimeoutProvider from "@/components/providers/SessionTimeoutProvide
 import NavigationProgress from "@/components/providers/NavigationProgress";
 import PageTransition from "@/components/providers/PageTransition";
 import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +56,8 @@ export default function RootLayout({
             {children}
           </PageTransition>
         </SessionTimeoutProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
