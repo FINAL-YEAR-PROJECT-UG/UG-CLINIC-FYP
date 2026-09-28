@@ -30,8 +30,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const databaseUrl = process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL;
 const sessionSecret = process.env.SESSION_SECRET;
 
-if (isProduction && !process.env.STORAGE_PRISMA_DATABASE_URL) {
-  throw new Error('STORAGE_PRISMA_DATABASE_URL must be set in production');
+if (isProduction && !databaseUrl) {
+  throw new Error('DATABASE_URL or STORAGE_PRISMA_DATABASE_URL must be set in production');
 }
 
 if (isProduction && !sessionSecret) {
