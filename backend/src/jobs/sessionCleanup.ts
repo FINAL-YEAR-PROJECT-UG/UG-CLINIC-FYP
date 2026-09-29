@@ -15,8 +15,7 @@ export const startSessionCleanupJob = () => {
     async () => {
       try {
         const pool = new Pool({
-          connectionString:
-            process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL,
+          connectionString: process.env.DATABASE_URL,
           ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
         });
 
@@ -52,8 +51,7 @@ export const startSessionCleanupJob = () => {
 export const cleanupExpiredSessions = async () => {
   try {
     const pool = new Pool({
-      connectionString:
-        process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL,
+      connectionString: process.env.DATABASE_URL,
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
     });
 

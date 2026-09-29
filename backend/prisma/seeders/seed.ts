@@ -5,8 +5,7 @@ import { PrismaClient, UserRole } from "@prisma/client";
 import { Pool } from "pg";
 
 export const pool = new Pool({
-  connectionString:
-    process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 });
 
 export const prisma = new PrismaClient({

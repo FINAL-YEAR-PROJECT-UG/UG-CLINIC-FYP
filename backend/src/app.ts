@@ -27,11 +27,11 @@ import startSessionCleanupJob from './jobs/sessionCleanup';
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 const isProduction = process.env.NODE_ENV === 'production';
-const databaseUrl = process.env.STORAGE_PRISMA_DATABASE_URL ?? process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL;
 const sessionSecret = process.env.SESSION_SECRET;
 
 if (isProduction && !databaseUrl) {
-  throw new Error('DATABASE_URL or STORAGE_PRISMA_DATABASE_URL must be set in production');
+  throw new Error('DATABASE_URL must be set in production');
 }
 
 if (isProduction && !sessionSecret) {
