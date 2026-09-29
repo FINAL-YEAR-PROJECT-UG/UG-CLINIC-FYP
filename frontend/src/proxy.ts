@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { updateSession } from '@/utils/supabase/middleware';
 
 /**
  * Protect private pages using NextAuth sessions, with Express sessions retained for staff login.
@@ -32,37 +33,68 @@ const studentRoutes = [
   '/dashboard',
 ];
 
+const STAFF_ROLES = ['ADMIN', 'DOCTOR', 'RECEPTIONIST'];
+
+function preserveSupabaseSession(response: NextResponse, supabaseResponse: NextResponse) {
+  supabaseResponse.cookies.getAll().forEach(({ name, value, ...options }) => {
+    response.cookies.set(name, value, options);
+  });
+
+  for (const header of ['cache-control', 'expires', 'pragma']) {
+    const value = supabaseResponse.headers.get(header);
+    if (value) response.headers.set(header, value);
+  }
+
+  return response;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const { response: supabaseResponse, claims } = await updateSession(request);
 
-  // Allow public routes without authentication
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
-    return NextResponse.next();
+  const isPublicRoute = publicRoutes.some((route) =>
+    route === '/'
+      ? pathname === '/'
+      : pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  if (isPublicRoute) {
+    return supabaseResponse;
   }
 
   const [token, sessionCookie] = await Promise.all([
     getToken({ req: request, secret: process.env.NEXTAUTH_SECRET }),
     Promise.resolve(request.cookies.get('connect.sid')),
   ]);
+  const appMetadata = claims?.app_metadata as { role?: unknown } | undefined;
+  const supabaseRole = typeof appMetadata?.role === 'string'
+    ? appMetadata.role.toUpperCase()
+    : undefined;
+  const userRole = token?.user?.role?.toUpperCase() ?? supabaseRole;
+  const hasSupabaseSession = typeof claims?.sub === 'string';
 
-  if (!token && !sessionCookie) {
+  if (!token && !sessionCookie && !hasSupabaseSession) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    return preserveSupabaseSession(NextResponse.redirect(loginUrl), supabaseResponse);
   }
 
-  const userRole = token?.user?.role?.toUpperCase();
-
-  if (staffRoutes.some(route => pathname.startsWith(route)) && token &&
-      !['ADMIN', 'DOCTOR', 'RECEPTIONIST'].includes(userRole ?? '')) {
-    return NextResponse.redirect(new URL('/staff-portal-access', request.url));
+  if (staffRoutes.some((route) => pathname.startsWith(route)) && !sessionCookie &&
+      !STAFF_ROLES.includes(userRole ?? '')) {
+    return preserveSupabaseSession(
+      NextResponse.redirect(new URL('/staff-portal-access', request.url)),
+      supabaseResponse
+    );
   }
 
-  if (studentRoutes.some(route => pathname.startsWith(route)) && token && userRole !== 'STUDENT') {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (studentRoutes.some((route) => pathname.startsWith(route)) && userRole && userRole !== 'STUDENT') {
+    return preserveSupabaseSession(
+      NextResponse.redirect(new URL('/login', request.url)),
+      supabaseResponse
+    );
   }
 
-  return NextResponse.next();
+  return supabaseResponse;
 }
 
 export const config = {
