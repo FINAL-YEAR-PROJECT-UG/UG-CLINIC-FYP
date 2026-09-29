@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 
 interface UGLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -27,13 +26,13 @@ export default function UGLogo({
   const logoContent = (
     <div className={`inline-flex items-center gap-3 ${className}`}>
       <div className="relative flex items-center justify-center shrink-0 overflow-hidden rounded-xl border-2 border-gray-100 bg-white p-1 shadow-sm">
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/logo.svg"
           alt="University of Ghana Health Services Logo"
           width={dimensions.img}
           height={dimensions.img}
           className="object-contain rounded-xl"
-          priority
         />
       </div>
       {showText && (

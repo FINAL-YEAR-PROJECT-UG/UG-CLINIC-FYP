@@ -201,7 +201,7 @@ export default function ContactPageClient() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity 100"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         >
           <source src="/ug-video.mp4" type="video/mp4" />
           <source src="/UG video.mp4" type="video/mp4" />

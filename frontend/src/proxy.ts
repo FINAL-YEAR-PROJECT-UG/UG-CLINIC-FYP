@@ -99,14 +99,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - api routes (handled by backend)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:css|js|mjs|map|json|webmanifest|xml|txt|svg|png|jpe?g|gif|webp|avif|ico|mp4|webm|mov|mp3|wav|ogg|woff2?|ttf|otf|pdf)$).*)',
   ],
 };
