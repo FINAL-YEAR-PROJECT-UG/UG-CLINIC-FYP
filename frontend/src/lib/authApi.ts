@@ -25,6 +25,7 @@ export interface LoginData {
 export interface AuthResponse {
   success: boolean;
   message: string;
+  requiresEmailConfirmation?: boolean;
   user?: {
     id: string;
     email: string;
@@ -52,8 +53,10 @@ export interface AuthResponse {
       accessToken: string;
       refreshToken: string;
     };
+    session?: unknown;
   };
 }
+
 
 export const authApi = {
   register: async (data: RegisterData): Promise<AuthResponse> => {

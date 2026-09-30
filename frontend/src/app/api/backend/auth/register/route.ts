@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server.js";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
@@ -110,10 +110,16 @@ export async function POST(request: NextRequest) {
         isActive: true,
       };
 
+      // data.session is null when Supabase has email confirmation enabled.
+      const requiresEmailConfirmation = !data.session;
+
       return NextResponse.json(
         {
           success: true,
-          message: "Registration successful",
+          message: requiresEmailConfirmation
+            ? "Registration successful. Please check your email to confirm your account."
+            : "Registration successful",
+          requiresEmailConfirmation,
           user: formattedUser,
           data: {
             user: formattedUser,

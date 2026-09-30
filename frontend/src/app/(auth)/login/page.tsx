@@ -27,13 +27,18 @@ function LoginFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   useEffect(() => {
     const roleParam = searchParams?.get('role')?.toLowerCase?.();
     if (roleParam === 'staff' || roleParam === 'admin' || roleParam === 'doctor' || roleParam === 'receptionist') {
       router.replace('/staff-portal-access');
     }
+    if (searchParams?.get('registered') === 'true') {
+      setRegistrationSuccess(true);
+    }
   }, [searchParams, router]);
+
 
   const {
     register,
@@ -162,6 +167,16 @@ function LoginFormContent() {
             animate-[scaleIn_260ms_cubic-bezier(0.4,0,0.2,1)_both]
           ">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
+              {/* Registration success — email confirmation banner */}
+              {registrationSuccess && (
+                <div
+                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both]"
+                  role="status"
+                >
+                  ✅ Account created! Check your email for a confirmation link, then sign in below.
+                </div>
+              )}
+
               {/* Error Alert */}
               {error && (
                 <div
@@ -179,6 +194,7 @@ function LoginFormContent() {
                   )}
                 </div>
               )}
+
 
               {/* Username */}
               <div>

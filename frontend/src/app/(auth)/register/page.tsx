@@ -176,7 +176,16 @@ export default function RegisterPage() {
       });
 
       if (response.success) {
-        router.push('/dashboard');
+        if (response.requiresEmailConfirmation) {
+          // Supabase email confirmation is enabled — the user must click the
+          // link in their inbox before they can log in.  Send them to the login
+          // page with a banner explaining this.
+          router.push('/login?registered=true');
+        } else {
+          // Email confirmation is disabled (or the Supabase project auto-confirms).
+          // The auth store was already populated by registerWithStore; go to dashboard.
+          router.push('/dashboard');
+        }
       } else {
         setError(response.message || 'Registration failed. Please try again.');
         setIsLoading(false);
@@ -186,6 +195,7 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
+
 
   // Shared Header
   const header = (
