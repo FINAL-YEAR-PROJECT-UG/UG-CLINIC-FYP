@@ -52,12 +52,12 @@ export default function StaffPortalAccessPage() {
   const onSubmit = async (data: StaffLoginFormData) => {
     setIsLoading(true);
     setError('');
+    let supabaseAuthError: string | null = null;
     try {
       const email = data.email.trim();
       const password = data.password;
 
       // 1. Authenticate with Supabase Auth email/password flow
-      let supabaseAuthError: string | null = null;
       try {
         const supabase = createClient();
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
