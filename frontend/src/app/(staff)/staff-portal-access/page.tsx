@@ -13,6 +13,8 @@ import UGLogo from '@/components/shared/UGLogo';
 import Image from 'next/image';
 import viceChancellorBg from '@/Assets/Legon UG/vice chancelor.jpg';
 
+import { createClient } from '@/utils/supabase/client';
+
 const staffLoginSchema = z.object({
   email: z.string().email('Please enter a valid staff email address'),
   password: z.string().min(6, 'Password is required'),
@@ -51,9 +53,56 @@ export default function StaffPortalAccessPage() {
     setIsLoading(true);
     setError('');
     try {
+      const email = data.email.trim();
+      const password = data.password;
+
+      // 1. Authenticate with Supabase Auth email/password flow
+      let supabaseAuthError: string | null = null;
+      try {
+        const supabase = createClient();
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (!authError && authData.user) {
+          const user = authData.user;
+          // Verify staff role from trusted app_metadata (set only by server/admin) or user_metadata
+          const appRole = (user.app_metadata?.role as string | undefined)?.toUpperCase();
+          const userMetaRole = (user.user_metadata?.role as string | undefined)?.toUpperCase();
+          const trustedRole = appRole || userMetaRole;
+
+          const ALLOWED_STAFF_ROLES = ['ADMIN', 'DOCTOR', 'RECEPTIONIST'];
+
+          if (trustedRole && ALLOWED_STAFF_ROLES.includes(trustedRole)) {
+            setAuth({
+              id: user.id,
+              email: user.email ?? email,
+              firstName: user.user_metadata?.firstName || 'Staff',
+              lastName: user.user_metadata?.lastName || '',
+              phone: user.user_metadata?.phone,
+              role: trustedRole,
+              isActive: true,
+            });
+            router.push('/staff/overview');
+            return;
+          } else {
+            // Signed in as non-staff; immediately revoke session
+            await supabase.auth.signOut();
+            setError('Access denied: This account is not authorized as staff (Admin, Doctor, Receptionist).');
+            return;
+          }
+        } else if (authError) {
+          supabaseAuthError = authError.message;
+        }
+      } catch (err: any) {
+        supabaseAuthError = err.message;
+      }
+
+      // 2. Fall back to backend staff login if account was not found in Supabase
       const response = await api.post('/staff/login', {
-        email: data.email.trim(),
-        password: data.password,
+        email,
+        password,
       }, { withCredentials: true });
 
       if (response.data.success) {
@@ -61,7 +110,7 @@ export default function StaffPortalAccessPage() {
         const require2FA = require2FAVal ?? response.data.requires2FA ?? false;
 
         if (require2FA) {
-          const otpEmail = response.data.data?.email ?? data.email.trim();
+          const otpEmail = response.data.data?.email ?? email;
           sessionStorage.setItem('otpEmail', otpEmail);
           const devCode = response.data.data?.devCode;
           if (devCode) {
@@ -75,18 +124,17 @@ export default function StaffPortalAccessPage() {
         }
 
         const normalizedUserRole = user?.role?.toUpperCase?.() ?? user?.role ?? '';
-        if (user && ['RECEPTIONIST', 'ADMIN'].includes(normalizedUserRole)) {
-          // Session cookie is set by the backend — just update UI state.
+        if (user && ['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(normalizedUserRole)) {
           setAuth(user);
           router.push('/staff/overview');
         } else {
-          setError('Access denied: Only Receptionist and Admin credentials are authorized to sign in.');
+          setError('Access denied: Only Doctor, Receptionist, and Admin credentials are authorized to sign in.');
         }
       } else {
-        setError(response.data.message || 'Staff authentication failed.');
+        setError(response.data.message || supabaseAuthError || 'Staff authentication failed.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid staff credentials or unauthorized access attempt.');
+      setError(err.response?.data?.message || supabaseAuthError || 'Invalid staff credentials or unauthorized access attempt.');
     } finally {
       setIsLoading(false);
     }

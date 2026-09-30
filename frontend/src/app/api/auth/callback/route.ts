@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server.js";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
 export const runtime = "nodejs";
 
@@ -12,8 +12,9 @@ export const runtime = "nodejs";
  * Without this route the request falls through to NextAuth's catch-all
  * which returns: "Callback for provider type credentials not supported"
  *
- * This handler exchanges the PKCE `code` for a session and redirects
- * the user to the dashboard (or /login on error).
+ * This handler exchanges the PKCE `code` for a session, writes the session
+ * cookies onto the redirect response, and forwards the user to /dashboard
+ * (or /login on error).
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
@@ -37,8 +38,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=configuration`);
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
+  const redirectUrl = next.startsWith("/") ? `${origin}${next}` : `${origin}/dashboard`;
+  const response = NextResponse.redirect(redirectUrl);
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
   });
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -50,7 +63,5 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Email confirmed — redirect to the originally requested page (default: /dashboard).
-  const redirectUrl = next.startsWith("/") ? `${origin}${next}` : `${origin}/dashboard`;
-  return NextResponse.redirect(redirectUrl);
+  return response;
 }

@@ -73,25 +73,45 @@ export async function proxy(request: NextRequest) {
   const userRole = token?.user?.role?.toUpperCase() ?? supabaseRole;
   const hasSupabaseSession = typeof claims?.sub === 'string';
 
+  const isStaffPath = staffRoutes.some((route) => pathname.startsWith(route));
+  const isStudentPath = studentRoutes.some((route) => pathname.startsWith(route));
+
+  // Protect staff routes: require authenticated session with trusted staff role
+  if (isStaffPath) {
+    if (!token && !sessionCookie && !hasSupabaseSession) {
+      const staffLoginUrl = new URL('/staff-portal-access', request.url);
+      staffLoginUrl.searchParams.set('redirect', pathname);
+      return preserveSupabaseSession(NextResponse.redirect(staffLoginUrl), supabaseResponse);
+    }
+    if (!userRole || !STAFF_ROLES.includes(userRole)) {
+      const redirectUrl = new URL('/staff-portal-access', request.url);
+      redirectUrl.searchParams.set('error', 'unauthorized');
+      return preserveSupabaseSession(NextResponse.redirect(redirectUrl), supabaseResponse);
+    }
+    return supabaseResponse;
+  }
+
+  // Protect student routes: require authenticated session with STUDENT role
+  if (isStudentPath) {
+    if (!token && !sessionCookie && !hasSupabaseSession) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return preserveSupabaseSession(NextResponse.redirect(loginUrl), supabaseResponse);
+    }
+    if (userRole && userRole !== 'STUDENT') {
+      return preserveSupabaseSession(
+        NextResponse.redirect(new URL('/staff/overview', request.url)),
+        supabaseResponse
+      );
+    }
+    return supabaseResponse;
+  }
+
+  // Default protected routes
   if (!token && !sessionCookie && !hasSupabaseSession) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return preserveSupabaseSession(NextResponse.redirect(loginUrl), supabaseResponse);
-  }
-
-  if (staffRoutes.some((route) => pathname.startsWith(route)) && !sessionCookie &&
-      !STAFF_ROLES.includes(userRole ?? '')) {
-    return preserveSupabaseSession(
-      NextResponse.redirect(new URL('/staff-portal-access', request.url)),
-      supabaseResponse
-    );
-  }
-
-  if (studentRoutes.some((route) => pathname.startsWith(route)) && userRole && userRole !== 'STUDENT') {
-    return preserveSupabaseSession(
-      NextResponse.redirect(new URL('/login', request.url)),
-      supabaseResponse
-    );
   }
 
   return supabaseResponse;
