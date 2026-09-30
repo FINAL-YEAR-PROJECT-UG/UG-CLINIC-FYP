@@ -1,10 +1,10 @@
 $kind: http-request
+description: ""
 method: POST
-url: '{{baseUrl}}/api/auth/register'
+url: "{{baseUrl}}/api/auth/register"
 order: 3000
 headers:
-  - key: Content-Type
-    value: application/json
+  Content-Type: application/json
 body:
   type: json
   content: |-
@@ -21,7 +21,6 @@ body:
     }
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |-
       pm.test('Returns success or validation error', function () {
         pm.expect(pm.response.code).to.be.oneOf([201, 400, 409, 500]);
@@ -32,3 +31,4 @@ scripts:
           pm.environment.set('studentIdOrUserId', json.data.user.id || '');
         }
       }
+    language: text/javascript
