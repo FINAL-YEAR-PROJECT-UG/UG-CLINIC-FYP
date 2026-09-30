@@ -1,5 +1,6 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { buildUpstreamHeaders } from "../headers";
 
 type RouteContext = {
   params: Promise<{ path: string[] }>;
@@ -19,19 +20,10 @@ async function forwardToBackend(request: NextRequest, context: RouteContext) {
   });
   const cookie =
     token?.backendSessionCookie ?? request.cookies.get("connect.sid")?.value;
-  const headers = new Headers(request.headers);
-
-  headers.delete("connection");
-  headers.delete("content-length");
-  headers.delete("cookie");
-  headers.delete("host");
-
-  if (cookie) {
-    headers.set(
-      "cookie",
-      cookie.startsWith("connect.sid=") ? cookie : `connect.sid=${cookie}`
-    );
-  }
+  const headers = buildUpstreamHeaders(request.headers, {
+    cookie,
+    backendUrl,
+  });
 
   try {
     const hasBody = !["GET", "HEAD"].includes(request.method);
