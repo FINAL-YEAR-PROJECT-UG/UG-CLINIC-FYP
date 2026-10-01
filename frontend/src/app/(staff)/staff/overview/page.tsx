@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
-import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
 import universityOfGhanaBg from '@/Assets/Legon UG/university-of-ghana.jpg';
@@ -95,12 +93,6 @@ export default function StaffOverviewPage() {
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
 
-  // Inactivity timeout hook
-  const { showWarning, timeRemaining, handleStayLoggedIn, handleLogout: handleInactivityLogout } = useInactivityTimeout({
-    warningMinutes: 10,
-    logoutMinutes: 2,
-    enabled: storeIsAuth,
-  });
 
   const initialSnap = useAuthStore.getState();
   const initialUser = initialSnap.user ?? storeUser;
@@ -862,13 +854,6 @@ export default function StaffOverviewPage() {
         </div>
       </div>
 
-      {/* Inactivity Warning Modal */}
-      <InactivityWarning
-        show={showWarning}
-        timeRemaining={timeRemaining}
-        onStayLoggedIn={handleStayLoggedIn}
-        onLogout={handleInactivityLogout}
-      />
     </div>
   );
 }

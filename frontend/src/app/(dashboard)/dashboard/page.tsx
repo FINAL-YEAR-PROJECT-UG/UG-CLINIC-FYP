@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation';
 import ug2Bg from '@/Assets/Legon UG/ug 2.jpg';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/authStore';
-import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
-import { InactivityWarning } from '@/components/shared/InactivityWarning';
 import {
   appointmentApi,
   type ApiAppointment,
@@ -77,12 +75,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
 
-  // Inactivity timeout hook
-  const { showWarning, timeRemaining, handleStayLoggedIn, handleLogout: handleInactivityLogout } = useInactivityTimeout({
-    warningMinutes: 10,
-    logoutMinutes: 2,
-    enabled: isAuthenticated,
-  });
 
   const [guardRedirecting, setGuardRedirecting] = useState(false);
   const [appointments, setAppointments] = useState<ApiAppointment[]>([]);
@@ -531,13 +523,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Inactivity Warning Modal */}
-      <InactivityWarning
-        show={showWarning}
-        timeRemaining={timeRemaining}
-        onStayLoggedIn={handleStayLoggedIn}
-        onLogout={handleInactivityLogout}
-      />
     </div>
   );
 }

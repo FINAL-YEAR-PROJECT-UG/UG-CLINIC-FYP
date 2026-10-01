@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { logoutWithStore } from '@/lib/authApi';
 import { isStaffRole } from '@/lib/utils';
@@ -11,10 +11,37 @@ const PROMPT_MS = 2 * 60 * 1000;
 
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'] as const;
 
+/**
+ * Returns true only if the given pathname is within the student dashboard or staff dashboard.
+ * Explicitly excludes all public pages and the staff login page (/staff-portal-access).
+ */
+export function isDashboardRoute(pathname: string | null): boolean {
+  if (!pathname) return false;
+
+  // Student dashboard: /dashboard or any /dashboard/* subpaths
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    return true;
+  }
+
+  // Staff dashboard: /staff or any /staff/* subpaths (excludes /staff-portal-access)
+  if (pathname === '/staff' || pathname.startsWith('/staff/')) {
+    return true;
+  }
+
+  return false;
+}
+
 export default function SessionTimeoutProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const userRole = useAuthStore((s) => s.user?.role);
+  const user = useAuthStore((s) => s.user);
+
+  // Active ONLY when:
+  // 1. The user is logged in with an authenticated user session
+  // 2. The user is actively viewing either the student dashboard or staff dashboard
+  // Explicitly disabled for users viewing public site pages, auth pages, or staff portal login
+  const isProtectedSessionActive = Boolean(isAuthenticated && user && isDashboardRoute(pathname));
 
   const [showPrompt, setShowPrompt] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(Math.floor(PROMPT_MS / 1000));
@@ -26,9 +53,17 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
     router.replace(isStaffRole(role) ? '/staff-portal-access' : '/login');
   }, [router]);
 
-  // Effect 1: Idle detection (active only when authenticated AND prompt is not visible)
+  // If the user navigates away from dashboard or is no longer authenticated, dismiss prompt and reset
   useEffect(() => {
-    if (!isAuthenticated || showPrompt) return;
+    if (!isProtectedSessionActive) {
+      setShowPrompt(false);
+      setSecondsLeft(Math.floor(PROMPT_MS / 1000));
+    }
+  }, [isProtectedSessionActive]);
+
+  // Effect 1: Idle detection (active only when logged in on a dashboard route AND prompt is not visible)
+  useEffect(() => {
+    if (!isProtectedSessionActive || showPrompt) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -50,11 +85,11 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
       ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity));
       if (timer) clearTimeout(timer);
     };
-  }, [isAuthenticated, showPrompt]);
+  }, [isProtectedSessionActive, showPrompt]);
 
-  // Effect 2: Countdown timer (active only when prompt is visible)
+  // Effect 2: Countdown timer (active only when prompt is visible on active dashboard session)
   useEffect(() => {
-    if (!isAuthenticated || !showPrompt) {
+    if (!isProtectedSessionActive || !showPrompt) {
       setSecondsLeft(Math.floor(PROMPT_MS / 1000));
       return;
     }
@@ -75,7 +110,7 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
     return () => {
       clearInterval(interval);
     };
-  }, [isAuthenticated, showPrompt, performLogout]);
+  }, [isProtectedSessionActive, showPrompt, performLogout]);
 
   const stayActive = useCallback(() => {
     setShowPrompt(false);
@@ -85,8 +120,8 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
   return (
     <>
       {children}
-      {showPrompt && isAuthenticated && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4">
+      {showPrompt && isProtectedSessionActive && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div
             role="dialog"
             aria-modal="true"
@@ -98,7 +133,7 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
               Are you still there?
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Your session has been idle. Click below to stay signed in, or you will be logged out automatically
+              Your session has been idle. Do you want to stay logged in? You will be logged out automatically
               in{' '}
               <span className="font-mono font-bold text-[#1e3a8a]">
                 {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
@@ -109,14 +144,14 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
               <button
                 type="button"
                 onClick={stayActive}
-                className="flex-1 py-3 px-4 rounded-xl bg-[#1e3a8a] text-white text-sm font-bold hover:bg-blue-900 transition-colors"
+                className="flex-1 py-3 px-4 rounded-xl bg-[#1e3a8a] text-white text-sm font-bold hover:bg-blue-900 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                I&apos;m still here
+                Stay logged in
               </button>
               <button
                 type="button"
                 onClick={() => void performLogout()}
-                className="flex-1 inline-flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold leading-tight text-center hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                className="flex-1 inline-flex items-center justify-center py-3 px-4 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold leading-tight text-center hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
               >
                 Log out now
               </button>

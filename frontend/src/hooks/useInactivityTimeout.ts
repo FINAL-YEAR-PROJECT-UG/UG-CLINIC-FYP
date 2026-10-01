@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { isDashboardRoute } from '@/components/providers/SessionTimeoutProvider';
+import { logoutWithStore } from '@/lib/authApi';
+import { isStaffRole } from '@/lib/utils';
 
 interface UseInactivityTimeoutOptions {
   /** Minutes of inactivity before showing warning popup (default: 10) */
@@ -17,15 +20,21 @@ export function useInactivityTimeout({
   enabled = true,
 }: UseInactivityTimeoutOptions = {}) {
   const router = useRouter();
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const pathname = usePathname();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
+
+  const isSessionActive = Boolean(enabled && isAuthenticated && user && isDashboardRoute(pathname));
+
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
-  const handleLogout = useCallback(() => {
-    clearAuth();
+  const handleLogout = useCallback(async () => {
     setShowWarning(false);
-    router.push('/login');
-  }, [clearAuth, router]);
+    const role = useAuthStore.getState().user?.role;
+    await logoutWithStore();
+    router.replace(isStaffRole(role) ? '/staff-portal-access' : '/login');
+  }, [router]);
 
   const resetInactivityTimer = useCallback(() => {
     setShowWarning(false);
@@ -37,7 +46,14 @@ export function useInactivityTimeout({
   }, [resetInactivityTimer]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!isSessionActive) {
+      setShowWarning(false);
+      setTimeRemaining(0);
+    }
+  }, [isSessionActive]);
+
+  useEffect(() => {
+    if (!isSessionActive) return;
 
     let warningTimeoutId: NodeJS.Timeout;
     let logoutTimeoutId: NodeJS.Timeout;
@@ -71,7 +87,7 @@ export function useInactivityTimeout({
 
         // Set logout timer after warning
         logoutTimeoutId = setTimeout(() => {
-          handleLogout();
+          void handleLogout();
         }, logoutTime);
       }, warningTime);
     };
@@ -109,7 +125,7 @@ export function useInactivityTimeout({
         window.removeEventListener(event, handleActivity);
       });
     };
-  }, [enabled, warningMinutes, logoutMinutes, showWarning, handleLogout]);
+  }, [isSessionActive, warningMinutes, logoutMinutes, showWarning, handleLogout]);
 
   return {
     showWarning,
