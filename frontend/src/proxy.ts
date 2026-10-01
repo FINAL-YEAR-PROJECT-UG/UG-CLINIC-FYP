@@ -23,6 +23,7 @@ const publicRoutes = [
   '/verify-otp',
   '/staff-portal-access',
   '/demo-booking', // Allow public access to booking demo
+  '/auth/callback', // Allow public access to auth callback for confirmation
 ];
 
 const staffRoutes = [

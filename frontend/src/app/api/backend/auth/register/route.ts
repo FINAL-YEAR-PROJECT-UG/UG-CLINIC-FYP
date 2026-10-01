@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { createClient } from "@supabase/supabase-js";
+import { getEmailRedirectTo } from "../../../../../lib/authUrl.ts";
 
 export const runtime = "nodejs";
 
@@ -66,23 +67,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Compute canonical production email confirmation redirect URL.
-      // 1. Prefer Vercel production domain if running on Vercel (never uses preview/deployment URLs)
-      // 2. Fall back to NEXT_PUBLIC_APP_URL or NEXTAUTH_URL
-      // 3. Fall back to request origin for local development
-      let emailRedirectTo: string;
-      if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-        emailRedirectTo = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/auth/callback`;
-      } else if (process.env.NEXT_PUBLIC_APP_URL) {
-        emailRedirectTo = `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "")}/api/auth/callback`;
-      } else if (process.env.NEXTAUTH_URL) {
-        emailRedirectTo = `${process.env.NEXTAUTH_URL.replace(/\/+$/, "")}/api/auth/callback`;
-      } else {
-        const origin =
-          (request as any).nextUrl?.origin ||
-          (request.url ? new URL(request.url).origin : "http://localhost:3000");
-        emailRedirectTo = `${origin}/api/auth/callback`;
-      }
+      const origin =
+        (request as any).nextUrl?.origin ||
+        (request.url ? new URL(request.url).origin : undefined);
+      const emailRedirectTo = getEmailRedirectTo(origin, "/auth/callback");
 
       const { data, error } = await supabase.auth.signUp({
         email: String(email).trim().toLowerCase(),

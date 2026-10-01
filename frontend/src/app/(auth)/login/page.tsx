@@ -37,6 +37,16 @@ function LoginFormContent() {
     if (searchParams?.get('registered') === 'true') {
       setRegistrationSuccess(true);
     }
+
+    // If an implicit auth fragment arrives at /login, forward to /auth/callback to consume the session
+    if (typeof window !== 'undefined' && window.location.hash) {
+      if (
+        window.location.hash.includes('access_token=') ||
+        window.location.hash.includes('error=')
+      ) {
+        router.replace(`/auth/callback${window.location.search}${window.location.hash}`);
+      }
+    }
   }, [searchParams, router]);
 
 

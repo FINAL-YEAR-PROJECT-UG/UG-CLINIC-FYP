@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { createServerClient } from "@supabase/ssr";
+import { getSafeRedirectUrl, getCanonicalAppUrl } from "../../../../lib/authUrl.ts";
 
 export const runtime = "nodejs";
 
@@ -18,12 +19,14 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
+  const canonicalOrigin = getCanonicalAppUrl(origin);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const rawNext = searchParams.get("next");
+  const safeNext = getSafeRedirectUrl(rawNext, "/dashboard");
 
   if (!code) {
-    // No code — not a Supabase callback; send to login.
-    return NextResponse.redirect(`${origin}/login`);
+    // No code — not a Supabase PKCE callback; send to login.
+    return NextResponse.redirect(`${canonicalOrigin}/login`);
   }
 
   const supabaseUrl =
@@ -31,14 +34,15 @@ export async function GET(request: NextRequest) {
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY;
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     console.error("[auth/callback] Supabase env vars are not configured.");
-    return NextResponse.redirect(`${origin}/login?error=configuration`);
+    return NextResponse.redirect(`${canonicalOrigin}/login?error=configuration`);
   }
 
-  const redirectUrl = next.startsWith("/") ? `${origin}${next}` : `${origin}/dashboard`;
+  const redirectUrl = `${canonicalOrigin}${safeNext}`;
   const response = NextResponse.redirect(redirectUrl);
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
