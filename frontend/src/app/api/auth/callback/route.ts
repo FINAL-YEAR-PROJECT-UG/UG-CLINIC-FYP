@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { createServerClient } from "@supabase/ssr";
-import { getSafeRedirectUrl, getCanonicalAppUrl } from "../../../../lib/authUrl.ts";
+import { getSafeRedirectUrl, getCanonicalAppUrl } from "@/lib/authUrl";
 
 export const runtime = "nodejs";
 

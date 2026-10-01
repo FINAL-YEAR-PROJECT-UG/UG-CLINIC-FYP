@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GET, POST, OPTIONS } from '../src/app/api/backend/auth/register/route.ts';
+import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+// Resolve @/ alias before importing the route under test.
+const loaderPath = path.resolve('test/setup/alias-loader.mjs');
+register(pathToFileURL(loaderPath));
+
+const { GET, POST, OPTIONS } = await import('../src/app/api/backend/auth/register/route.ts');
 
 test('GET /api/backend/auth/register reaches the handler and returns 200', async () => {
   const response = await GET();

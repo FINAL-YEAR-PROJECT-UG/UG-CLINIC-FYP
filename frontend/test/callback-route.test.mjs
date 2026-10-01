@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GET } from '../src/app/api/auth/callback/route.ts';
+import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+// Resolve @/ alias before importing the route under test.
+// The Node test runner runs each file in its own worker so the top-level
+// --import hook does not propagate; we register the loader here instead.
+const loaderPath = path.resolve('test/setup/alias-loader.mjs');
+register(pathToFileURL(loaderPath));
+
+const { GET } = await import('../src/app/api/auth/callback/route.ts');
 
 test('GET /api/auth/callback without code redirects to /login', async () => {
   const req = {

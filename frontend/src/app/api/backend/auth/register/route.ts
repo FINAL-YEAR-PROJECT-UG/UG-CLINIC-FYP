@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { createClient } from "@supabase/supabase-js";
-import { getEmailRedirectTo } from "../../../../../lib/authUrl.ts";
+import { getEmailRedirectTo } from "@/lib/authUrl";
 
 export const runtime = "nodejs";
 
