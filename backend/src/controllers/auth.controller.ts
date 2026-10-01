@@ -5,6 +5,8 @@ import {
   isValidStudentId,
   validatePhoneNumber,
 } from '../utils/studentValidation';
+import { sendEmailVerificationEmail } from '../services/email.service';
+
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 30;
@@ -142,9 +144,30 @@ export const register = async (req: Request, res: Response) => {
       },
     });
 
+    // Automatically dispatch email verification code upon registration
+    try {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+      await prisma.oTPCode.create({
+        data: {
+          code: verificationCode,
+          userId: user.id,
+          phone: user.phone || user.email,
+          type: 'email_verification',
+          expiresAt: verificationExpiresAt,
+        },
+      });
+
+      sendEmailVerificationEmail(user.email, verificationCode, user.firstName)
+        .catch((err) => console.warn('[Registration] Verification email dispatch error:', err));
+    } catch (emailErr) {
+      console.warn('[Registration] Failed to create email verification code:', emailErr);
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Registration successful',
+      message: 'Registration successful. A verification code has been dispatched to your email.',
       user,
       data: {
         user,
@@ -499,3 +522,143 @@ export const getProfile = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Send or resend an email verification OTP code
+ */
+export const sendEmailVerification = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      // Return 200 to mitigate account enumeration
+      return res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email address, a verification code has been dispatched.',
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'This email is already verified.',
+        alreadyVerified: true,
+      });
+    }
+
+    // Invalidate existing unused email verification codes
+    await prisma.oTPCode.updateMany({
+      where: {
+        userId: user.id,
+        type: 'email_verification',
+        usedAt: null,
+      },
+      data: { usedAt: new Date() },
+    });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+    await prisma.oTPCode.create({
+      data: {
+        code,
+        userId: user.id,
+        phone: user.phone || user.email,
+        type: 'email_verification',
+        expiresAt,
+      },
+    });
+
+    await sendEmailVerificationEmail(user.email, code, user.firstName);
+
+    const isConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+    const devCode = process.env.NODE_ENV !== 'production' && !isConfigured ? code : undefined;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification code sent to your email address.',
+      ...(devCode ? { devCode } : {}),
+    });
+  } catch (error) {
+    console.error('Send email verification error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while dispatching verification email',
+    });
+  }
+};
+
+/**
+ * Verify user email address with 6-digit code
+ */
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim();
+
+    const user = await prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'No account found with this email address.',
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'Email is already verified.',
+      });
+    }
+
+    const otpRecord = await prisma.oTPCode.findFirst({
+      where: {
+        userId: user.id,
+        code: cleanCode,
+        type: 'email_verification',
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code.',
+      });
+    }
+
+    // Mark code as used and update user.emailVerified in a transaction
+    await prisma.$transaction([
+      prisma.oTPCode.update({
+        where: { id: otpRecord.id },
+        data: { usedAt: new Date() },
+      }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true },
+      }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Email verified successfully!',
+    });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while verifying email.',
+    });
+  }
+};
+

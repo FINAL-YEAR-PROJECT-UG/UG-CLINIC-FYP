@@ -152,3 +152,39 @@ export const validateLogout = [
     next();
   },
 ];
+
+export const validateSendEmailVerification = [
+  emailValidator,
+  (req: any, res: any, next: any) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: errors.array()[0]?.msg || 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+    next();
+  },
+];
+
+export const validateVerifyEmail = [
+  emailValidator,
+  body('code')
+    .trim()
+    .notEmpty()
+    .withMessage('Verification code is required')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 digits'),
+  (req: any, res: any, next: any) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: errors.array()[0]?.msg || 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+    next();
+  },
+];

@@ -6,12 +6,16 @@ import {
   getProfile,
   loginWithOTP,
   checkAccount,
+  sendEmailVerification,
+  verifyEmail,
 } from '../controllers/auth.controller';
 import {
   validateRegistration,
   validateLogin,
   validateLogout,
   validateCheckAccount,
+  validateSendEmailVerification,
+  validateVerifyEmail,
 } from '../validators/auth.validator';
 import { authenticateSession } from '../middleware/sessionAuth';
 import {
@@ -46,6 +50,8 @@ router.post('/login', validateLogin, login);
 router.post('/logout', validateLogout, logout);
 router.get('/profile', authenticateSession, getProfile);
 router.post('/login-otp', loginWithOTP);
+router.post('/send-email-verification', validateSendEmailVerification, sendEmailVerification);
+router.post('/verify-email', validateVerifyEmail, verifyEmail);
 
 router.post('/forgot-password', validateForgotPassword, forgotPassword);
 router.post('/reset-password', validateResetPassword, resetPassword);

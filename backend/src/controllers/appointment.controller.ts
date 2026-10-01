@@ -1,6 +1,11 @@
 import { Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
+import {
+  sendAppointmentConfirmationEmail,
+  sendAppointmentRescheduledEmail,
+  sendAppointmentCancellationEmail,
+} from '../services/email.service';
 
 // Helper to convert time slot string to minutes since midnight
 function timeSlotToMinutes(timeStr: string): number {
@@ -469,11 +474,37 @@ export const createAppointment = async (req: AuthRequest, res: Response) => {
         include: {
           service: { select: { id: true, name: true, category: true } },
           doctor: { select: { firstName: true, lastName: true } },
+          user: { select: { email: true, firstName: true, lastName: true } },
         },
       });
 
       return newAppointment;
     });
+
+    // Send confirmation email asynchronously
+    if (appointment?.user?.email) {
+      const studentName = `${appointment.user.firstName} ${appointment.user.lastName}`.trim();
+      const formattedDate = appointmentDate.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      const doctorName = appointment.doctor
+        ? `${appointment.doctor.firstName} ${appointment.doctor.lastName}`.trim()
+        : null;
+
+      sendAppointmentConfirmationEmail({
+        email: appointment.user.email,
+        studentName,
+        serviceName: appointment.service.name,
+        doctorName,
+        date: formattedDate,
+        timeSlot: appointment.timeSlot,
+        appointmentId: appointment.id,
+      }).catch((err) => console.warn('[Appointment] Email confirmation send error:', err));
+    }
+
 
     res.status(201).json({
       success: true,
@@ -586,8 +617,31 @@ export const cancelAppointment = async (req: AuthRequest, res: Response) => {
           cancellationReason: String(cancellationReason).trim().slice(0, 100),
           cancellationNote: cancellationNote ? String(cancellationNote).trim().slice(0, 1000) : null,
         },
+        include: {
+          user: { select: { email: true, firstName: true, lastName: true } },
+          service: { select: { name: true } },
+        },
       });
     });
+
+    // Send cancellation email asynchronously
+    if (updated?.user?.email) {
+      const studentName = `${updated.user.firstName} ${updated.user.lastName}`.trim();
+      const formattedDate = new Date(updated.date).toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      sendAppointmentCancellationEmail({
+        email: updated.user.email,
+        studentName,
+        serviceName: updated.service.name,
+        date: formattedDate,
+        reason: updated.cancellationReason || undefined,
+      }).catch((err) => console.warn('[Appointment] Email cancellation send error:', err));
+    }
+
 
     res.status(200).json({
       success: true,
@@ -949,8 +1003,31 @@ export const rescheduleAppointment = async (req: AuthRequest, res: Response) => 
           status: 'RESCHEDULED',
           updatedAt: new Date(),
         },
+        include: {
+          user: { select: { email: true, firstName: true, lastName: true } },
+          service: { select: { name: true } },
+        },
       });
     });
+
+    // Send reschedule email asynchronously
+    if (updated?.user?.email) {
+      const studentName = `${updated.user.firstName} ${updated.user.lastName}`.trim();
+      const formattedDate = appointmentDate.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      sendAppointmentRescheduledEmail({
+        email: updated.user.email,
+        studentName,
+        serviceName: updated.service.name,
+        newDate: formattedDate,
+        newTimeSlot: String(timeSlot),
+      }).catch((err) => console.warn('[Appointment] Email reschedule send error:', err));
+    }
+
 
     res.status(200).json({
       success: true,
