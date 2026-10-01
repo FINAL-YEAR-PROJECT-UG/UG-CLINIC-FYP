@@ -9,16 +9,24 @@ import nodemailer from 'nodemailer';
  * - SMTP_USER
  * - SMTP_PASS
  */
+const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
 const port = Number(process.env.SMTP_PORT) || 587;
 const secure = process.env.SMTP_SECURE === 'true' || port === 465;
 
+const rawUser = process.env.SMTP_USER?.trim();
+const rawPass = process.env.SMTP_PASS?.trim();
+// If using Gmail SMTP, Google app passwords commonly contain spaces when copied (e.g. "xxxx xxxx xxxx xxxx").
+// Removing whitespace ensures nodemailer authenticates smoothly.
+const isGmail = smtpHost.includes('gmail.com');
+const cleanedPass = isGmail && rawPass ? rawPass.replace(/\s+/g, '') : rawPass;
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  host: smtpHost,
   port,
   secure,
-  auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+  auth: rawUser && cleanedPass ? {
+    user: rawUser,
+    pass: cleanedPass,
   } : undefined,
 });
 
@@ -34,8 +42,21 @@ export const verifyTransporterConnection = async (): Promise<boolean> => {
     await transporter.verify();
     console.info('[EmailService] SMTP server connection verified successfully.');
     return true;
-  } catch (error) {
-    console.error('[EmailService] SMTP server connection verification failed:', error);
+  } catch (error: any) {
+    console.error('[EmailService] SMTP server connection verification failed:', error?.message || error);
+    if (error?.code === 'EAUTH' || error?.responseCode === 535) {
+      console.warn(`
+[EmailService Troubleshooting: Gmail 535 BadCredentials]
+1. If using Gmail, your regular Google password cannot be used directly.
+2. 2-Step Verification must be enabled on your Google Account: https://myaccount.google.com/signinoptions/two-step-verification
+3. Generate a 16-character App Password at: https://myaccount.google.com/apppasswords
+4. Paste the 16-character App Password in backend/.env:
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your_full_email@gmail.com
+   SMTP_PASS=your-16-character-app-password
+`);
+    }
     return false;
   }
 };
