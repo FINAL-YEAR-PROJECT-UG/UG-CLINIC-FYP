@@ -1,9 +1,5 @@
 import sgMail from '@sendgrid/mail';
 
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
-
 /**
  * Sends an email using SendGrid Mail API.
  *
@@ -24,7 +20,13 @@ export async function sendEmail(to, subject, htmlBody) {
     throw new Error('SENDGRID_FROM_EMAIL is not set in environment variables');
   }
 
-  // Ensure the latest API key is configured
+  if (!String(apiKey).startsWith('SG.')) {
+    throw new Error(
+      'SENDGRID_API_KEY is invalid. SendGrid API keys must start with "SG.". ' +
+      'Please verify your environment variable configuration.'
+    );
+  }
+
   sgMail.setApiKey(apiKey);
 
   const msg = {
