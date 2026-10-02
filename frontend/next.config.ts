@@ -60,17 +60,6 @@ const nextConfig: NextConfig = {
   // assets aggressively, so repeat visits are served from disk — no round-trips.
   async headers() {
     return [
-      // Next.js built static assets (_next/static) — immutable 1-year cache
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      // Public folder assets (images, videos, fonts, logo, etc.)
       {
         source: "/(.*)\\.(png|jpg|jpeg|gif|webp|avif|svg|ico|woff|woff2|ttf|otf|mp4|webm)$",
         headers: [
@@ -80,23 +69,19 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // API routes — no caching (always fresh)
       {
         source: "/api/:path*",
         headers: [
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],
       },
-      // All HTML pages — short CDN cache, always revalidate
       {
-        source: "/(.*)",
+        source: "/:path*",
         headers: [
-          // Security headers
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // Preconnect hints for faster font/API loading
           {
             key: "Link",
             value: [

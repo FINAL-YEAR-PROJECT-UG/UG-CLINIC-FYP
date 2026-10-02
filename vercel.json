@@ -1,5 +1,0 @@
-{
-  "framework": "nextjs",
-  "installCommand": "npm ci --legacy-peer-deps --prefix frontend",
-  "buildCommand": "npm run build --prefix frontend"
-}
