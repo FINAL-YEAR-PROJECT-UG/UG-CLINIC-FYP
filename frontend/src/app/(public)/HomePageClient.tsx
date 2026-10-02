@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,28 @@ import universityOfGhanaBg from '@/Assets/Legon UG/university-of-ghana.jpg';
 import { getImageSrc } from '@/lib/assets';
 
 export default function HomePageClient() {
+  const router = useRouter();
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  // When Supabase email confirmation redirects to the site root (e.g. https://ug-clinic-fyp.vercel.app/),
+  // capture the tokens or PKCE code and forward to /auth/callback for session establishment.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const hasAuthHash =
+        hash &&
+        (hash.includes('access_token=') ||
+          hash.includes('refresh_token=') ||
+          hash.includes('error='));
+      const hasAuthCode =
+        search && (search.includes('code=') || search.includes('error='));
+
+      if (hasAuthHash || hasAuthCode) {
+        router.replace(`/auth/callback${search}${hash}`);
+      }
+    }
+  }, [router]);
 
   const services = [
     { icon: Stethoscope, title: 'General Consultation', description: 'Routine check-ups, illness diagnosis, and treatment for common health concerns', color: 'from-[#0F172A] to-[#1e3a8a]' },

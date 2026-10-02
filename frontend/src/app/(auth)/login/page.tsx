@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getSession, signIn } from 'next-auth/react';
 import UGLogo from '@/components/shared/UGLogo';
 import { useAuthStore } from '@/stores/authStore';
+import { getSafeRedirectUrl } from '@/lib/authUrl';
 import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 
 const loginSchema = z.object({
@@ -28,6 +29,7 @@ function LoginFormContent() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [emailConfirmedSuccess, setEmailConfirmedSuccess] = useState(false);
 
   useEffect(() => {
     const roleParam = searchParams?.get('role')?.toLowerCase?.();
@@ -36,6 +38,9 @@ function LoginFormContent() {
     }
     if (searchParams?.get('registered') === 'true') {
       setRegistrationSuccess(true);
+    }
+    if (searchParams?.get('confirmed') === 'true') {
+      setEmailConfirmedSuccess(true);
     }
 
     // If an implicit auth fragment arrives at /login, forward to /auth/callback to consume the session
@@ -69,7 +74,11 @@ function LoginFormContent() {
       });
 
       if (result?.error) {
-        setError('Login failed. Please verify your credentials.');
+        if (result.error.toLowerCase().includes('email not confirmed')) {
+          setError('Email not confirmed. Please check your inbox and click the verification link before logging in.');
+        } else {
+          setError('Login failed. Please verify your credentials.');
+        }
         return;
       }
 
@@ -89,7 +98,9 @@ function LoginFormContent() {
           role: user.role ?? '',
           isActive: user.isActive ?? false,
         });
-        router.replace('/dashboard');
+        const redirectParam = searchParams?.get('redirect');
+        const targetPath = getSafeRedirectUrl(redirectParam, '/dashboard');
+        router.replace(targetPath);
       } else {
         setError('Access denied. This login is for students only.');
       }
@@ -177,8 +188,18 @@ function LoginFormContent() {
             animate-[scaleIn_260ms_cubic-bezier(0.4,0,0.2,1)_both]
           ">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
+              {/* Email confirmation success banner */}
+              {emailConfirmedSuccess && (
+                <div
+                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both]"
+                  role="status"
+                >
+                  ✅ Email verified successfully! You can now sign in with your credentials below.
+                </div>
+              )}
+
               {/* Registration success — email confirmation banner */}
-              {registrationSuccess && (
+              {registrationSuccess && !emailConfirmedSuccess && (
                 <div
                   className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both]"
                   role="status"

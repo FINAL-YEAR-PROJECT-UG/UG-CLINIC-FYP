@@ -22,7 +22,6 @@ const publicRoutes = [
   '/reset-password',
   '/verify-otp',
   '/staff-portal-access',
-  '/demo-booking', // Allow public access to booking demo
   '/auth/callback', // Allow public access to auth callback for confirmation
 ];
 
@@ -32,6 +31,7 @@ const staffRoutes = [
 
 const studentRoutes = [
   '/dashboard',
+  '/demo-booking',
 ];
 
 const STAFF_ROLES = ['ADMIN', 'DOCTOR', 'RECEPTIONIST'];

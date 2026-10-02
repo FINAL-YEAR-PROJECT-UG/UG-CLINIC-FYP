@@ -38,7 +38,7 @@ export default function Header() {
   const navLinks = useMemo(() => NAV_LINKS, []);
 
   const bookingHref = !isAuthenticated
-    ? '/login'
+    ? '/login?redirect=/demo-booking'
     : isStaff
     ? '/staff/appointments'
     : '/demo-booking';

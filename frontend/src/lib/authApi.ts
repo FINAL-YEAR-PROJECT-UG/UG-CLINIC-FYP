@@ -121,8 +121,11 @@ export const loginWithStore = async (data: LoginData) => {
 export const registerWithStore = async (data: RegisterData) => {
   const response = await authApi.register(data);
   const user = response.data?.user || response.user;
-  if (response.success && user) {
+  // Only authenticate the session in the store if the account is immediately active without email confirmation.
+  if (response.success && user && !response.requiresEmailConfirmation) {
     useAuthStore.getState().setAuth(user);
+  } else {
+    useAuthStore.getState().clearAuth();
   }
   return response;
 };

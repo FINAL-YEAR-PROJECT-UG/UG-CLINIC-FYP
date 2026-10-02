@@ -7,6 +7,7 @@ import { z } from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerWithStore } from '@/lib/authApi';
+import { useAuthStore } from '@/stores/authStore';
 import { getErrorMessage } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import AuthBrand from '@/components/shared/AuthBrand';
@@ -177,9 +178,9 @@ export default function RegisterPage() {
 
       if (response.success) {
         if (response.requiresEmailConfirmation) {
-          // Supabase email confirmation is enabled — the user must click the
-          // link in their inbox before they can log in.  Send them to the login
-          // page with a banner explaining this.
+          // Supabase email confirmation is enabled — clear any session state in the store.
+          // The user must click the link in their inbox and log in with credentials.
+          useAuthStore.getState().clearAuth();
           router.push('/login?registered=true');
         } else {
           // Email confirmation is disabled (or the Supabase project auto-confirms).

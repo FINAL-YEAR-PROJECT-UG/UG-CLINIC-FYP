@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { getSafeRedirectUrl } from '@/lib/authUrl';
+import { useAuthStore } from '@/stores/authStore';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import AuthBrand from '@/components/shared/AuthBrand';
 
@@ -73,9 +74,28 @@ function AuthCallbackContent() {
               return;
             }
 
+            const { data: userData } = await supabase.auth.getUser();
+            const verifiedUser = userData?.user;
+            if (verifiedUser) {
+              useAuthStore.getState().setAuth({
+                id: verifiedUser.id,
+                email: verifiedUser.email || '',
+                firstName: verifiedUser.user_metadata?.firstName || 'Student',
+                lastName: verifiedUser.user_metadata?.lastName || '',
+                studentId: verifiedUser.user_metadata?.studentId,
+                phone: verifiedUser.user_metadata?.phone,
+                program: verifiedUser.user_metadata?.program,
+                role: verifiedUser.user_metadata?.role || 'STUDENT',
+                isActive: true,
+              });
+            }
+
             if (!isCancelled) {
-              setStatusMessage('Success! Redirecting to dashboard...');
-              router.replace(targetPath);
+              setStatusMessage('Email verified successfully! Preparing your account...');
+              const destination = targetPath !== '/dashboard' ? targetPath : '/login?confirmed=true';
+              setTimeout(() => {
+                if (!isCancelled) router.replace(destination);
+              }, 1200);
             }
             return;
           }
@@ -97,9 +117,28 @@ function AuthCallbackContent() {
             return;
           }
 
+          const { data: userData } = await supabase.auth.getUser();
+          const verifiedUser = userData?.user;
+          if (verifiedUser) {
+            useAuthStore.getState().setAuth({
+              id: verifiedUser.id,
+              email: verifiedUser.email || '',
+              firstName: verifiedUser.user_metadata?.firstName || 'Student',
+              lastName: verifiedUser.user_metadata?.lastName || '',
+              studentId: verifiedUser.user_metadata?.studentId,
+              phone: verifiedUser.user_metadata?.phone,
+              program: verifiedUser.user_metadata?.program,
+              role: verifiedUser.user_metadata?.role || 'STUDENT',
+              isActive: true,
+            });
+          }
+
           if (!isCancelled) {
-            setStatusMessage('Success! Redirecting to dashboard...');
-            router.replace(targetPath);
+            setStatusMessage('Email verified successfully! Preparing your account...');
+            const destination = targetPath !== '/dashboard' ? targetPath : '/login?confirmed=true';
+            setTimeout(() => {
+              if (!isCancelled) router.replace(destination);
+            }, 1200);
           }
           return;
         }

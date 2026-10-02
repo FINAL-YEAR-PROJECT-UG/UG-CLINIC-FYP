@@ -261,7 +261,7 @@ function BookingContent() {
 
       if (!currentAuth || !currentUser) {
         setGuardRedirecting(true);
-        const target = getLoginRouteForRole(role);
+        const target = '/login?redirect=/demo-booking';
         redirectTimer = setTimeout(() => {
           if (active) router.replace(target);
         }, 0);
