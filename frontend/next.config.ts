@@ -10,10 +10,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: frontendRoot,
   },
-  // Standalone output: required for Docker/Railway deployment.
-  // The Dockerfile copies .next/standalone into the production image.
-  // Vercel safely ignores this setting.
-  output: "standalone",
+  // Standalone output is used by Docker/Railway; Vercel packages Next.js natively.
+  output: process.env.VERCEL ? undefined : "standalone",
 
   // CDN Configuration for asset delivery
   // Set CDN_URL environment variable to enable CDN (e.g., https://cdn.example.com)
