@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server.js';
+import type { NextRequest } from 'next/server.js';
 import { getToken } from 'next-auth/jwt';
 import { updateSession } from '@/utils/supabase/middleware';
 

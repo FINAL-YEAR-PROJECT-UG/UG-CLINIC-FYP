@@ -15,6 +15,14 @@ import {
   isValidStudentId,
   studentIdMessage,
   validatePhoneNumber,
+  isNameKeyAllowed,
+  filterNameInput,
+  isPhoneKeyAllowed,
+  filterPhoneInput,
+  filterStudentIdInput,
+  isStudentIdKeyAllowed,
+  isValidName,
+  nameValidationMessage,
 } from '@/lib/validation';
 import { CheckCircle2, Eye, EyeOff } from '@/components/icons';
 import './page.css';
@@ -28,9 +36,9 @@ const getImageSrc = (image: any) => {
 
 const registerSchema = z
   .object({
-    firstName: z.string().trim().min(2, 'First name is required'),
-    lastName: z.string().trim().min(2, 'Last name is required'),
-    otherNames: z.string().trim().optional(),
+    firstName: z.string().trim().min(2, 'First name is required').refine(isValidName, nameValidationMessage),
+    lastName: z.string().trim().min(2, 'Last name is required').refine(isValidName, nameValidationMessage),
+    otherNames: z.string().trim().optional().refine((v) => !v || isValidName(v), nameValidationMessage),
     studentId: z.string().trim().min(1, 'Student ID is required').refine((val) => isValidStudentId(val), studentIdMessage),
     email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
     phone: z.string().trim().superRefine((value, ctx) => {
@@ -275,7 +283,7 @@ export default function RegisterPage() {
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input id="firstName" type="text" placeholder="e.g. Kwame" disabled={isLoading} className={`register-input ${errors.firstName ? 'error' : ''}`} {...register('firstName')} />
+                      <input id="firstName" type="text" placeholder="e.g. Kwame" disabled={isLoading} className={`register-input ${errors.firstName ? 'error' : ''}`} {...register('firstName')} onKeyDown={(e) => { if (!isNameKeyAllowed(e.key)) e.preventDefault(); }} onInput={(e) => { const el = e.currentTarget; const filtered = filterNameInput(el.value); if (filtered !== el.value) el.value = filtered; }} />
                     </div>
                     {errors.firstName && <p className="register-error-text" role="alert">{errors.firstName.message}</p>}
                   </div>
@@ -288,7 +296,7 @@ export default function RegisterPage() {
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input id="lastName" type="text" placeholder="e.g. Mensah" disabled={isLoading} className={`register-input ${errors.lastName ? 'error' : ''}`} {...register('lastName')} />
+                      <input id="lastName" type="text" placeholder="e.g. Mensah" disabled={isLoading} className={`register-input ${errors.lastName ? 'error' : ''}`} {...register('lastName')} onKeyDown={(e) => { if (!isNameKeyAllowed(e.key)) e.preventDefault(); }} onInput={(e) => { const el = e.currentTarget; const filtered = filterNameInput(el.value); if (filtered !== el.value) el.value = filtered; }} />
                     </div>
                     {errors.lastName && <p className="register-error-text" role="alert">{errors.lastName.message}</p>}
                   </div>
@@ -301,7 +309,7 @@ export default function RegisterPage() {
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
-                      <input id="otherNames" type="text" placeholder="e.g. Kofi" disabled={isLoading} className={`register-input ${errors.otherNames ? 'error' : ''}`} {...register('otherNames')} />
+                      <input id="otherNames" type="text" placeholder="e.g. Kofi" disabled={isLoading} className={`register-input ${errors.otherNames ? 'error' : ''}`} {...register('otherNames')} onKeyDown={(e) => { if (!isNameKeyAllowed(e.key)) e.preventDefault(); }} onInput={(e) => { const el = e.currentTarget; const filtered = filterNameInput(el.value); if (filtered !== el.value) el.value = filtered; }} />
                     </div>
                     {errors.otherNames && <p className="register-error-text" role="alert">{errors.otherNames.message}</p>}
                   </div>
@@ -314,7 +322,7 @@ export default function RegisterPage() {
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input id="studentId" type="text" inputMode="numeric" maxLength={8} placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} />
+                      <input id="studentId" type="text" inputMode="numeric" maxLength={8} placeholder="e.g. 10987654" disabled={isLoading} className={`register-input ${errors.studentId ? 'error' : ''}`} {...register('studentId')} onKeyDown={(e) => { if (!isStudentIdKeyAllowed(e.key)) e.preventDefault(); }} onInput={(e) => { const el = e.currentTarget; const filtered = filterStudentIdInput(el.value); if (filtered !== el.value) el.value = filtered; }} />
                     </div>
                     {errors.studentId && <p className="register-error-text" role="alert">{errors.studentId.message}</p>}
                   </div>
@@ -339,7 +347,7 @@ export default function RegisterPage() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="register-input-icon">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
-                      <input id="phone" type="tel" placeholder="e.g. 0241234567" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} />
+                      <input id="phone" type="tel" placeholder="e.g. 0241234567 or +233241234567" disabled={isLoading} className={`register-input ${errors.phone ? 'error' : ''}`} {...register('phone')} onKeyDown={(e) => { if (!isPhoneKeyAllowed(e.key, e.currentTarget.value)) e.preventDefault(); }} onInput={(e) => { const el = e.currentTarget; const filtered = filterPhoneInput(el.value); if (filtered !== el.value) el.value = filtered; }} />
                     </div>
                     <p className="register-hint-text">Enter a valid Ghanaian mobile number (e.g. 024 or 050 prefix).</p>
                     {errors.phone && <p className="register-error-text" role="alert">{errors.phone.message}</p>}

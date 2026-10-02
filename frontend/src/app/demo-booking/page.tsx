@@ -17,6 +17,7 @@ import {
 } from '@/lib/utils';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
+import AppointmentPrintSlip from '@/components/booking/AppointmentPrintSlip';
 import {
   Stethoscope,
   Brain,
@@ -366,21 +367,23 @@ function BookingContent() {
         reason: reason.trim(),
         notes: notes.trim() || undefined,
         doctorId: selectedDoctorId || undefined,
+        doctorName: selectedDoctorName !== 'To be assigned' ? selectedDoctorName : undefined,
       };
 
       const envelope = await appointmentApi.create(payload);
       const appointment = envelope?.data?.appointment;
+      if (!envelope?.success || !appointment?.id) {
+        throw new Error(envelope?.message || 'Booking was not saved. Please try again.');
+      }
 
-      const id: string = appointment?.id || String(Date.now());
+      const id: string = appointment.id;
       const year = new Date(bookingDate).getFullYear();
       const shortId = id.replace(/-/g, '').slice(0, 6).toUpperCase().padStart(6, '0');
       const reference = `UGC-${year}-${shortId}`;
       const status =
-        appointment?.status === 'PENDING' || appointment?.status === 'CONFIRMED'
+        appointment.status === 'PENDING' || appointment.status === 'CONFIRMED'
           ? appointment.status
-          : selectedDoctorId
-            ? 'CONFIRMED'
-            : 'PENDING';
+          : 'PENDING';
 
       setConfirmedId(id);
       setConfirmedReference(reference);
@@ -1344,120 +1347,17 @@ function BookingContent() {
               </div>
             </div>
 
-            {/* ── Official Printable Slip (Displayed ONLY when printing) ── */}
-            <div className="hidden print:block bg-white p-8 text-black font-sans max-w-2xl mx-auto border border-gray-300 rounded-lg">
-              {/* Header Letterhead */}
-              <div className="flex items-center justify-between border-b-2 border-black pb-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 relative flex items-center justify-center border border-gray-300 rounded p-1">
-                    <Image
-                      src="/logo.svg"
-                      alt="University of Ghana Logo"
-                      width={48}
-                      height={48}
-                      className="object-contain"
-                      priority
-                    />
-                  </div>
-                  <div>
-                    <h1 className="text-lg font-black tracking-tight uppercase leading-tight">
-                      University of Ghana Health Services
-                    </h1>
-                    <p className="text-xs font-bold text-gray-700">STUDENT CLINIC DIRECTORATE - LEGON CAMPUS</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Accra, Ghana | Emergency Helpline: +233 20 123 4567</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="inline-block px-2.5 py-1 text-[10px] font-bold uppercase border border-black rounded">
-                    Official Slip
-                  </span>
-                  <p className="text-[9px] text-gray-500 mt-1">
-                    Issued: {new Date().toLocaleDateString('en-GB')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Title & Reference Box */}
-              <div className="text-center mb-6">
-                <h2 className="text-base font-extrabold uppercase tracking-wider underline underline-offset-4 mb-3">
-                  Appointment Confirmation Slip
-                </h2>
-                <div className="bg-gray-100 border border-gray-300 rounded p-3 inline-block min-w-[280px]">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600">Booking Reference</p>
-                  <p className="text-xl font-black tracking-widest text-black mt-0.5">{confirmedReference}</p>
-                  <p className="text-[9px] font-semibold text-gray-700 mt-0.5">Status: CONFIRMED</p>
-                </div>
-              </div>
-
-              {/* Structured Appointment Details Table */}
-              <div className="border border-gray-300 rounded overflow-hidden mb-6 text-xs">
-                <table className="w-full divide-y divide-gray-300">
-                  <tbody className="divide-y divide-gray-200">
-                    <tr className="bg-gray-50">
-                      <td className="py-2 px-3 font-bold text-gray-700 w-1/3">Patient Name:</td>
-                      <td className="py-2 px-3 font-bold text-black">
-                        {storeUser?.firstName} {storeUser?.lastName}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-bold text-gray-700">Student ID / Email:</td>
-                      <td className="py-2 px-3 text-black">
-                        {storeUser?.studentId ? `${storeUser.studentId} (${storeUser.email})` : storeUser?.email || 'Registered Student'}
-                      </td>
-                    </tr>
-                    <tr className="bg-gray-50">
-                      <td className="py-2 px-3 font-bold text-gray-700">Clinical Service:</td>
-                      <td className="py-2 px-3 font-bold text-black">{selectedService.title}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-bold text-gray-700">Appointment Date:</td>
-                      <td className="py-2 px-3 font-bold text-black">
-                        {bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                      </td>
-                    </tr>
-                    <tr className="bg-gray-50">
-                      <td className="py-2 px-3 font-bold text-gray-700">Scheduled Time Slot:</td>
-                      <td className="py-2 px-3 font-bold text-black">{bookingTime}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-bold text-gray-700">Clinic Location:</td>
-                      <td className="py-2 px-3 text-black">Student Clinic Block, Main University Road, Legon Campus</td>
-                    </tr>
-                    <tr className="bg-gray-50">
-                      <td className="py-2 px-3 font-bold text-gray-700">Assigned Doctor:</td>
-                      <td className="py-2 px-3 text-black">{selectedDoctorName}</td>
-                    </tr>
-                    {reason && (
-                      <tr>
-                        <td className="py-2 px-3 font-bold text-gray-700">Reason for Visit:</td>
-                        <td className="py-2 px-3 text-black">{reason}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Instructions for Students */}
-              <div className="bg-gray-50 border border-gray-200 rounded p-4 mb-6 text-[11px] space-y-1.5">
-                <p className="font-bold text-black uppercase tracking-wide text-xs mb-1">Important Instructions</p>
-                <p className="text-gray-700">• Please arrive at least 10 minutes prior to your scheduled time slot.</p>
-                <p className="text-gray-700">• Present your valid University of Ghana Student ID card at the reception desk.</p>
-                <p className="text-gray-700">• If you need to reschedule or cancel, please do so via the student portal at least 2 hours in advance.</p>
-                <p className="text-gray-700">• For urgent medical inquiries or emergencies, call the 24/7 hotline at +233 20 123 4567.</p>
-              </div>
-
-              {/* Official Seal / Signature Line */}
-              <div className="pt-4 border-t border-gray-300 flex justify-between items-end text-[10px] text-gray-600">
-                <div>
-                  <p className="font-bold text-gray-800">University of Ghana Health Services</p>
-                  <p>Verified Electronic Clinic Appointment Record</p>
-                </div>
-                <div className="text-right">
-                  <div className="w-48 border-b border-gray-400 mb-1" />
-                  <p className="font-semibold text-gray-700">Authorized Signature / Clinic Stamp</p>
-                </div>
-              </div>
-            </div>
+            <AppointmentPrintSlip
+              reference={confirmedReference}
+              status={confirmedStatus}
+              patientName={`${(storeUser?.firstName ?? '').trim()} ${(storeUser?.lastName ?? '').trim()}`.trim() || 'Registered student'}
+              studentId={storeUser?.studentId}
+              email={storeUser?.email}
+              serviceName={selectedService.title}
+              dateLabel={bookingDate.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+              timeSlot={bookingTime}
+              doctorName={selectedDoctorName}
+            />
           </div>
         )}
       </div>

@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const frontendRoot = path.resolve(__dirname);
+
 const nextConfig: NextConfig = {
-  turbopack: {},
+  // Keep Turbopack and file tracing inside frontend/, even if the Git root
+  // is the monorepo. This prevents "Can't resolve next-auth / @tailwindcss/postcss".
+  outputFileTracingRoot: frontendRoot,
+  turbopack: {
+    root: frontendRoot,
+  },
   // Standalone output: required for Docker/Railway deployment.
   // The Dockerfile copies .next/standalone into the production image.
   // Vercel safely ignores this setting.

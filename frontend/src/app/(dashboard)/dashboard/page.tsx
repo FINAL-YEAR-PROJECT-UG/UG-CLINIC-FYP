@@ -197,13 +197,20 @@ export default function DashboardPage() {
   const mobile = user?.phone || ' ';
   const programme = user?.program || ' ';
 
-  const now = new Date();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const appointmentDay = (iso: string) => {
+    const [year, month, day] = String(iso).slice(0, 10).split('-').map(Number);
+    if (!year || !month || !day) return new Date(iso);
+    return new Date(year, month - 1, day);
+  };
   const upcoming = appointments
-    .filter((a) => UPCOMING_STATUSES.includes(a.status) && new Date(a.date) >= now)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .filter((a) => UPCOMING_STATUSES.includes(a.status) && appointmentDay(a.date) >= startOfToday)
+    .sort((a, b) => appointmentDay(a.date).getTime() - appointmentDay(b.date).getTime());
   const nextAppointment = upcoming[0];
-  const upcomingIds = new Set(upcoming.map((a) => a.id));
-  const past = appointments.filter((a) => !upcomingIds.has(a.id));
+  const history = [...appointments].sort(
+    (a, b) => appointmentDay(b.date).getTime() - appointmentDay(a.date).getTime(),
+  );
 
   if (authLoading || guardRedirecting) {
     return (
@@ -414,9 +421,9 @@ export default function DashboardPage() {
             )}
           </section>
 
-          {/* Past appointments */}
+          {/* Appointment history (all saved bookings except the highlighted upcoming one) */}
           <section>
-            <h2 className="text-lg font-bold text-[#020617] mb-3">Past Appointments</h2>
+            <h2 className="text-lg font-bold text-[#020617] mb-3">Appointment history</h2>
             <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -433,14 +440,14 @@ export default function DashboardPage() {
                         <LoadingSpinner size={40} />
                       </td>
                     </tr>
-                  ) : past.length === 0 ? (
+                  ) : history.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-5 py-6 text-center text-[#334155]">
-                        No past appointments yet.
+                        No saved appointments yet. Booked visits appear here once they are stored.
                       </td>
                     </tr>
                   ) : (
-                    past.map((appt) => {
+                    history.map((appt) => {
                       const pill = STATUS_PILL[appt.status] ?? {
                         label: appt.status,
                         className: 'bg-gray-100 text-gray-600',

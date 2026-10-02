@@ -7,25 +7,32 @@
  *
  * Used via: node --import ./test/setup/alias-loader.mjs --test …
  */
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import fs from 'node:fs';
 import path from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// src/ root is two levels up from test/setup/
 const srcRoot = path.resolve(__dirname, '../../src');
 
 export async function resolve(specifier, context, nextResolve) {
   if (specifier.startsWith('@/')) {
-    const relativePath = specifier.slice(2); // strip "@/"
-    // Try each extension in order
-    for (const ext of ['.ts', '.tsx', '.js', '.jsx', '']) {
-      const candidate = path.join(srcRoot, relativePath) + ext;
-      try {
-        return nextResolve(`file://${candidate.replace(/\\/g, '/')}`, context);
-      } catch {
-        // Try next extension
+    const relativePath = specifier.slice(2);
+    const candidates = [
+      path.join(srcRoot, relativePath),
+      path.join(srcRoot, relativePath + '.ts'),
+      path.join(srcRoot, relativePath + '.tsx'),
+      path.join(srcRoot, relativePath + '.js'),
+      path.join(srcRoot, relativePath + '.jsx'),
+      path.join(srcRoot, relativePath, 'index.ts'),
+      path.join(srcRoot, relativePath, 'index.tsx'),
+      path.join(srcRoot, relativePath, 'index.js'),
+      path.join(srcRoot, relativePath, 'index.jsx'),
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return nextResolve(pathToFileURL(candidate).href, context);
       }
     }
   }

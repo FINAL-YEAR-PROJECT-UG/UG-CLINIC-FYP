@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios from "axios";
 import NextAuth, { type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@supabase/supabase-js";
@@ -47,8 +46,6 @@ declare module "next-auth/jwt" {
   }
 }
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
-
 const createCredentialsProvider =
   typeof CredentialsProvider === "function"
     ? CredentialsProvider
@@ -70,36 +67,7 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.trim();
         const password = credentials.password;
 
-        // 1. Try Express backend login first (if backend is reachable)
-        if (apiBaseUrl) {
-          try {
-            const response = await axios.post(
-              `${apiBaseUrl}/auth/login`,
-              {
-                username: email,
-                password,
-              },
-              { timeout: 5000 }
-            );
-            const user = response.data?.data?.user ?? response.data?.user;
-            const setCookies = response.headers["set-cookie"];
-            const backendSessionCookie = Array.isArray(setCookies)
-              ? setCookies.map((cookie) => cookie.split(";", 1)[0]).join("; ")
-              : undefined;
-
-            if (response.data?.success && user?.id && backendSessionCookie) {
-              return {
-                ...user,
-                id: String(user.id),
-                backendSessionCookie,
-              };
-            }
-          } catch {
-            // Backend unavailable or user not registered in Express DB; fall back to Supabase
-          }
-        }
-
-        // 2. Fall back to Supabase Auth (for accounts created through Supabase registration)
+        // Vercel app authenticates against Supabase only (no Railway/Prisma login).
         const supabaseUrl =
           process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
         const supabaseKey =
@@ -139,7 +107,10 @@ export const authOptions: NextAuthOptions = {
               studentId: sbUser.user_metadata?.studentId,
               phone: sbUser.user_metadata?.phone,
               program: sbUser.user_metadata?.program,
-              role: sbUser.user_metadata?.role || "STUDENT",
+              role:
+                sbUser.app_metadata?.role ||
+                sbUser.user_metadata?.role ||
+                "STUDENT",
               isActive: true,
               backendSessionCookie:
                 sbData.session?.access_token || "supabase-session",

@@ -1,69 +1,25 @@
-import { getToken } from "next-auth/jwt";
-import { NextRequest, NextResponse } from "next/server";
-import { buildUpstreamHeaders } from "../headers";
-
-type RouteContext = {
-  params: Promise<{ path: string[] }>;
-};
+import { NextResponse } from "next/server.js";
 
 export const runtime = "nodejs";
 
-async function forwardToBackend(request: NextRequest, context: RouteContext) {
-  const apiBaseUrl = (
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3005/api"
-  ).replace(/\/+$/, "");
-  const { path } = await context.params;
-  const backendUrl = `${apiBaseUrl}/${path.map(encodeURIComponent).join("/")}${request.nextUrl.search}`;
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-  const cookie =
-    token?.backendSessionCookie ?? request.cookies.get("connect.sid")?.value;
-  const headers = buildUpstreamHeaders(request.headers, {
-    cookie,
-    backendUrl,
-  });
-
-  try {
-    const hasBody = !["GET", "HEAD"].includes(request.method);
-    const upstream = await fetch(backendUrl, {
-      method: request.method,
-      headers,
-      body: hasBody ? await request.arrayBuffer() : undefined,
-      cache: "no-store",
-      redirect: "manual",
-    });
-    const responseHeaders = new Headers();
-
-    upstream.headers.forEach((value, name) => {
-      if (
-        !["connection", "content-encoding", "content-length", "transfer-encoding", "set-cookie"].includes(name)
-      ) {
-        responseHeaders.set(name, value);
-      }
-    });
-
-    const setCookie = upstream.headers.get("set-cookie");
-    if (setCookie) {
-      responseHeaders.set("set-cookie", setCookie);
-    }
-
-    return new NextResponse(
-      [204, 304].includes(upstream.status) ? null : upstream.body,
-      { status: upstream.status, headers: responseHeaders }
-    );
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Backend service is unavailable" },
-      { status: 502 }
-    );
-  }
+/**
+ * Catch-all for unmatched /api/backend/* routes.
+ * The Vercel app stores clinic data in Supabase and does not proxy to Railway/Prisma.
+ */
+async function disabled() {
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        "This endpoint is not available on the Vercel app. Appointments, registration, and auth run against Supabase — the Railway/Prisma backend is not used here.",
+    },
+    { status: 404 },
+  );
 }
 
-export const GET = forwardToBackend;
-export const POST = forwardToBackend;
-export const PUT = forwardToBackend;
-export const PATCH = forwardToBackend;
-export const DELETE = forwardToBackend;
-export const OPTIONS = forwardToBackend;
+export const GET = disabled;
+export const POST = disabled;
+export const PUT = disabled;
+export const PATCH = disabled;
+export const DELETE = disabled;
+export const OPTIONS = disabled;

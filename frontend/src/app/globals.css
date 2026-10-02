@@ -909,3 +909,139 @@ section:not(:first-of-type) {
     align-self: flex-end;
   }
 }
+
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .appointment-print-slip {
+    display: block !important;
+  }
+
+  .appointment-print-slip .slip {
+    max-width: 148mm;
+    margin: 0 auto;
+    color: #0f172a;
+    font-family: "Segoe UI", Arial, sans-serif;
+  }
+
+  .appointment-print-slip .slip-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #1e3a8a;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .appointment-print-slip .slip-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .appointment-print-slip .slip-org {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .appointment-print-slip .slip-sub,
+  .appointment-print-slip .slip-issued {
+    margin: 0;
+    font-size: 9px;
+    color: #475569;
+  }
+
+  .appointment-print-slip .slip-issued {
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .appointment-print-slip .slip-ref {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #eff6ff;
+    border: 1px solid #1e3a8a;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  .appointment-print-slip .slip-ref span {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .appointment-print-slip .slip-ref strong {
+    font-size: 16px;
+    letter-spacing: 0.08em;
+  }
+
+  .appointment-print-slip .slip-ref em {
+    font-style: normal;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .appointment-print-slip .slip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .appointment-print-slip dl {
+    margin: 0;
+  }
+
+  .appointment-print-slip dt {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+  }
+
+  .appointment-print-slip dd {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .appointment-print-slip .slip-notes {
+    margin: 0 0 10px;
+    padding-left: 16px;
+    font-size: 10px;
+  }
+
+  .appointment-print-slip .slip-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 8px;
+    font-size: 8px;
+    color: #64748b;
+  }
+
+  .appointment-print-slip .stamp {
+    min-width: 120px;
+    border-top: 1px solid #94a3b8;
+    padding-top: 4px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+}

@@ -65,6 +65,7 @@ export interface CreateAppointmentData {
   reason: string;
   notes?: string;
   doctorId?: string;
+  doctorName?: string;
 }
 
 export const appointmentApi = {
@@ -104,7 +105,9 @@ export const appointmentApi = {
     const response = await api.get<{ success: boolean; data: { appointments: ApiAppointment[] } }>(
       '/appointments'
     );
-    return response.data.data.appointments;
+    return Array.isArray(response.data.data?.appointments)
+      ? response.data.data.appointments
+      : [];
   },
 
   getStaffDashboard: async (): Promise<StaffDashboardData> => {
