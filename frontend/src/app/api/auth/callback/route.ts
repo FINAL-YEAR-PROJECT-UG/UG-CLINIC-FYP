@@ -49,7 +49,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${canonicalOrigin}/login?error=configuration`);
   }
 
-  const redirectUrl = `${canonicalOrigin}${safeNext}`;
+  // After email verification, always send the user to the login page to sign in
+  // via NextAuth. The PKCE exchange only establishes a Supabase session cookie,
+  // not a NextAuth JWT — so going to /dashboard directly would fail middleware checks.
+  // If a specific `next` destination was requested (not the default /dashboard), keep it.
+  const postVerifyDestination =
+    rawNext && safeNext !== "/dashboard"
+      ? safeNext
+      : "/login?confirmed=true";
+  const redirectUrl = `${canonicalOrigin}${postVerifyDestination}`;
   const response = NextResponse.redirect(redirectUrl);
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {

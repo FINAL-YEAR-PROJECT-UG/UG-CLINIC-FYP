@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import NextAuth, { type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { createClient } from "@supabase/supabase-js";
 
 declare module "next-auth" {
   interface User {
@@ -62,33 +63,93 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!apiBaseUrl || !credentials?.email || !credentials.password) {
+        if (!credentials?.email || !credentials.password) {
           return null;
         }
 
-        try {
-          const response = await axios.post(`${apiBaseUrl}/auth/login`, {
-            username: credentials.email,
-            password: credentials.password,
-          });
-          const user = response.data?.data?.user ?? response.data?.user;
-          const setCookies = response.headers["set-cookie"];
-          const backendSessionCookie = Array.isArray(setCookies)
-            ? setCookies.map((cookie) => cookie.split(";", 1)[0]).join("; ")
-            : undefined;
+        const email = credentials.email.trim();
+        const password = credentials.password;
 
-          if (!response.data?.success || !user?.id || !backendSessionCookie) {
+        // 1. Try Express backend login first (if backend is reachable)
+        if (apiBaseUrl) {
+          try {
+            const response = await axios.post(
+              `${apiBaseUrl}/auth/login`,
+              {
+                username: email,
+                password,
+              },
+              { timeout: 5000 }
+            );
+            const user = response.data?.data?.user ?? response.data?.user;
+            const setCookies = response.headers["set-cookie"];
+            const backendSessionCookie = Array.isArray(setCookies)
+              ? setCookies.map((cookie) => cookie.split(";", 1)[0]).join("; ")
+              : undefined;
+
+            if (response.data?.success && user?.id && backendSessionCookie) {
+              return {
+                ...user,
+                id: String(user.id),
+                backendSessionCookie,
+              };
+            }
+          } catch {
+            // Backend unavailable or user not registered in Express DB; fall back to Supabase
+          }
+        }
+
+        // 2. Fall back to Supabase Auth (for accounts created through Supabase registration)
+        const supabaseUrl =
+          process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+        const supabaseKey =
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+          process.env.SUPABASE_ANON_KEY ||
+          process.env.SUPABASE_PUBLISHABLE_KEY;
+
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false, autoRefreshToken: false },
+          });
+
+          const { data: sbData, error: sbError } =
+            await supabase.auth.signInWithPassword({ email, password });
+
+          if (sbError) {
+            const msg = sbError.message?.toLowerCase() ?? "";
+            if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed")) {
+              // Surface this so the login page shows the right message
+              throw new Error(
+                "Email not confirmed. Please check your inbox and verify your email before logging in."
+              );
+            }
+            // Wrong password / user not found — return null for generic "login failed"
+            console.error("[NextAuth] Supabase signIn error:", sbError.message);
             return null;
           }
 
-          return {
-            ...user,
-            id: String(user.id),
-            backendSessionCookie,
-          };
-        } catch {
-          return null;
+          if (sbData?.user) {
+            const sbUser = sbData.user;
+            return {
+              id: String(sbUser.id),
+              email: sbUser.email || email,
+              firstName: sbUser.user_metadata?.firstName || "Student",
+              lastName: sbUser.user_metadata?.lastName || "",
+              studentId: sbUser.user_metadata?.studentId,
+              phone: sbUser.user_metadata?.phone,
+              program: sbUser.user_metadata?.program,
+              role: sbUser.user_metadata?.role || "STUDENT",
+              isActive: true,
+              backendSessionCookie:
+                sbData.session?.access_token || "supabase-session",
+            };
+          }
+        } else {
+          console.error("[NextAuth] Supabase env vars not configured.");
         }
+
+        return null;
       },
     }),
   ],
