@@ -28,14 +28,6 @@ export async function POST(request: NextRequest) {
     // });
     // const data = await response.json();
 
-    console.log('Appointment booking request:', {
-      studentId,
-      name,
-      email,
-      date,
-      time,
-      reason,
-    });
 
     return NextResponse.json(
       { 
