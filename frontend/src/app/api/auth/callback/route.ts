@@ -24,6 +24,13 @@ export async function GET(request: NextRequest) {
   const rawNext = searchParams.get("next");
   const safeNext = getSafeRedirectUrl(rawNext, "/dashboard");
 
+  const queryError = searchParams.get("error_description") || searchParams.get("error");
+  if (queryError) {
+    return NextResponse.redirect(
+      `${canonicalOrigin}/login?error=${encodeURIComponent(queryError)}`
+    );
+  }
+
   if (!code) {
     // No code — not a Supabase PKCE callback; send to login.
     return NextResponse.redirect(`${canonicalOrigin}/login`);
@@ -63,7 +70,7 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession error:", error.message);
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`
+      `${canonicalOrigin}/login?error=${encodeURIComponent(error.message)}`
     );
   }
 

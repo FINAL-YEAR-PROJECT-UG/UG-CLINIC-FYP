@@ -1,3 +1,4 @@
+import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import NextAuth, { type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -47,9 +48,14 @@ declare module "next-auth/jwt" {
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
 
+const createCredentialsProvider =
+  typeof CredentialsProvider === "function"
+    ? CredentialsProvider
+    : ((CredentialsProvider as any)?.default as typeof CredentialsProvider);
+
 export const authOptions: NextAuthOptions = {
   providers: [
-    CredentialsProvider({
+    createCredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email or student ID", type: "text" },
@@ -120,4 +126,45 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export default NextAuth(authOptions);
+const nextAuthFactory =
+  typeof NextAuth === "function"
+    ? NextAuth
+    : ((NextAuth as any)?.default as typeof NextAuth);
+
+const nextAuthHandler = nextAuthFactory(authOptions);
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Intercept any GET request directed to the NextAuth callback route (e.g., Supabase email confirmations
+  // or legacy email verification links pointing to /api/auth/callback or /api/auth/callback/credentials).
+  // NextAuth credentials provider only accepts POST submissions and will throw:
+  // "Callback for provider type credentials not supported".
+  // We forward these to the application's dedicated client-side callback page (/auth/callback).
+  if (req.method === "GET") {
+    const nextauth = req.query.nextauth;
+    const isCallback = Array.isArray(nextauth)
+      ? nextauth[0] === "callback"
+      : nextauth === "callback";
+
+    if (isCallback) {
+      const queryString = req.url && req.url.includes("?")
+        ? req.url.slice(req.url.indexOf("?"))
+        : "";
+      return res.redirect(307, `/auth/callback${queryString}`);
+    }
+  }
+
+  try {
+    return await nextAuthHandler(req, res);
+  } catch (error: any) {
+    if (
+      error?.message?.includes("Callback for provider type credentials not supported") ||
+      String(error).includes("credentials not supported")
+    ) {
+      const queryString = req.url && req.url.includes("?")
+        ? req.url.slice(req.url.indexOf("?"))
+        : "";
+      return res.redirect(307, `/auth/callback${queryString}`);
+    }
+    throw error;
+  }
+}
