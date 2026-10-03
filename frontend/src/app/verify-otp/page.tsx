@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import UGLogo from '@/components/shared/UGLogo';
 import { Mail, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from '@/components/icons';
+import SuccessCheckmark from '@/components/shared/SuccessCheckmark';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -232,8 +233,9 @@ export default function VerifyOtpPage() {
           )}
 
           {successMsg && (
-            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {successMsg}
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center justify-center gap-2">
+              <SuccessCheckmark size="xs" />
+              <span>{successMsg}</span>
             </div>
           )}
 

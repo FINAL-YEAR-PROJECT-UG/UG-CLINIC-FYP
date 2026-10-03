@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
+import SuccessCheckmark from '@/components/shared/SuccessCheckmark';
+
 type ToastType = 'error' | 'success' | 'info';
 
 interface ToastProps {
@@ -52,10 +54,10 @@ export default function Toast({
       'bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E40AF] shadow-[0_8px_32px_-4px_rgba(3,105,161,0.25)]',
   };
 
-  const icons: Record<ToastType, string> = {
-    error: '⚠️',
-    success: '✅',
-    info: 'ℹ️',
+  const icons: Record<ToastType, React.ReactNode> = {
+    error: <span>⚠️</span>,
+    success: <SuccessCheckmark size="sm" className="mt-0.5" />,
+    info: <span>ℹ️</span>,
   };
 
   return (

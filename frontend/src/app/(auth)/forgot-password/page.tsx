@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import UGLogo from '@/components/shared/UGLogo';
-import { KeyRound, ArrowLeft, CheckCircle2, Loader2, Mail } from '@/components/icons';
+import { KeyRound, ArrowLeft, Loader2, Mail } from '@/components/icons';
 import Toast from '@/components/shared/Toast';
+
+import SuccessCheckmark from '@/components/shared/SuccessCheckmark';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -94,11 +96,7 @@ export default function ForgotPasswordPage() {
           {sent ? (
             /* ── Success state ── */
             <div className="text-center space-y-5 py-2">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <CheckCircle2 className="h-9 w-9 text-emerald-600" />
-                </div>
-              </div>
+              <SuccessCheckmark size="xl" glow={true} animated={true} />
               <div>
                 <h2 className="text-lg font-bold text-[#0B1221] mb-1">Check Your Inbox</h2>
                 <p className="text-sm text-[#4B5A6E]">

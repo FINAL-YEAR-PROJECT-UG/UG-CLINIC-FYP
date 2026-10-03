@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { getSafeRedirectUrl } from '@/lib/authUrl';
 import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
 import Toast from '@/components/shared/Toast';
+import SuccessCheckmark from '@/components/shared/SuccessCheckmark';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Please enter your student ID or email'),
@@ -193,20 +194,22 @@ function LoginFormContent() {
               {/* Email confirmation success banner */}
               {emailConfirmedSuccess && (
                 <div
-                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both]"
+                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both] flex items-center gap-2.5"
                   role="status"
                 >
-                  ✅ Email verified successfully! You can now sign in with your credentials below.
+                  <SuccessCheckmark size="sm" />
+                  <span>Email verified successfully! You can now sign in with your credentials below.</span>
                 </div>
               )}
 
               {/* Registration success — email confirmation banner */}
               {registrationSuccess && !emailConfirmedSuccess && (
                 <div
-                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both]"
+                  className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 animate-[slideDown_200ms_ease_both] flex items-center gap-2.5"
                   role="status"
                 >
-                  ✅ Account created! Check your email for a confirmation link, then sign in below.
+                  <SuccessCheckmark size="sm" />
+                  <span>Account created! Check your email for a confirmation link, then sign in below.</span>
                 </div>
               )}
 
