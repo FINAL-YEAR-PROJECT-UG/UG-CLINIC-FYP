@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, ShieldCheck, ArrowRight, Lock, Eye, EyeOff } from '@/components/icons';
+import { Loader2, ShieldCheck, Lock, Eye, EyeOff } from '@/components/icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -13,6 +13,7 @@ import UGLogo from '@/components/shared/UGLogo';
 import { useAuthStore } from '@/stores/authStore';
 import { getSafeRedirectUrl } from '@/lib/authUrl';
 import ugEntranceBg from '@/Assets/Legon UG/UG entrance1.jpg';
+import Toast from '@/components/shared/Toast';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Please enter your student ID or email'),
@@ -26,7 +27,7 @@ function LoginFormContent() {
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toastMsg, setToastMsg]   = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [emailConfirmedSuccess, setEmailConfirmedSuccess] = useState(false);
@@ -65,7 +66,7 @@ function LoginFormContent() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setError('');
+    setToastMsg(null);
     try {
       const result = await signIn('credentials', {
         email: data.username.trim(),
@@ -75,9 +76,9 @@ function LoginFormContent() {
 
       if (result?.error) {
         if (result.error.toLowerCase().includes('email not confirmed')) {
-          setError('Email not confirmed. Please check your inbox and click the verification link before logging in.');
+          setToastMsg('Email not confirmed. Please check your inbox and click the verification link before logging in.');
         } else {
-          setError('Login failed. Please verify your credentials.');
+          setToastMsg('Login failed. Please verify your credentials.');
         }
         return;
       }
@@ -102,10 +103,10 @@ function LoginFormContent() {
         const targetPath = getSafeRedirectUrl(redirectParam, '/dashboard');
         router.replace(targetPath);
       } else {
-        setError('Access denied. This login is for students only.');
+        setToastMsg('Access denied. This login is for students only.');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during login. Please try again.');
+      setToastMsg(err.message || 'An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -113,6 +114,7 @@ function LoginFormContent() {
 
   return (
     <div className="min-h-screen relative flex flex-col font-sans overflow-x-hidden bg-[#0B1221]">
+      <Toast message={toastMsg} type="error" onDismiss={() => setToastMsg(null)} />
       {/* ── Campus Entrance Atmospheric Background ── */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <Image
@@ -208,23 +210,7 @@ function LoginFormContent() {
                 </div>
               )}
 
-              {/* Error Alert */}
-              {error && (
-                <div
-                  className="p-3.5 bg-red-50 border border-red-200 rounded-2xl text-xs font-semibold text-red-700 space-y-1.5 animate-[slideDown_200ms_ease_both]"
-                  role="alert"
-                >
-                  <p>{error}</p>
-                  {error.includes('Staff members') && (
-                    <Link
-                      href="/staff-portal-access"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#0369A1] hover:underline"
-                    >
-                      Go to Secured Staff Access Portal <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  )}
-                </div>
-              )}
+              {/* Error Alert — now shown as Toast, no inline div needed */}
 
 
               {/* Username */}
