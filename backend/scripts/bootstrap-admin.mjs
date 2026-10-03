@@ -106,13 +106,45 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 // ── Generate a cryptographically random temporary password ────────────────────
-// 32 random bytes → 64-character hex string.
-// This satisfies any reasonable password-length requirement.
+// Supabase may enforce a password policy requiring at least one character from
+// each of: lowercase, uppercase, digit, special character.
+// We satisfy all four classes explicitly, then shuffle the result using
+// Fisher-Yates driven by crypto.randomBytes to avoid Math.random().
 // The value is NEVER logged or printed anywhere in this script.
 
 function generateTempPassword() {
-  return randomBytes(32).toString('hex');
+  const lower   = 'abcdefghijklmnopqrstuvwxyz';
+  const upper   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits  = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const all     = lower + upper + digits + special;
+
+  // Pick at least two from each required class to be safe
+  const pick = (charset, n) =>
+    Array.from({ length: n }, (_, i) =>
+      charset[randomBytes(1)[0] % charset.length]
+    );
+
+  const chars = [
+    ...pick(lower,   3),
+    ...pick(upper,   3),
+    ...pick(digits,  3),
+    ...pick(special, 3),
+    // Fill the rest of a 32-char password from the full pool
+    ...Array.from({ length: 20 }, (_, i) =>
+      all[randomBytes(1)[0] % all.length]
+    ),
+  ];
+
+  // Cryptographic Fisher-Yates shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomBytes(4).readUInt32BE(0) % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join('');
 }
+
 
 // ── Profile upsert helper ─────────────────────────────────────────────────────
 
