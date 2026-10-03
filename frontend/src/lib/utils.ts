@@ -6,23 +6,66 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Known technical patterns that should never be shown to users
+const TECHNICAL_PATTERNS = [
+  /vercel/i,
+  /supabase/i,
+  /prisma/i,
+  /postgresql/i,
+  /502|503|504/,
+  /internal server error/i,
+  /cannot read propert/i,
+  /is not a function/i,
+  /unexpected token/i,
+  /json/i,
+  /fetch failed/i,
+  /econnrefused/i,
+  /cors/i,
+  /this endpoint is not available/i,
+  /request failed with status code 5/i,
+];
+
+function isTechnical(msg: string): boolean {
+  return TECHNICAL_PATTERNS.some((p) => p.test(msg));
+}
+
 export function getErrorMessage(err: unknown, fallback: string): string {
+  // Always log technical details for developers
+  if (err) {
+    console.error('[App Error]', err);
+  }
+
   if (
     typeof err === 'object' &&
     err !== null &&
     'response' in err &&
     typeof (err as { response?: unknown }).response === 'object'
   ) {
-    const response = (err as { response?: { data?: { message?: unknown } } }).response;
+    const response = (err as { response?: { data?: { message?: unknown }; status?: number } }).response;
+    const status = response?.status;
     const message = response?.data?.message;
-    if (typeof message === 'string') return message;
-  }
-  if (err instanceof Error) {
-    if (err.message === 'Network Error') {
-      return 'Unable to reach the server. Please ensure the backend is running and try again.';
+
+    // Map HTTP status codes to friendly messages
+    if (status === 401) return 'Your session has expired. Please sign in again.';
+    if (status === 403) return 'You do not have permission to perform this action.';
+    if (status === 404) return 'The requested resource could not be found.';
+    if (status === 409) return 'This information already exists. Please check your details.';
+    if (status === 422) return 'Some details are invalid. Please review and try again.';
+    if (status && status >= 500) return fallback;
+
+    if (typeof message === 'string' && message.trim() && !isTechnical(message)) {
+      return message;
     }
+  }
+
+  if (err instanceof Error) {
+    if (err.message === 'Network Error' || err.message.toLowerCase().includes('network')) {
+      return 'Connection failed. Please check your internet and try again.';
+    }
+    if (isTechnical(err.message)) return fallback;
     if (err.message) return err.message;
   }
+
   return fallback;
 }
 

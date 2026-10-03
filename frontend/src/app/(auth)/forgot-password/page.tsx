@@ -7,6 +7,7 @@ import api from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 import UGLogo from '@/components/shared/UGLogo';
 import { KeyRound, ArrowLeft, CheckCircle2, Loader2, Eye, EyeOff, ShieldCheck } from '@/components/icons';
+import Toast from '@/components/shared/Toast';
 
 // ─── Password strength checker ─────────────────────────────────────────────────
 function PasswordStrength({ password }: { password: string }) {
@@ -63,53 +64,62 @@ export default function ForgotPasswordPage() {
   const [showConfirmPw, setShowConfirmPw] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [toastMsg, setToastMsg]   = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'error' | 'success'>('error');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Step 1
   const handleIdentifyAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) { setError('Please enter your email or Student ID.'); return; }
+    if (!email.trim()) { setToastType('error'); setToastMsg('Please enter your email or Student ID.'); return; }
     try {
-      setIsLoading(true); setError(null);
+      setIsLoading(true); setToastMsg(null);
       await api.post('/auth/send-otp', { email: email.trim(), type: 'PASSWORD_RESET' });
       setSuccessMsg('A 6-digit verification code has been sent to your email.');
+      setToastType('success');
+      setToastMsg('Verification code sent! Check your email.');
       setStep(2);
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not locate account. Please verify your details.'));
+      setToastType('error');
+      setToastMsg(getErrorMessage(err, 'Could not locate account. Please verify your details.'));
     } finally { setIsLoading(false); }
   };
 
   // Step 2
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpCode.length < 6) { setError('Please enter the complete 6-digit code.'); return; }
+    if (otpCode.length < 6) { setToastType('error'); setToastMsg('Please enter the complete 6-digit code.'); return; }
     try {
-      setIsLoading(true); setError(null);
+      setIsLoading(true); setToastMsg(null);
       await api.post('/auth/verify-otp', { email: email.trim(), code: otpCode.trim() });
       setSuccessMsg('Verification successful! Set your new password below.');
+      setToastType('success');
+      setToastMsg('Code verified! Now set your new password.');
       setStep(3);
     } catch (err) {
-      setError(getErrorMessage(err, 'Invalid or expired verification code.'));
+      setToastType('error');
+      setToastMsg(getErrorMessage(err, 'Invalid or expired verification code.'));
     } finally { setIsLoading(false); }
   };
 
   // Step 3
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
-    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (newPassword.length < 8) { setToastType('error'); setToastMsg('Password must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setToastType('error'); setToastMsg('Passwords do not match.'); return; }
     try {
-      setIsLoading(true); setError(null);
+      setIsLoading(true); setToastMsg(null);
       await api.post('/auth/reset-password-otp', {
         email: email.trim(),
         code: otpCode.trim(),
         newPassword,
       });
-      setSuccessMsg('Password reset successful! Redirecting to sign in…');
-      setTimeout(() => router.push('/login'), 1500);
+      setToastType('success');
+      setToastMsg('Password reset successfully! Redirecting to sign in…');
+      setTimeout(() => router.push('/login'), 1800);
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to reset password. Please try again.'));
+      setToastType('error');
+      setToastMsg(getErrorMessage(err, 'Failed to reset password. Please try again.'));
     } finally { setIsLoading(false); }
   };
 
@@ -117,6 +127,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] flex flex-col">
+      <Toast message={toastMsg} type={toastType} onDismiss={() => setToastMsg(null)} />
       {/* Header with back nav */}
       <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-3.5 sticky top-0 z-20 shadow-[0_1px_8px_-2px_rgba(15,23,42,0.08)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -186,12 +197,7 @@ export default function ForgotPasswordPage() {
             })}
           </div>
 
-          {/* Error / Success */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700 animate-[slideDown_200ms_ease]" role="alert">
-              {error}
-            </div>
-          )}
+          {/* Error / Success inline indicator (small, non-blocking) */}
           {successMsg && (
             <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-1.5" role="status">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> {successMsg}
@@ -249,7 +255,7 @@ export default function ForgotPasswordPage() {
               <div className="flex gap-2.5">
                 <button
                   type="button"
-                  onClick={() => { setStep(1); setError(null); setSuccessMsg(null); }}
+                  onClick={() => { setStep(1); setToastMsg(null); setSuccessMsg(null); }}
                   className="px-4 py-3 rounded-xl font-bold text-xs border-[1.5px] border-[#DDE3EE] text-[#4B5A6E] hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 flex-shrink-0"
                 >
                   <ArrowLeft className="w-4 h-4" />

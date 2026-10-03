@@ -25,6 +25,7 @@ import {
   nameValidationMessage,
 } from '@/lib/validation';
 import { CheckCircle2, Eye, EyeOff } from '@/components/icons';
+import Toast from '@/components/shared/Toast';
 import './page.css';
 import logoIcon from '@/Assets/logo.svg';
 
@@ -144,7 +145,7 @@ function PasswordStrength({ password }: { password: string }) {
 export default function RegisterPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [toastMsg, setToastMsg]   = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(true);
   const [showConfirmPassword, setShowConfirmPassword] = useState(true);
 
@@ -161,7 +162,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
-    setError('');
+    setToastMsg(null);
     try {
       let programValue = undefined;
       if (data.program) {
@@ -196,11 +197,11 @@ export default function RegisterPage() {
           router.push('/dashboard');
         }
       } else {
-        setError(response.message || 'Registration failed. Please try again.');
+        setToastMsg(response.message || 'Registration failed. Please try again.');
         setIsLoading(false);
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
+      setToastMsg(getErrorMessage(err, 'Registration failed. Please try again.'));
       setIsLoading(false);
     }
   };
@@ -231,6 +232,7 @@ export default function RegisterPage() {
 
   return (
     <div className="register-page">
+      <Toast message={toastMsg} type="error" onDismiss={() => setToastMsg(null)} />
       {header}
 
       {/* Hero */}
@@ -270,9 +272,7 @@ export default function RegisterPage() {
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)}>
-                {error && (
-                  <div className="register-error-banner">{error}</div>
-                )}
+                {/* errors are shown via Toast popup, no inline banner needed */}
 
                 <div className="register-form-grid">
                   {/* First Name */}
