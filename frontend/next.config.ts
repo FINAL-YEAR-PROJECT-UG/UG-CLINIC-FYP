@@ -5,16 +5,16 @@ const isVercel = !!process.env.VERCEL;
 const frontendRoot = path.resolve(__dirname);
 
 const nextConfig: NextConfig = {
-  // outputFileTracingRoot and turbopack.root are only needed for Docker/Railway
-  // monorepo builds where file tracing must be scoped to frontend/.
-  // On Vercel, setting these causes the routes-manifest-deterministic.json
-  // ENOENT error during output bundling, so we omit them there.
-  ...(!isVercel && {
-    outputFileTracingRoot: frontendRoot,
-    turbopack: {
-      root: frontendRoot,
-    },
-  }),
+  // outputFileTracingRoot is only needed for Docker/Railway monorepo builds where
+  // file tracing must be scoped to frontend/. Omit on Vercel to avoid the
+  // routes-manifest-deterministic.json ENOENT error during output bundling.
+  ...(isVercel ? {} : { outputFileTracingRoot: frontendRoot }),
+
+  // Always declare turbopack (even as {} on Vercel) so Next.js unambiguously
+  // knows to use Turbopack and avoids the WorkerError / ambiguous-bundler warning.
+  // The `root` is only set on Railway/Docker where monorepo file tracing is needed.
+  turbopack: isVercel ? {} : { root: frontendRoot },
+
   // Standalone output is used by Docker/Railway; Vercel packages Next.js natively.
   output: isVercel ? undefined : "standalone",
 
