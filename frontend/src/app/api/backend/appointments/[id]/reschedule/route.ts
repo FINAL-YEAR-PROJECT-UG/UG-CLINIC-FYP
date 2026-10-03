@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { mapAppointmentRow, type AppointmentRow } from "@/lib/appointmentMapper";
 import { getSessionIdentity, isStaffRole } from "@/lib/sessionIdentity";
+import { AuthzError, requireStaffRole, STAFF_ROLES } from "@/lib/staffAuthz";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -34,6 +35,24 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Determine if caller is staff (server-revalidated via Supabase app_metadata)
+  let isStaff = identity?.role ? isStaffRole(identity.role) : false;
+  if (!isStaff) {
+    try {
+      await requireStaffRole(request, { allow: STAFF_ROLES, requireTrusted: true });
+      isStaff = true;
+    } catch (e) {
+      if (e instanceof AuthzError) {
+        isStaff = false;
+      } else {
+        return NextResponse.json(
+          { success: false, message: e instanceof Error ? e.message : "Authorization error" },
+          { status: 500 },
+        );
+      }
+    }
+  }
+
   const supabase = getSupabaseAdmin();
   const { data: existing, error: readError } = await supabase
     .from("appointments")
@@ -48,10 +67,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Staff can reschedule any appointment; patients can only reschedule their own
   const ownsRecord =
-    isStaffRole(identity.role) ||
+    isStaff ||
     (identity.userId && existing.user_id === identity.userId) ||
     (identity.email && existing.patient_email === identity.email);
+
   if (!ownsRecord) {
     return NextResponse.json(
       { success: false, message: "Forbidden" },

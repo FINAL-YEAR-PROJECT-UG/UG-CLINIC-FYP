@@ -8,8 +8,9 @@ import {
   Users,
   FileText,
   Settings,
+  ShieldCheck,
 } from '@/components/icons';
-import { canAccessStudentRecords, canManageClinicOperations, normalizeRole } from '@/lib/utils';
+import { canAccessStudentRecords, canManageClinicOperations, isAdminRole, normalizeRole } from '@/lib/utils';
 
 type NavItem = {
   name: string;
@@ -32,6 +33,7 @@ export default function StaffNav({ userRole }: { userRole: string }) {
     },
     { name: 'Student Records', href: '/staff/students', icon: Users, show: canAccessStudentRecords(role) },
     { name: 'Resources', href: '/staff/resources', icon: FileText, show: true },
+    { name: 'Staff & Permissions', href: '/staff/permissions', icon: ShieldCheck, show: isAdminRole(role) },
     { name: 'Settings', href: '/staff/settings', icon: Settings, show: true },
   ];
 

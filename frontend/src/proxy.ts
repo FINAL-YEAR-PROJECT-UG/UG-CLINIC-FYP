@@ -68,11 +68,20 @@ export async function proxy(request: NextRequest) {
     Promise.resolve(request.cookies.get('connect.sid')),
   ]);
   const appMetadata = claims?.app_metadata as { role?: unknown } | undefined;
-  const supabaseRole = typeof appMetadata?.role === 'string'
-    ? appMetadata.role.toUpperCase()
-    : undefined;
-  const userRole = token?.user?.role?.toUpperCase() ?? supabaseRole;
+  const supabaseRole =
+    typeof appMetadata?.role === 'string' ? appMetadata.role.toUpperCase() : undefined;
   const hasSupabaseSession = typeof claims?.sub === 'string';
+
+  // Supabase app_metadata.role is authoritative when a Supabase session exists.
+  // NextAuth inline role is a fallback only when no Supabase session is present.
+  let userRole: string | undefined;
+  if (hasSupabaseSession) {
+    userRole = supabaseRole ?? 'STUDENT';
+  } else {
+    const naRole = (token?.user as Record<string, unknown> | undefined)
+      ?.role as string | undefined;
+    userRole = naRole?.toUpperCase() ?? supabaseRole;
+  }
 
   const isStaffPath = staffRoutes.some((route) => pathname.startsWith(route));
   const isStudentPath = studentRoutes.some((route) => pathname.startsWith(route));
@@ -85,8 +94,11 @@ export async function proxy(request: NextRequest) {
       return preserveSupabaseSession(NextResponse.redirect(staffLoginUrl), supabaseResponse);
     }
     if (!userRole || !STAFF_ROLES.includes(userRole)) {
+      // Authenticated but wrong role: redirect with error + redirect param so
+      // user can re-authenticate as staff and return to intended page.
       const redirectUrl = new URL('/staff-portal-access', request.url);
       redirectUrl.searchParams.set('error', 'unauthorized');
+      redirectUrl.searchParams.set('redirect', pathname);
       return preserveSupabaseSession(NextResponse.redirect(redirectUrl), supabaseResponse);
     }
     return supabaseResponse;

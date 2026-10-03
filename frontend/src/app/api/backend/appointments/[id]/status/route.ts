@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { mapAppointmentRow, type AppointmentRow } from "@/lib/appointmentMapper";
 import { sendApprovalEmail } from "@/lib/appointmentNotifications";
-import {
-  canApproveAppointments,
-  getSessionIdentity,
-} from "@/lib/sessionIdentity";
+import { AuthzError, requireAppointmentApprover } from "@/lib/staffAuthz";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -21,18 +18,18 @@ const ALLOWED_STATUSES = new Set([
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const identity = await getSessionIdentity(request);
-  if (!identity) {
+  try {
+    await requireAppointmentApprover(request);
+  } catch (e) {
+    if (e instanceof AuthzError) {
+      return NextResponse.json(
+        { success: false, message: e.message },
+        { status: e.status },
+      );
+    }
     return NextResponse.json(
-      { success: false, message: "Authentication required" },
-      { status: 401 },
-    );
-  }
-
-  if (!canApproveAppointments(identity.role)) {
-    return NextResponse.json(
-      { success: false, message: "Forbidden: doctor or admin only" },
-      { status: 403 },
+      { success: false, message: "Authorization check failed" },
+      { status: 500 },
     );
   }
 
