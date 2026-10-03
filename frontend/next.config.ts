@@ -1,17 +1,22 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const isVercel = !!process.env.VERCEL;
 const frontendRoot = path.resolve(__dirname);
 
 const nextConfig: NextConfig = {
-  // Keep Turbopack and file tracing inside frontend/, even if the Git root
-  // is the monorepo. This prevents "Can't resolve next-auth / @tailwindcss/postcss".
-  outputFileTracingRoot: frontendRoot,
-  turbopack: {
-    root: frontendRoot,
-  },
+  // outputFileTracingRoot and turbopack.root are only needed for Docker/Railway
+  // monorepo builds where file tracing must be scoped to frontend/.
+  // On Vercel, setting these causes the routes-manifest-deterministic.json
+  // ENOENT error during output bundling, so we omit them there.
+  ...(!isVercel && {
+    outputFileTracingRoot: frontendRoot,
+    turbopack: {
+      root: frontendRoot,
+    },
+  }),
   // Standalone output is used by Docker/Railway; Vercel packages Next.js natively.
-  output: process.env.VERCEL ? undefined : "standalone",
+  output: isVercel ? undefined : "standalone",
 
   // CDN Configuration for asset delivery
   // Set CDN_URL environment variable to enable CDN (e.g., https://cdn.example.com)
