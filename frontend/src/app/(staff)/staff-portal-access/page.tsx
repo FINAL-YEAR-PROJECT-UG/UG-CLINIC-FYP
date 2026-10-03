@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,7 +22,11 @@ type StaffLoginFormData = z.infer<typeof staffLoginSchema>;
 
 const ALLOWED_STAFF_ROLES = ['ADMIN', 'DOCTOR', 'RECEPTIONIST'] as const;
 
-export default function StaffPortalAccessPage() {
+// ─── Inner component ─────────────────────────────────────────────────────────
+// useSearchParams() MUST be in a component wrapped by <Suspense>.
+// Next.js will throw a prerender error if it is called in the default export directly.
+
+function StaffPortalAccessInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -30,7 +34,8 @@ export default function StaffPortalAccessPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Read query params (searchParams may be null outside Suspense boundaries)
+  // Read query params
+  // Note: useSearchParams() is typed as possibly null by Next.js; optional-chain to satisfy TS.
   const unauthorizedError = searchParams?.get('error') === 'unauthorized';
   const redirectParam = searchParams?.get('redirect') ?? null;
 
@@ -73,7 +78,7 @@ export default function StaffPortalAccessPage() {
 
       const user = authData.user;
 
-      // POST to /api/auth/staff-role to get server-verified role from app_metadata
+      // POST to /api/auth/staff-role to get server-verified role from app_metadata.
       // This handles the case where app_metadata wasn't set yet at invite acceptance.
       let verifiedRole: string | null = null;
       let verifiedFirstName: string | null = null;
@@ -139,7 +144,7 @@ export default function StaffPortalAccessPage() {
 
   return (
     <div className="min-h-screen relative flex flex-col bg-slate-950 text-white font-sans overflow-x-hidden">
-      {/* ── High-Security Administrative Background ── */}
+      {/* ── Background ── */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <Image
           src={viceChancellorBg}
@@ -156,7 +161,6 @@ export default function StaffPortalAccessPage() {
       <header className="relative z-20 bg-slate-950/75 backdrop-blur-md border-b border-slate-800/60 px-6 py-4 sticky top-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <UGLogo size="md" textColor="text-white" href="/" />
-
           <Link
             href="/login"
             className="flex items-center gap-1.5 text-xs text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 px-3.5 py-1.5 rounded-full backdrop-blur-sm transition-all"
@@ -255,5 +259,27 @@ export default function StaffPortalAccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Skeleton shown while Suspense resolves ───────────────────────────────────
+
+function StaffPortalSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="w-8 h-8 rounded-full border-2 border-blue-500/30 border-t-blue-400 animate-spin" />
+    </div>
+  );
+}
+
+// ─── Default export: Suspense shell ──────────────────────────────────────────
+// Next.js requires any component calling useSearchParams() to be wrapped
+// in <Suspense> — without this the static prerender will fail at build time.
+
+export default function StaffPortalAccessPage() {
+  return (
+    <Suspense fallback={<StaffPortalSkeleton />}>
+      <StaffPortalAccessInner />
+    </Suspense>
   );
 }
