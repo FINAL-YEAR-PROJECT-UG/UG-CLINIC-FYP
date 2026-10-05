@@ -1145,12 +1145,24 @@ export const updateTimeSlot = async (req: AuthRequest, res: Response) => {
 export const getTimeSlots = async (req: AuthRequest, res: Response) => {
   try {
     const { serviceId, date } = req.query as any;
+    console.log(`[getTimeSlots] Request received - serviceId: ${serviceId}, date: ${date}`);
 
     const where: any = {};
 
     if (serviceId) {
       const resolvedService = await resolveService(serviceId);
-      where.serviceId = resolvedService ? resolvedService.id : String(serviceId);
+      if (resolvedService) {
+        where.serviceId = resolvedService.id;
+      } else {
+        // Ensure serviceId is a valid UUID before passing to Prisma to avoid 500s
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(String(serviceId))) {
+          where.serviceId = String(serviceId);
+        } else {
+          console.warn(`[getTimeSlots] Invalid serviceId provided and could not be resolved: ${serviceId}`);
+          return res.status(400).json({ success: false, message: 'Invalid service identifier' });
+        }
+      }
     }
 
     let targetDate: Date | null = null;
@@ -1159,6 +1171,9 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
       if (!Number.isNaN(d.getTime())) {
         targetDate = d;
         where.date = { gte: startOfDay(d), lte: endOfDay(d) };
+      } else {
+        console.warn(`[getTimeSlots] Invalid date format: ${date}`);
+        return res.status(400).json({ success: false, message: 'Invalid date format' });
       }
     }
 
@@ -1170,6 +1185,7 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
 
     // Auto-initialize general schedule slots if none exist for this weekday date
     if (timeSlots.length === 0 && targetDate && !isWeekend(targetDate)) {
+      console.log(`[getTimeSlots] No slots found. Attempting auto-initialization for date: ${targetDate.toISOString()}`);
       // Get all active services to seed slots for
       const services = await prisma.service.findMany({
         where: { isActive: true },
@@ -1184,9 +1200,12 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
         ];
 
         const formatTimePad = (totalMinutes: number) => {
-          const h = Math.floor(totalMinutes / 60);
+          let h = Math.floor(totalMinutes / 60);
           const m = totalMinutes % 60;
-          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          h = h % 12;
+          h = h ? h : 12; // the hour '0' should be '12'
+          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} ${ampm}`;
         };
 
         const slotsToCreate: {
@@ -1221,15 +1240,21 @@ export const getTimeSlots = async (req: AuthRequest, res: Response) => {
         }
 
         if (slotsToCreate.length > 0) {
-          // Use createMany with skipDuplicates to safely handle any race conditions
-          await prisma.timeSlot.createMany({ data: slotsToCreate, skipDuplicates: true });
+          try {
+            console.log(`[getTimeSlots] Creating ${slotsToCreate.length} time slots...`);
+            // Use createMany with skipDuplicates to safely handle any race conditions
+            await prisma.timeSlot.createMany({ data: slotsToCreate, skipDuplicates: true });
 
-          // Re-fetch newly created slots
-          timeSlots = await prisma.timeSlot.findMany({
-            where,
-            orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-            include: { service: { select: { id: true, name: true, category: true } } },
-          });
+            // Re-fetch newly created slots
+            timeSlots = await prisma.timeSlot.findMany({
+              where,
+              orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+              include: { service: { select: { id: true, name: true, category: true } } },
+            });
+          } catch (createError) {
+            console.error('[getTimeSlots] Failed to auto-initialize time slots:', createError);
+            // We don't throw here so we can still return an empty array instead of a 500
+          }
         }
       }
     }

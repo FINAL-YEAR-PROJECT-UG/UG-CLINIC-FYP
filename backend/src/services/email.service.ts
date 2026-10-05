@@ -1,49 +1,118 @@
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+
+export interface DevEmailRecord {
+  id: string;
+  to: string;
+  from: string;
+  subject: string;
+  html: string;
+  text?: string;
+  sentAt: string;
+  status: 'sent' | 'simulated' | 'failed';
+  error?: string;
+  messageId?: string;
+  previewUrl: string;
+  extractedCode?: string;
+  extractedLink?: string;
+}
+
+// In-memory ring buffer of recent emails dispatched during development
+const MAX_DEV_EMAILS = 50;
+const devEmailStore: DevEmailRecord[] = [];
+
+export function getRecentDevEmails(): DevEmailRecord[] {
+  return [...devEmailStore];
+}
+
+export function getDevEmailById(id: string): DevEmailRecord | undefined {
+  return devEmailStore.find((e) => e.id === id);
+}
+
+export function clearRecentDevEmails(): void {
+  devEmailStore.length = 0;
+}
 
 /**
- * Configure Nodemailer Transporter
- * Supports environment configurations:
- * - SMTP_HOST (defaults to smtp.gmail.com)
- * - SMTP_PORT (defaults to 587)
- * - SMTP_SECURE (defaults to port === 465)
- * - SMTP_USER
- * - SMTP_PASS
+ * Returns a safe summary of current SMTP settings (passwords masked)
  */
-const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-const port = Number(process.env.SMTP_PORT) || 587;
-const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+export function getSmtpConfigSummary() {
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER?.trim() || '';
+  const configured = Boolean(user && process.env.SMTP_PASS?.trim());
 
-const rawUser = process.env.SMTP_USER?.trim();
-const rawPass = process.env.SMTP_PASS?.trim();
-// If using Gmail SMTP, Google app passwords commonly contain spaces when copied (e.g. "xxxx xxxx xxxx xxxx").
-// Removing whitespace ensures nodemailer authenticates smoothly.
-const isGmail = smtpHost.includes('gmail.com');
-const cleanedPass = isGmail && rawPass ? rawPass.replace(/\s+/g, '') : rawPass;
+  return {
+    host,
+    port,
+    user: user ? `${user.slice(0, 3)}***@${user.split('@')[1] || ''}` : 'Not set',
+    configured,
+    fromEmail: process.env.FROM_EMAIL || 'noreply@ugclinic-fyp.edu.gh',
+    fromName: process.env.FROM_NAME || 'UG Student Clinic',
+  };
+}
 
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port,
-  secure,
-  auth: rawUser && cleanedPass ? {
-    user: rawUser,
-    pass: cleanedPass,
-  } : undefined,
-});
+/**
+ * Get or create Nodemailer Transporter dynamically with current env vars
+ */
+function createTransporter() {
+  const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+  const rawUser = process.env.SMTP_USER?.trim();
+  const rawPass = process.env.SMTP_PASS?.trim();
+  const isGmail = smtpHost.includes('gmail.com');
+  const cleanedPass = isGmail && rawPass ? rawPass.replace(/\s+/g, '') : rawPass;
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port,
+    secure,
+    pool: isGmail,
+    maxConnections: 3,
+    maxMessages: 100,
+    rateDelta: 1000,
+    rateLimit: 5,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    auth: rawUser && cleanedPass ? {
+      user: rawUser,
+      pass: cleanedPass,
+    } : undefined,
+  } as any);
+}
+
+let transporter = createTransporter();
+
+/**
+ * Re-initialize transporter (e.g. after env vars change)
+ */
+export function reloadTransporter() {
+  transporter = createTransporter();
+  return transporter;
+}
 
 /**
  * Verify transporter connectivity on initialization or when requested
  */
-export const verifyTransporterConnection = async (): Promise<boolean> => {
+export const verifyTransporterConnection = async (): Promise<{ success: boolean; message: string; error?: any }> => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('[EmailService] SMTP credentials not set. Running in development/simulated email mode.');
-    return false;
+    const msg = 'SMTP credentials not set in backend/.env. Running in development/simulated email mode.';
+    console.warn(`[EmailService] ${msg}`);
+    return { success: false, message: msg };
   }
   try {
+    reloadTransporter();
     await transporter.verify();
-    console.info('[EmailService] SMTP server connection verified successfully.');
-    return true;
+    const msg = `SMTP server connection (${process.env.SMTP_HOST || 'smtp.gmail.com'}) verified successfully!`;
+    console.info(`[EmailService] ${msg}`);
+    return { success: true, message: msg };
   } catch (error: any) {
-    console.error('[EmailService] SMTP server connection verification failed:', error?.message || error);
+    const errorMsg = error?.message || String(error);
+    console.error('[EmailService] SMTP server connection verification failed:', errorMsg);
     if (error?.code === 'EAUTH' || error?.responseCode === 535) {
       console.warn(`
 [EmailService Troubleshooting: Gmail 535 BadCredentials]
@@ -57,32 +126,93 @@ export const verifyTransporterConnection = async (): Promise<boolean> => {
    SMTP_PASS=your-16-character-app-password
 `);
     }
-    return false;
+    return { success: false, message: errorMsg, error };
   }
 };
 
+const DEFAULT_SENDER = `"${process.env.FROM_NAME || 'UG Student Clinic'}" <${process.env.FROM_EMAIL || 'noreply@ugclinic-fyp.edu.gh'}>`;
+
 /**
- * Helper to dispatch email with automatic development fallback logging
+ * Helper to dispatch email with development store and terminal logging
  */
-async function sendMailSafely(mailOptions: nodemailer.SendMailOptions): Promise<{ success: boolean; error?: unknown; messageId?: string }> {
+async function sendMailSafely(mailOptions: nodemailer.SendMailOptions): Promise<{
+  success: boolean;
+  error?: unknown;
+  messageId?: string;
+  devEmailId?: string;
+  previewUrl?: string;
+}> {
   const isConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  const id = crypto.randomBytes(6).toString('hex');
+  const recipient = Array.isArray(mailOptions.to) ? mailOptions.to.join(', ') : String(mailOptions.to || '');
+  const htmlContent = String(mailOptions.html || mailOptions.text || '');
+
+  // Extract OTP or verification code if present
+  const codeMatch = htmlContent.match(/class="(?:otp-code|code-box)"[^>]*>([0-9A-Za-z]{4,8})<\/div>/i) ||
+                    htmlContent.match(/\b([0-9]{6})\b/);
+  const extractedCode = codeMatch ? codeMatch[1] : undefined;
+
+  // Extract reset or verification URL if present
+  const linkMatch = htmlContent.match(/href="([^"]*token=[^"]*)"/i) ||
+                    htmlContent.match(/href="(http[^"]+)"/i);
+  const extractedLink = linkMatch ? linkMatch[1] : undefined;
+
+  const serverPort = process.env.PORT || 3005;
+  const previewUrl = `http://localhost:${serverPort}/api/dev/email/preview/${id}`;
+
+  const record: DevEmailRecord = {
+    id,
+    to: recipient,
+    from: String(mailOptions.from || DEFAULT_SENDER),
+    subject: String(mailOptions.subject || 'No Subject'),
+    html: htmlContent,
+    text: typeof mailOptions.text === 'string' ? mailOptions.text : undefined,
+    sentAt: new Date().toISOString(),
+    status: isConfigured ? 'sent' : 'simulated',
+    previewUrl,
+    extractedCode,
+    extractedLink,
+  };
+
+  devEmailStore.unshift(record);
+  if (devEmailStore.length > MAX_DEV_EMAILS) {
+    devEmailStore.pop();
+  }
+
+  // Visual terminal box for localhost debugging
+  const border = '═'.repeat(60);
+  console.log(`\n╔${border}╗`);
+  console.log(`║ 📧 [EMAIL DISPATCHED] ${record.status.toUpperCase().padEnd(37)} ║`);
+  console.log(`╟${border}╢`);
+  console.log(`║ To:      ${recipient.slice(0, 48).padEnd(48)} ║`);
+  console.log(`║ Subject: ${record.subject.slice(0, 48).padEnd(48)} ║`);
+  if (extractedCode) {
+    console.log(`║ Code:    ${('🔑 ' + extractedCode).padEnd(48)} ║`);
+  }
+  if (extractedLink) {
+    console.log(`║ Link:    ${extractedLink.slice(0, 48).padEnd(48)} ║`);
+  }
+  console.log(`║ Preview: ${previewUrl.slice(0, 48).padEnd(48)} ║`);
+  console.log(`╚${border}╝\n`);
 
   if (!isConfigured) {
-    console.info(`[EmailService DEV] Simulated dispatch to ${mailOptions.to}: "${mailOptions.subject}"`);
-    return { success: true, messageId: 'simulated-dev-id' };
+    console.info(`[EmailService DEV] Simulated dispatch to ${recipient}: "${mailOptions.subject}"`);
+    return { success: true, messageId: 'simulated-dev-id', devEmailId: id, previewUrl };
   }
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.info(`[EmailService] Email sent successfully to ${mailOptions.to} (ID: ${info.messageId})`);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error(`[EmailService] Failed to send email to ${mailOptions.to}:`, error);
-    return { success: false, error };
+    record.messageId = info.messageId;
+    record.status = 'sent';
+    console.info(`[EmailService] Real email sent via SMTP to ${recipient} (ID: ${info.messageId})`);
+    return { success: true, messageId: info.messageId, devEmailId: id, previewUrl };
+  } catch (error: any) {
+    record.status = 'failed';
+    record.error = error?.message || String(error);
+    console.error(`[EmailService] Failed to send email via SMTP to ${recipient}:`, error?.message || error);
+    return { success: false, error, devEmailId: id, previewUrl };
   }
 }
-
-const DEFAULT_SENDER = `"${process.env.FROM_NAME || 'UG Student Clinic'}" <${process.env.FROM_EMAIL || 'noreply@ugclinic-fyp.edu.gh'}>`;
 
 /**
  * 1. Email Verification / Account Welcome Email with Verification Code or Link

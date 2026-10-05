@@ -174,7 +174,7 @@ export default function StaffResourcesPage() {
         category: selectedCategory !== 'all' ? selectedCategory : undefined,
         search: searchQuery.trim() || undefined,
       });
-      setResources(data.resources);
+      setResources(Array.isArray(data.resources) ? data.resources : []);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load resources'));
     } finally {
@@ -282,13 +282,13 @@ export default function StaffResourcesPage() {
     });
   };
 
-  const totalPages = Math.ceil(resources.length / RESOURCE_PER_PAGE);
-  const paginated = resources.slice((currentPage - 1) * RESOURCE_PER_PAGE, currentPage * RESOURCE_PER_PAGE);
-
   if (!isAuthenticated) return null;
   if (user && !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) return null;
 
   const canManage = userRole === 'ADMIN' || userRole === 'RECEPTIONIST';
+
+  const totalPages = Math.ceil(resources.length / RESOURCE_PER_PAGE);
+  const paginated = resources.slice((currentPage - 1) * RESOURCE_PER_PAGE, currentPage * RESOURCE_PER_PAGE);
 
   const pendingCount = resources.filter((r) => r.status === 'PENDING_REVIEW').length;
   const flaggedCount = resources.filter((r) => r.status === 'FLAGGED').length;

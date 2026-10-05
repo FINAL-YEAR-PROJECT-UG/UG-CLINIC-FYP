@@ -22,7 +22,7 @@ router.get('/availability', authenticateSession, getAvailability);
 router.get('/', authenticateSession, getMyAppointments);
 router.get('/staff/dashboard', authenticateSession, getStaffDashboard);
 router.get('/timeslots', authenticateSession, (req, res, next) => {
-  (req as any).user && ['RECEPTIONIST', 'ADMIN'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: receptionist/admin only' });
+  (req as any).user && ['RECEPTIONIST', 'ADMIN', 'DOCTOR'].includes((req as any).user.role) ? next() : res.status(403).json({ success: false, message: 'Forbidden: staff access only' });
 }, getTimeSlots);
 
 router.patch('/timeslots/batch', authenticateSession, (req, res, next) => {

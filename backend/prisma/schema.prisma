@@ -45,7 +45,7 @@ model User {
   resources           Resource[]
   securityEvents      SecurityEvent[]
   securityQuestions   SecurityQuestion[]
-  sessions            Session[]
+  staffSessions       StaffSession[]
   newsPosts           NewsPost[]
 
   @@index([email])
@@ -273,7 +273,7 @@ model BackupRecoveryCode {
   @@index([userId])
 }
 
-model Session {
+model StaffSession {
   id           String    @id @default(uuid())
   userId       String
   token        String    @unique

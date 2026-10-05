@@ -6,8 +6,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { logoutWithStore } from '@/lib/authApi';
 import { isStaffRole } from '@/lib/utils';
 
-const IDLE_MS = 2 * 60 * 1000;
-const PROMPT_MS = 2 * 60 * 1000;
+// 15 min idle before showing the timeout warning prompt
+const IDLE_MS = 15 * 60 * 1000;
+// 3 min grace period to respond before auto-logout
+const PROMPT_MS = 3 * 60 * 1000;
 
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'] as const;
 

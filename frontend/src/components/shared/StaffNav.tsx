@@ -38,7 +38,7 @@ export default function StaffNav({ userRole }: { userRole: string }) {
   ];
 
   return (
-    <div className="sm:sticky sm:top-16 z-20 mb-6">
+    <div className="sticky top-0 z-30 mb-6 pt-1 pb-1.5 bg-[#F8FAFC]/90 backdrop-blur-md">
       <nav className="bg-white/95 backdrop-blur-md rounded-2xl border border-[#E2E8F0] p-1.5 shadow-[0_4px_20px_-4px_rgba(15,23,42,0.12)] overflow-x-auto overscroll-x-contain">
         <div className="flex gap-1.5 min-w-max">
           {items

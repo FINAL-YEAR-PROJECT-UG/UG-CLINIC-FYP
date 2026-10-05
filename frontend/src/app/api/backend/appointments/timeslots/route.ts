@@ -43,12 +43,32 @@ export async function GET(request: NextRequest) {
 
   const { data, error, count } = await query;
   if (error) {
+    // Table may not exist yet — return empty list instead of 500
+    if (error.code === '42P01' || error.message?.includes('does not exist')) {
+      return NextResponse.json({
+        success: true,
+        data: { timeSlots: [], total: 0, page, pageSize },
+      });
+    }
     return NextResponse.json({ success: false, message: error.message, code: error.code }, { status: 500 });
   }
 
+  // Map snake_case DB columns → camelCase for the frontend
+  const timeSlots = (data || []).map((row: any) => ({
+    id: row.id,
+    serviceId: row.service_id ?? null,
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    isAvailable: row.status === 'AVAILABLE' || row.is_available === true,
+    maxBookings: row.capacity ?? row.max_bookings ?? 1,
+    currentBookings: row.booked_count ?? row.current_bookings ?? 0,
+    service: row.service_name ? { id: row.service_id ?? '', name: row.service_name } : undefined,
+  }));
+
   return NextResponse.json({
     success: true,
-    data: { slots: data || [], total: count ?? 0, page, pageSize },
+    data: { timeSlots, total: count ?? 0, page, pageSize },
   });
 }
 

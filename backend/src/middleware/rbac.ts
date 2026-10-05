@@ -32,7 +32,7 @@ export const authenticateStaff = async (req: StaffRequest, res: Response, next: 
     const token = authHeader.substring(7);
     const payload = verifyAccessToken(token);
 
-    const session = await prisma.session.findUnique({
+    const session = await prisma.staffSession.findUnique({
       where: { token: sessionToken },
     });
 
@@ -44,7 +44,7 @@ export const authenticateStaff = async (req: StaffRequest, res: Response, next: 
     }
 
     if (session.expiresAt < new Date()) {
-      await prisma.session.update({
+      await prisma.staffSession.update({
         where: { id: session.id },
         data: { revokedAt: new Date() },
       });

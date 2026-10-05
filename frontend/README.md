@@ -27,7 +27,7 @@ A modern, responsive web application for the University of Ghana Clinic Manageme
 
 ### Prerequisites
 - Node.js 18+ installed
-- Backend server running on `http://localhost:3005`
+- A Supabase project configured for email/password authentication
 
 ### Installation
 
@@ -37,18 +37,20 @@ npm install
 ```
 
 2. Set up environment variables:
-Create a `.env.local` file in the root directory:
+Copy `.env.example` to `.env.local` in the `frontend` directory and configure the Supabase values:
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3005/api
-NEXTAUTH_SECRET=your-secret-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
+Get the service-role key from your Supabase project API settings. It is required for account registration, must remain server-side, and must never use a `NEXT_PUBLIC_` prefix. Restart the Next.js dev server after changing environment variables.
 
 3. Run the development server:
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3001](http://localhost:3001) in your browser
 
 ## Development Credentials
 

@@ -22,6 +22,7 @@ import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
 import staffRoutes from './routes/staff.routes';
 import newsRoutes from './routes/news.routes';
+import devEmailRoutes from './routes/devEmail.routes';
 import startSessionCleanupJob from './jobs/sessionCleanup';
 import { verifyTransporterConnection } from './services/email.service';
 
@@ -121,12 +122,16 @@ app.use((req, res, next) => {
   res.setTimeout(30000);
   next();
 });
+console.log('Request timeout middleware applied');
 
 // Input sanitization and logging
 app.use(sanitizeInputs);
+console.log('Input sanitization applied');
 app.use(logSuspiciousRequests);
+console.log('Request logging applied');
 
 // Rate limiting
+console.log('Setting up rate limiting...');
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -136,6 +141,7 @@ const globalLimiter = rateLimit({
   skip: (req) => req.path === '/health', // Skip rate limit for health checks
 });
 app.use(globalLimiter);
+console.log('Global rate limiter applied');
 
 const speedLimiter = slowDown({
   windowMs: 15 * 60 * 1000,
@@ -143,37 +149,67 @@ const speedLimiter = slowDown({
   delayMs: () => 500,
 });
 app.use(speedLimiter);
+console.log('Speed limiter applied');
 
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok', service: 'ug-clinic-api' });
 });
+console.log('Health route registered');
 
+console.log('Registering API routes...');
 app.use('/api/auth', authRoutes);
+console.log('Auth routes registered');
 app.use('/api/appointments', appointmentRoutes);
+console.log('Appointment routes registered');
 app.use('/api/services', serviceRoutes);
+console.log('Service routes registered');
 app.use('/api/resources', resourceRoutes);
+console.log('Resource routes registered');
 app.use('/api/admin', adminRoutes);
+console.log('Admin routes registered');
 app.use('/api/notifications', notificationRoutes);
+console.log('Notification routes registered');
 app.use('/api/staff', staffRoutes);
+console.log('Staff routes registered');
 app.use('/api/news', newsRoutes);
+console.log('News routes registered');
+// Localhost email delivery testing and interactive preview dashboard
+app.use('/api/dev/email', devEmailRoutes);
+app.use('/dev/email', devEmailRoutes);
+console.log('Dev email routes registered');
 
 app.use(notFound);
+console.log('Not found middleware applied');
 app.use(errorHandler);
+console.log('Error handler applied');
 
 if (require.main === module) {
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`Server listening on port ${port}`);
+  console.log('Starting server...');
+  console.log('Port:', port);
+  try {
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`Server listening on port ${port}`);
 
-    // Check email service transporter connectivity
-    verifyTransporterConnection().catch((err) =>
-      console.warn('[EmailService] Transporter startup check failed:', err)
-    );
+      // Check email service transporter connectivity
+      verifyTransporterConnection().catch((err) =>
+        console.warn('[EmailService] Transporter startup check failed:', err)
+      );
 
-    // Start session cleanup job in production
-    if (process.env.NODE_ENV === 'production') {
-      startSessionCleanupJob();
-    }
-  });
+      // Start session cleanup job in production
+      // Temporarily disabled for debugging
+      // if (process.env.NODE_ENV === 'production') {
+      //   startSessionCleanupJob();
+      // }
+    });
+
+    server.on('error', (error) => {
+      console.error('Server error:', error);
+      process.exit(1);
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  }
 }
 
 export default app;

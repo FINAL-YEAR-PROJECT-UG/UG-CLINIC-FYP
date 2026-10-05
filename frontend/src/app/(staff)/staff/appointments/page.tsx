@@ -629,10 +629,10 @@ export default function StaffAppointmentsPage() {
       const appointmentDate = new Date(appointment.date);
       const matchesSearch =
         query.length === 0 ||
-        appointment.user.firstName.toLowerCase().includes(query) ||
-        appointment.user.lastName.toLowerCase().includes(query) ||
-        appointment.user.studentId?.toLowerCase().includes(query) ||
-        appointment.user.email.toLowerCase().includes(query) ||
+        appointment.user?.firstName?.toLowerCase().includes(query) ||
+        appointment.user?.lastName?.toLowerCase().includes(query) ||
+        appointment.user?.studentId?.toLowerCase().includes(query) ||
+        appointment.user?.email?.toLowerCase().includes(query) ||
         appointment.service?.name?.toLowerCase().includes(query) ||
         appointment.reason.toLowerCase().includes(query);
 
@@ -1031,17 +1031,17 @@ export default function StaffAppointmentsPage() {
                               </div>
 
                               <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_1fr] gap-4">
-                                <div>
+                                 <div>
                                   <p className="text-base font-bold text-slate-950">
-                                    {appointment.user.firstName}{" "}
-                                    {appointment.user.lastName}
+                                    {appointment.user?.firstName ?? '—'}{" "}
+                                    {appointment.user?.lastName ?? ''}
                                   </p>
                                   <p className="text-sm text-slate-500">
-                                    {appointment.user.studentId ||
+                                    {appointment.user?.studentId ||
                                       "No student ID"}
                                   </p>
                                   <p className="text-sm text-slate-500">
-                                    {appointment.user.email}
+                                    {appointment.user?.email ?? ''}
                                   </p>
                                 </div>
 
@@ -1206,8 +1206,8 @@ export default function StaffAppointmentsPage() {
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-bold text-slate-950">
-                              {appointment.user.firstName}{" "}
-                              {appointment.user.lastName}
+                              {appointment.user?.firstName ?? '—'}{" "}
+                              {appointment.user?.lastName ?? ''}
                             </p>
                             <p className="text-sm text-slate-500">
                               {appointment.service?.name ||
@@ -1872,8 +1872,8 @@ export default function StaffAppointmentsPage() {
                   Booking control panel
                 </p>
                 <h3 className="mt-1 text-2xl font-extrabold text-slate-950">
-                  {selectedAppointment.user.firstName}{" "}
-                  {selectedAppointment.user.lastName}
+                  {selectedAppointment.user?.firstName ?? '—'}{" "}
+                  {selectedAppointment.user?.lastName ?? ''}
                 </h3>
                 <p className="text-sm text-slate-500">
                   {formatDate(selectedAppointment.date)} at{" "}
@@ -1907,14 +1907,14 @@ export default function StaffAppointmentsPage() {
                     Student profile
                   </p>
                   <p className="mt-3 text-base font-bold text-slate-950">
-                    {selectedAppointment.user.firstName}{" "}
-                    {selectedAppointment.user.lastName}
+                    {selectedAppointment.user?.firstName ?? '—'}{" "}
+                    {selectedAppointment.user?.lastName ?? ''}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {selectedAppointment.user.studentId || "No student ID"}
+                    {selectedAppointment.user?.studentId || "No student ID"}
                   </p>
                   <p className="text-sm text-slate-500">
-                    {selectedAppointment.user.email}
+                    {selectedAppointment.user?.email ?? ''}
                   </p>
                 </div>
 

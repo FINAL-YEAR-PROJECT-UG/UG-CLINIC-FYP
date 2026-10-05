@@ -382,7 +382,7 @@ export const resendStaff2FA = async (req: Request, res: Response) => {
 };
 
 const createSession = async (user: any, ipAddress: string, userAgent: string) => {
-  const activeSessions = await prisma.session.count({
+  const activeSessions = await prisma.staffSession.count({
     where: {
       userId: user.id,
       revokedAt: null,
@@ -391,7 +391,7 @@ const createSession = async (user: any, ipAddress: string, userAgent: string) =>
   });
 
   if (activeSessions >= user.maxSessions) {
-    const oldestSession = await prisma.session.findFirst({
+    const oldestSession = await prisma.staffSession.findFirst({
       where: {
         userId: user.id,
         revokedAt: null,
@@ -401,7 +401,7 @@ const createSession = async (user: any, ipAddress: string, userAgent: string) =>
     });
 
     if (oldestSession) {
-      await prisma.session.update({
+      await prisma.staffSession.update({
         where: { id: oldestSession.id },
         data: { revokedAt: new Date() },
       });
@@ -411,7 +411,7 @@ const createSession = async (user: any, ipAddress: string, userAgent: string) =>
   const sessionToken = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_TIMEOUT_MINUTES * 60 * 1000);
 
-  await prisma.session.create({
+  await prisma.staffSession.create({
     data: {
       userId: user.id,
       token: sessionToken,
@@ -445,7 +445,7 @@ export const updateSessionActivity = async (req: Request, res: Response) => {
       });
     }
 
-    const session = await prisma.session.findUnique({
+    const session = await prisma.staffSession.findUnique({
       where: { token: sessionToken },
       include: { user: true },
     });
@@ -458,7 +458,7 @@ export const updateSessionActivity = async (req: Request, res: Response) => {
     }
 
     if (session.expiresAt < new Date()) {
-      await prisma.session.update({
+      await prisma.staffSession.update({
         where: { id: session.id },
         data: { revokedAt: new Date() },
       });
@@ -469,7 +469,7 @@ export const updateSessionActivity = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.session.update({
+    await prisma.staffSession.update({
       where: { id: session.id },
       data: {
         lastActivity: new Date(),
@@ -500,7 +500,7 @@ export const revokeSession = async (req: Request, res: Response) => {
     const sessionId = String(req.params.sessionId);
     const { userId } = (req as any).user;
 
-    const session = await prisma.session.findUnique({
+    const session = await prisma.staffSession.findUnique({
       where: { id: sessionId },
     });
 
@@ -518,7 +518,7 @@ export const revokeSession = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.session.update({
+    await prisma.staffSession.update({
       where: { id: sessionId },
       data: { revokedAt: new Date() },
     });
@@ -540,7 +540,7 @@ export const revokeAllSessions = async (req: Request, res: Response) => {
   try {
     const { userId } = (req as any).user;
 
-    await prisma.session.updateMany({
+    await prisma.staffSession.updateMany({
       where: {
         userId,
         revokedAt: null,
@@ -567,7 +567,7 @@ export const getActiveSessions = async (req: Request, res: Response) => {
   try {
     const { userId } = (req as any).user;
 
-    const sessions = await prisma.session.findMany({
+    const sessions = await prisma.staffSession.findMany({
       where: {
         userId,
         revokedAt: null,

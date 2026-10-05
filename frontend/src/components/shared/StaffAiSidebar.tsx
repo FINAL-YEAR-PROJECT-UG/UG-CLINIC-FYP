@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Activity,
   Zap,
@@ -63,6 +63,9 @@ export default function StaffAiSidebar({
       time: 'System Ready',
     },
   ]);
+
+  const isMountedRef = useRef(true);
+  useEffect(() => () => { isMountedRef.current = false; }, []);
 
   if (userRole !== 'ADMIN' && userRole !== 'RECEPTIONIST') {
     return null;
@@ -366,26 +369,30 @@ export default function StaffAiSidebar({
         actionTaken = `✨ Smart Operations Optimized for "${query}":\n• Workload: ${assignRes.message}\n• Queue: ${confirmRes.message}`;
       }
 
-      setCommandLog((prev) => [
-        ...prev,
-        {
-          role: 'system',
-          text: actionTaken,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      if (isMountedRef.current) {
+        setCommandLog((prev) => [
+          ...prev,
+          {
+            role: 'system',
+            text: actionTaken,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      }
     } catch (err: any) {
-      setCommandLog((prev) => [
-        ...prev,
-        {
-          role: 'system',
-          text: `Notice: ${getErrorMessage(err, 'Operation processed with live synchronization')}`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
+      if (isMountedRef.current) {
+        setCommandLog((prev) => [
+          ...prev,
+          {
+            role: 'system',
+            text: `Notice: ${getErrorMessage(err, 'Operation processed with live synchronization')}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      }
       await onDataChanged().catch(() => {});
     } finally {
-      setCommandRunning(false);
+      if (isMountedRef.current) setCommandRunning(false);
     }
   };
 

@@ -51,10 +51,25 @@ function StaffPortalAccessInner() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<StaffLoginFormData>({
     resolver: zodResolver(staffLoginSchema),
+    defaultValues: { email: '', password: '' },
   });
+
+  // ── Defeat browser credential manager autofill ──────────────────────────────
+  // Chrome ignores autoComplete="off" / "new-password" and fills saved passwords.
+  // We force-clear both fields twice: at 50 ms (fast autofill) and 300 ms (slow).
+  useEffect(() => {
+    const clear = () => {
+      setValue('email', '', { shouldValidate: false, shouldDirty: false });
+      setValue('password', '', { shouldValidate: false, shouldDirty: false });
+    };
+    const t1 = setTimeout(clear, 50);
+    const t2 = setTimeout(clear, 300);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [setValue]);
 
   const onSubmit = async (data: StaffLoginFormData) => {
     setIsLoading(true);
@@ -77,9 +92,11 @@ function StaffPortalAccessInner() {
       }
 
       const user = authData.user;
+      const session = authData.session;
 
       // POST to /api/auth/staff-role to get server-verified role from app_metadata.
-      // This handles the case where app_metadata wasn't set yet at invite acceptance.
+      // Pass the access token in the Authorization header — do NOT rely on cookies
+      // being flushed to the browser in time (race condition after signInWithPassword).
       let verifiedRole: string | null = null;
       let verifiedFirstName: string | null = null;
       let verifiedLastName: string | null = null;
@@ -88,7 +105,12 @@ function StaffPortalAccessInner() {
       try {
         const roleRes = await fetch('/api/auth/staff-role', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token
+              ? { Authorization: `Bearer ${session.access_token}` }
+              : {}),
+          },
           credentials: 'include',
         });
         const roleData = await roleRes.json();
@@ -98,13 +120,14 @@ function StaffPortalAccessInner() {
           verifiedLastName = roleData.lastName ?? null;
           verifiedEmail = roleData.email ?? null;
         } else if (roleRes.status === 403 || roleRes.status === 401) {
-          // Server confirmed: not a staff account
+          // Server confirmed: not a staff account — sign out and deny
           await supabase.auth.signOut();
           setError('Access denied: This account is not authorized as clinic staff (Admin, Doctor, Receptionist).');
           return;
         }
+        // Any other non-OK status: fall through to app_metadata fallback below
       } catch {
-        // If role endpoint fails, fall back to app_metadata from the signin response
+        // Network/server error — fall back to app_metadata from the signin token
       }
 
       // Use server-verified role; fall back to app_metadata from signin token
@@ -209,7 +232,10 @@ function StaffPortalAccessInner() {
               </label>
               <input
                 type="email"
-                autoComplete="off"
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
                 placeholder="Enter your staff email"
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -225,6 +251,9 @@ function StaffPortalAccessInner() {
               <input
                 type="password"
                 autoComplete="new-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
                 placeholder="••••••••"
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -232,6 +261,7 @@ function StaffPortalAccessInner() {
               />
               {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
             </div>
+
 
             <button
               type="submit"

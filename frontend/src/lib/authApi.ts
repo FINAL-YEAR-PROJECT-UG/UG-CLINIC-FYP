@@ -1,4 +1,4 @@
-import api from './api';
+import api, { evictSessionTokenCache } from './api';
 import { useAuthStore } from '../stores/authStore';
 import { signOut } from 'next-auth/react';
 
@@ -113,6 +113,7 @@ export const loginWithStore = async (data: LoginData) => {
   const response = await authApi.login(data);
   const user = response.data?.user || response.user;
   if (response.success && user) {
+    evictSessionTokenCache(); // flush cache so new session token is fetched
     useAuthStore.getState().setAuth(user);
   }
   return response;
@@ -136,6 +137,7 @@ export const logoutWithStore = async () => {
   } catch (error) {
     console.error('Logout API call failed:', error);
   }
+  evictSessionTokenCache(); // flush stale token from cache
   await signOut({ redirect: false });
   useAuthStore.getState().clearAuth();
 };

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore, useHasHydrated } from '@/stores/authStore';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import UGLogo from '@/components/shared/UGLogo';
 import universityOfGhanaBg from '@/Assets/Legon UG/university-of-ghana.jpg';
@@ -90,24 +90,18 @@ function formatShortDate(iso: string): string {
 
 export default function StaffOverviewPage() {
   const router = useRouter();
+  const hasHydrated = useHasHydrated();
   const storeIsAuth = useAuthStore((s) => s.isAuthenticated);
   const storeUser = useAuthStore((s) => s.user);
 
-
-  const initialSnap = useAuthStore.getState();
-  const initialUser = initialSnap.user ?? storeUser;
-  const initialIsAuth = initialSnap.isAuthenticated || storeIsAuth;
-  const initialRole = normalizeRole(initialUser?.role);
-  const initialIsStaff = initialIsAuth && isStaffRole(initialRole);
-
-  // Guard state
-  const [guardResolved, setGuardResolved] = useState(() => initialIsStaff);
+  // Guard state — initialise as false; guard resolves after hydration
+  const [guardResolved, setGuardResolved] = useState(false);
   const [guardRedirecting, setGuardRedirecting] = useState(false);
-  const [userRole, setUserRole] = useState<string>(() => initialRole);
-  const [userId, setUserId] = useState<string>(() => initialUser?.id || '');
-  const [userEmail, setUserEmail] = useState<string>(() => initialUser?.email || '');
-  const [firstName, setFirstName] = useState<string>(() => initialUser?.firstName || 'Staff');
-  const [lastName, setLastName] = useState<string>(() => initialUser?.lastName || '');
+  const [userRole, setUserRole] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('Staff');
+  const [lastName, setLastName] = useState<string>('');
 
   // Data state
   const [staffData, setStaffData] = useState<StaffOverviewData | null>(null);
@@ -119,36 +113,36 @@ export default function StaffOverviewPage() {
   const [automationMessage, setAutomationMessage] = useState<string | null>(null);
   const [autoLoading, setAutoLoading] = useState(false);
 
-  //     Guard: synchronous + early redirect    
+  // Guard: wait for Zustand persist hydration BEFORE checking auth.
+  // Without this, the store is empty on first render and the guard redirects
+  // immediately even though the user is genuinely logged in.
   useEffect(() => {
+    if (!hasHydrated) return; // not ready yet — keep showing spinner
+
     let active = true;
     let t: ReturnType<typeof setTimeout> | null = null;
 
-    const runGuard = () => {
-      const snapshot = useAuthStore.getState();
-      const isAuth = snapshot.isAuthenticated || storeIsAuth;
-      const u = snapshot.user ?? storeUser;
-      const role = normalizeRole(u?.role);
-      const isStaff = isStaffRole(role);
+    const snapshot = useAuthStore.getState();
+    const isAuth = snapshot.isAuthenticated || storeIsAuth;
+    const u = snapshot.user ?? storeUser;
+    const role = normalizeRole(u?.role);
+    const isStaff = isStaffRole(role);
 
-      if (!isAuth || !u || !isStaff) {
-        setGuardRedirecting(true);
-        const target = !isAuth ? '/staff-portal-access' : '/dashboard';
-        t = setTimeout(() => { if (active) router.replace(target); }, 0);
-        return;
-      }
-
+    if (!isAuth || !u || !isStaff) {
+      setGuardRedirecting(true);
+      const target = !isAuth ? '/staff-portal-access' : '/dashboard';
+      t = setTimeout(() => { if (active) router.replace(target); }, 0);
+    } else {
       setUserRole(role);
       setUserId(u.id);
       setUserEmail(u.email);
       setFirstName(u.firstName || 'Staff');
       setLastName(u.lastName || '');
       setGuardResolved(true);
-    };
+    }
 
-    runGuard();
     return () => { active = false; if (t) clearTimeout(t); };
-  }, [router, storeIsAuth, storeUser]);
+  }, [hasHydrated, router, storeIsAuth, storeUser]);
 
   //     Loaders    
   const fetchStaffOverview = useCallback(async () => {
@@ -836,8 +830,8 @@ export default function StaffOverviewPage() {
                       <td className="px-4 py-4">{formatShortDate(apt.date)}</td>
                       <td className="px-4 py-4">{formatTimeLabel(apt.timeSlot)}</td>
                       <td className="px-4 py-4">
-                        {apt.user.firstName} {apt.user.lastName}
-                        <div className="text-xs text-[#334155]">{apt.user.studentId || apt.user.email}</div>
+                        {apt.user?.firstName ?? '—'} {apt.user?.lastName ?? ''}
+                        <div className="text-xs text-[#334155]">{apt.user?.studentId || apt.user?.email || 'Unknown'}</div>
                       </td>
                       <td className="px-4 py-4">{apt.service?.name || apt.reason}</td>
                       <td className="px-4 py-4">

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 import { isDashboardRoute } from '@/components/providers/SessionTimeoutProvider';
@@ -28,8 +28,11 @@ export function useInactivityTimeout({
 
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  // Track showWarning in a ref so the main timer effect doesn't need it as a dep
+  const showWarningRef = useRef(false);
 
   const handleLogout = useCallback(async () => {
+    showWarningRef.current = false;
     setShowWarning(false);
     const role = useAuthStore.getState().user?.role;
     await logoutWithStore();
@@ -37,6 +40,7 @@ export function useInactivityTimeout({
   }, [router]);
 
   const resetInactivityTimer = useCallback(() => {
+    showWarningRef.current = false;
     setShowWarning(false);
     setTimeRemaining(0);
   }, []);
@@ -47,6 +51,7 @@ export function useInactivityTimeout({
 
   useEffect(() => {
     if (!isSessionActive) {
+      showWarningRef.current = false;
       setShowWarning(false);
       setTimeRemaining(0);
     }
@@ -66,11 +71,13 @@ export function useInactivityTimeout({
       clearTimeout(warningTimeoutId);
       clearTimeout(logoutTimeoutId);
       clearInterval(countdownIntervalId);
+      showWarningRef.current = false;
       setShowWarning(false);
       setTimeRemaining(0);
 
       // Set warning timer
       warningTimeoutId = setTimeout(() => {
+        showWarningRef.current = true;
         setShowWarning(true);
         setTimeRemaining(logoutMinutes * 60);
 
@@ -103,7 +110,8 @@ export function useInactivityTimeout({
     ];
 
     const handleActivity = () => {
-      if (!showWarning) {
+      // Use ref to avoid stale closure — don't reset timers while warning is visible
+      if (!showWarningRef.current) {
         resetTimers();
       }
     };
@@ -125,7 +133,10 @@ export function useInactivityTimeout({
         window.removeEventListener(event, handleActivity);
       });
     };
-  }, [isSessionActive, warningMinutes, logoutMinutes, showWarning, handleLogout]);
+  // showWarning intentionally NOT in deps — tracked via showWarningRef to prevent
+  // infinite re-registration of event listeners on every warning state change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSessionActive, warningMinutes, logoutMinutes, handleLogout]);
 
   return {
     showWarning,
