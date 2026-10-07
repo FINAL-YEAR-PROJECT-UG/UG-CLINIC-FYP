@@ -1,7 +1,12 @@
 import { sendEmail as sendWithSendGrid } from "@/lib/email";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type NotificationKind = "booking" | "approval";
+type NotificationKind =
+  | "booking"
+  | "approval"
+  | "assignment"
+  | "reschedule"
+  | "cancellation";
 
 type SendResult = {
   sent: boolean;
@@ -55,6 +60,46 @@ function approvalHtml(opts: {
       <strong>Time:</strong> ${escapeHtml(opts.timeSlot)}
     </p>
     <p>Please arrive 10 minutes early with your student ID.</p>
+    <p>UG Health Services</p>
+  `;
+}
+
+function appointmentUpdateHtml(opts: {
+  kind: "assignment" | "reschedule" | "cancellation";
+  patientName: string;
+  serviceName: string;
+  date: string;
+  timeSlot: string;
+  reference: string;
+  doctorName?: string;
+  cancellationReason?: string;
+}) {
+  const action =
+    opts.kind === "assignment"
+      ? "has been assigned to a doctor"
+      : opts.kind === "reschedule"
+        ? "has been rescheduled"
+        : "has been cancelled";
+  const extra =
+    opts.kind === "assignment" && opts.doctorName
+      ? `<p><strong>Doctor:</strong> ${escapeHtml(opts.doctorName)}</p>`
+      : opts.kind === "cancellation" && opts.cancellationReason
+        ? `<p><strong>Reason:</strong> ${escapeHtml(opts.cancellationReason)}</p>`
+        : "";
+  const schedule =
+    opts.kind === "cancellation"
+      ? ""
+      : `<p><strong>Date:</strong> ${escapeHtml(opts.date)}<br/><strong>Time:</strong> ${escapeHtml(opts.timeSlot)}</p>`;
+
+  return `
+    <p>Dear ${escapeHtml(opts.patientName)},</p>
+    <p>Your University of Ghana Student Clinic appointment ${action}.</p>
+    <p>
+      <strong>Reference:</strong> ${escapeHtml(opts.reference)}<br/>
+      <strong>Service:</strong> ${escapeHtml(opts.serviceName)}
+    </p>
+    ${schedule}
+    ${extra}
     <p>UG Health Services</p>
   `;
 }
@@ -185,18 +230,61 @@ export async function sendApprovalEmail(opts: {
   return result;
 }
 
+export async function sendAppointmentUpdateEmail(opts: {
+  supabase: SupabaseClient;
+  appointmentId: string;
+  kind: "assignment" | "reschedule" | "cancellation";
+  to: string;
+  patientName: string;
+  serviceName: string;
+  date: string;
+  timeSlot: string;
+  doctorName?: string;
+  cancellationReason?: string;
+}): Promise<SendResult> {
+  const year = new Date(opts.date).getFullYear();
+  const reference = `UGC-${year}-${opts.appointmentId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+  const subjects = {
+    assignment: "UG Student Clinic — doctor assigned",
+    reschedule: "UG Student Clinic — appointment rescheduled",
+    cancellation: "UG Student Clinic — appointment cancelled",
+  };
+  const result = await sendTransactionalEmail(
+    opts.to,
+    subjects[opts.kind],
+    appointmentUpdateHtml({ ...opts, reference }),
+  );
+  logDelivery(opts.kind, result);
+  await recordNotification(opts.supabase, opts.appointmentId, opts.kind, result);
+  return result;
+}
+
 async function recordNotification(
   supabase: SupabaseClient,
   appointmentId: string,
   kind: NotificationKind,
   result: SendResult,
 ) {
-  const flagColumn = kind === "booking" ? "booking_email_sent" : "approval_email_sent";
-  const { data } = await supabase
+  const flagColumn =
+    kind === "booking"
+      ? "booking_email_sent"
+      : kind === "approval"
+        ? "approval_email_sent"
+        : null;
+  const { data, error: readError } = await supabase
     .from("appointments")
     .select("notification_logs")
     .eq("id", appointmentId)
     .maybeSingle();
+
+  if (readError) {
+    console.error("[appointment-notification] Failed to read delivery log", {
+      appointmentId,
+      kind,
+      code: readError.code,
+    });
+    return;
+  }
 
   const logs = Array.isArray(data?.notification_logs) ? data.notification_logs.slice(-19) : [];
   logs.push({
@@ -207,20 +295,29 @@ async function recordNotification(
     at: new Date().toISOString(),
   });
 
+  const values: Record<string, unknown> = {
+    notification_logs: logs,
+    updated_at: new Date().toISOString(),
+  };
+  if (flagColumn) values[flagColumn] = Boolean(result.sent);
+
   let update = supabase
     .from("appointments")
-    .update({
-      [flagColumn]: Boolean(result.sent),
-      notification_logs: logs,
-      updated_at: new Date().toISOString(),
-    })
+    .update(values)
     .eq("id", appointmentId);
 
-  if (result.sent) {
+  if (result.sent && flagColumn) {
     update = update.eq(flagColumn, false);
   }
 
-  await update;
+  const { error } = await update;
+  if (error) {
+    console.error("[appointment-notification] Failed to record delivery", {
+      appointmentId,
+      kind,
+      code: error.code,
+    });
+  }
 }
 
 export { clinicFromName };

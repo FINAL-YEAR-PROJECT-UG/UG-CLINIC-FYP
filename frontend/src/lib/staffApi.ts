@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 
 export interface StaffAppointment {
   id: string;
@@ -241,7 +242,7 @@ export const staffApi = {
   },
 
   getTimeSlots: async (serviceId?: string, date?: string): Promise<{ timeSlots: StaffTimeSlot[] }> => {
-    const params: any = {};
+    const params: Record<string, string> = {};
     if (serviceId) params.serviceId = serviceId;
     if (date) params.date = date;
     const response = await api.get<{ success: boolean; data: { timeSlots: StaffTimeSlot[] } }>('/appointments/timeslots', { params });
@@ -253,7 +254,7 @@ export const staffApi = {
   },
 
   updateTimeSlotCapacity: async (slotId: string, maxBookings: number, isAvailable?: boolean): Promise<void> => {
-    const payload: any = { maxBookings };
+    const payload: { maxBookings: number; isAvailable?: boolean } = { maxBookings };
     if (typeof isAvailable === 'boolean') payload.isAvailable = isAvailable;
     await api.patch(`/appointments/timeslot/${slotId}`, payload);
   },
@@ -350,16 +351,37 @@ export const staffApi = {
     await api.patch(`/appointments/${appointmentId}/status`, { status });
   },
 
-  staffCancelAppointment: async (appointmentId: string, reason: string, note?: string): Promise<void> => {
-    await api.post(`/appointments/${appointmentId}/staff-cancel`, { cancellationReason: reason, cancellationNote: note });
+  staffCancelAppointment: async (appointmentId: string, reason: string, note?: string): Promise<{ emailSent: boolean; emailError?: string }> => {
+    const response = await api.patch<{
+      success: boolean;
+      emailNotification?: { sent: boolean; error?: string };
+    }>(`/appointments/${appointmentId}/cancel`, { cancellationReason: reason, cancellationNote: note });
+    return {
+      emailSent: Boolean(response.data.emailNotification?.sent),
+      emailError: response.data.emailNotification?.error,
+    };
   },
 
-  assignDoctorToAppointment: async (appointmentId: string, doctorId: string): Promise<void> => {
-    await api.patch(`/appointments/${appointmentId}/assign-doctor`, { doctorId });
+  assignDoctorToAppointment: async (appointmentId: string, doctorId: string): Promise<{ emailSent: boolean; emailError?: string }> => {
+    const response = await api.patch<{
+      success: boolean;
+      emailNotification?: { sent: boolean; error?: string };
+    }>(`/appointments/${appointmentId}/assign-doctor`, { doctorId });
+    return {
+      emailSent: Boolean(response.data.emailNotification?.sent),
+      emailError: response.data.emailNotification?.error,
+    };
   },
 
-  rescheduleAppointment: async (appointmentId: string, date: string, timeSlot: string): Promise<void> => {
-    await api.patch(`/appointments/${appointmentId}/reschedule`, { date, timeSlot });
+  rescheduleAppointment: async (appointmentId: string, date: string, timeSlot: string): Promise<{ emailSent: boolean; emailError?: string }> => {
+    const response = await api.patch<{
+      success: boolean;
+      emailNotification?: { sent: boolean; error?: string };
+    }>(`/appointments/${appointmentId}/reschedule`, { date, timeSlot });
+    return {
+      emailSent: Boolean(response.data.emailNotification?.sent),
+      emailError: response.data.emailNotification?.error,
+    };
   },
 
   autoAssignDoctors: async (): Promise<{ assignedCount: number; message: string }> => {
@@ -369,11 +391,13 @@ export const staffApi = {
         assignedCount: response.data.data?.assignedCount ?? 0,
         message: response.data.message || 'Auto-assignment completed successfully',
       };
-    } catch (err: any) {
-      return {
-        assignedCount: 0,
-        message: err.response?.data?.message || 'Auto-assignment completed (no pending unassigned visits)',
-      };
+    } catch (error: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : error instanceof Error
+          ? error.message
+          : undefined;
+      throw new Error(message || 'Failed to auto-assign doctors');
     }
   },
 
@@ -384,11 +408,13 @@ export const staffApi = {
         confirmedCount: response.data.data?.confirmedCount ?? 0,
         message: response.data.message || 'Auto-confirmation processed successfully',
       };
-    } catch (err: any) {
-      return {
-        confirmedCount: 0,
-        message: err.response?.data?.message || 'All pending appointments are up to date',
-      };
+    } catch (error: unknown) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : error instanceof Error
+          ? error.message
+          : undefined;
+      throw new Error(message || 'Failed to confirm pending appointments');
     }
   },
 };
@@ -418,7 +444,6 @@ export const autoAssignDoctors = staffApi.autoAssignDoctors;
 export const autoConfirmPending = staffApi.autoConfirmPending;
 
 // Public (unauthenticated) submission of articles for staff review
-import axios from 'axios';
 const publicApi = axios.create({ baseURL: '/api/backend', withCredentials: true });
 
 export const submitPublicResource = async (payload: PublicResourceSubmissionPayload): Promise<{
@@ -437,5 +462,3 @@ export const submitPublicResource = async (payload: PublicResourceSubmissionPayl
     scanResult: response.data.data?.scanResult,
   };
 };
-
-

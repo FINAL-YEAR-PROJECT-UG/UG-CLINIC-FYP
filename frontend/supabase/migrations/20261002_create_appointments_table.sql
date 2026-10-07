@@ -16,14 +16,21 @@
 --                                           booking_email_sent,
 --                                           approval_email_sent
 --  GET  /api/backend/appointments           all cols (SELECT *)
---  PATCH /api/backend/appointments/[id]/    id, user_id, patient_email,
---        cancel                             status, notes, updated_at
---  PATCH /api/backend/appointments/[id]/    date, time_slot, status, updated_at
---        reschedule
+--  PATCH /api/backend/appointments/[id]/    id, patient identity/details,
+--        cancel                             service/schedule, status, notes,
+--                                           notification_logs, updated_at
+--  PATCH /api/backend/appointments/[id]/    date, time_slot, doctor_id,
+--        reschedule                         status, notification_logs,
+--                                           updated_at
+--  PATCH /api/backend/appointments/[id]/    doctor_id, doctor_name,
+--        assign-doctor                      notification_logs, updated_at
 --  PATCH /api/backend/appointments/[id]/    status, updated_at,
 --        status                             approval_email_sent, patient_email,
 --                                           patient_name, service_name,
 --                                           service_id
+--  POST /api/backend/staff/auto-assign-     doctor_id, doctor_name,
+--       doctors                             patient/service/schedule,
+--                                           notification_logs
 --  GET  /api/backend/appointments/          time_slot, date, status
 --        availability
 --  GET  /api/backend/appointments/staff/all all cols (SELECT *)
@@ -215,4 +222,3 @@ $$;
 -- Data API resolves the table without a server restart.
 
 NOTIFY pgrst, 'reload schema';
-

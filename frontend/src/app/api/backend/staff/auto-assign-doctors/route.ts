@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server.js";
+import { sendAppointmentUpdateEmail } from "@/lib/appointmentNotifications";
 import { AuthzError, requireAdmin } from "@/lib/staffAuthz";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
 
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   // 2. Fetch unassigned PENDING appointments
   const { data: unassigned, error: apptErr } = await supabase
     .from("appointments")
-    .select("id, patient_name, date, time_slot")
+    .select("id, patient_name, patient_email, service_id, service_name, date, time_slot")
     .eq("status", "PENDING")
     .is("doctor_id", null);
 
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
     doctor_id: string;
     doctor_name: string;
     patient_name: string | null;
+    patient_email: string | null;
+    service_id: string;
+    service_name: string | null;
     date: string | null;
     time_slot: string | null;
   };
@@ -84,6 +88,9 @@ export async function POST(request: NextRequest) {
       doctor_id: doctor.id,
       doctor_name: doctorName,
       patient_name: appt.patient_name,
+      patient_email: appt.patient_email,
+      service_id: appt.service_id,
+      service_name: appt.service_name,
       date: appt.date,
       time_slot: appt.time_slot,
     };
@@ -99,19 +106,66 @@ export async function POST(request: NextRequest) {
 
   // 4. Commit updates
   const now = new Date().toISOString();
-  const updates = assigned.map(({ appointment_id, doctor_id, doctor_name }) =>
-    supabase
-      .from("appointments")
-      .update({ doctor_id, doctor_name, updated_at: now })
-      .eq("id", appointment_id),
-  );
+  const results = await Promise.all(
+    assigned.map(async (item) => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .update({
+          doctor_id: item.doctor_id,
+          doctor_name: item.doctor_name,
+          updated_at: now,
+        })
+        .eq("id", item.appointment_id)
+        .select("id")
+        .maybeSingle();
 
-  const results = await Promise.allSettled(updates);
-  const failed = results.filter((r) => r.status === "rejected" || (r.status === "fulfilled" && (r.value as { error?: unknown }).error));
+      if (error || !data) {
+        console.error("[appointment-assignment] Failed to assign doctor", {
+          appointmentId: item.appointment_id,
+          code: error?.code || null,
+        });
+        return { assigned: false, emailSent: false };
+      }
+
+      if (!item.patient_email || !item.date || !item.time_slot) {
+        return { assigned: true, emailSent: false };
+      }
+
+      try {
+        const notification = await sendAppointmentUpdateEmail({
+          supabase,
+          appointmentId: item.appointment_id,
+          kind: "assignment",
+          to: item.patient_email,
+          patientName: item.patient_name || "Student",
+          serviceName: item.service_name || item.service_id,
+          date: item.date,
+          timeSlot: item.time_slot,
+          doctorName: item.doctor_name,
+        });
+        return { assigned: true, emailSent: notification.sent };
+      } catch (error) {
+        console.error("[appointment-notification] Auto-assignment email failed", {
+          appointmentId: item.appointment_id,
+          error: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+        });
+        return { assigned: true, emailSent: false };
+      }
+    }),
+  );
+  const assignedCount = results.filter((result) => result.assigned).length;
+  const failedCount = results.length - assignedCount;
+  const emailFailedCount = results.filter((result) => result.assigned && !result.emailSent).length;
 
   return NextResponse.json({
     success: true,
-    message: `Assigned ${assigned.length - failed.length} of ${assigned.length} appointment(s). ${failed.length} failed.`,
-    data: { assigned: assigned.length - failed.length, failed: failed.length, dry_run: false },
+    message: `Assigned ${assignedCount} of ${assigned.length} appointment(s). ${failedCount} assignments failed; ${emailFailedCount} email notifications failed.`,
+    data: {
+      assigned: assignedCount,
+      assignedCount,
+      failed: failedCount,
+      emailFailed: emailFailedCount,
+      dry_run: false,
+    },
   });
 }

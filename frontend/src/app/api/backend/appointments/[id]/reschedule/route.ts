@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server.js";
+import { sendAppointmentUpdateEmail } from "@/lib/appointmentNotifications";
 import { mapAppointmentRow, type AppointmentRow } from "@/lib/appointmentMapper";
-import { getSessionIdentity, isStaffRole } from "@/lib/sessionIdentity";
+import { getSessionIdentity } from "@/lib/sessionIdentity";
 import { AuthzError, requireStaffRole, STAFF_ROLES } from "@/lib/staffAuthz";
+import { isValidAppointmentDate, normalizeAppointmentTime } from "@/lib/appointmentScheduling";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -26,30 +28,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
-  const date = body.date;
-  const timeSlot = body.timeSlot;
-  if (!date || !timeSlot) {
+  const date = typeof body.date === "string" ? body.date : "";
+  const timeSlot = typeof body.timeSlot === "string" ? body.timeSlot.trim() : "";
+  const normalizedTime = normalizeAppointmentTime(timeSlot);
+  if (!isValidAppointmentDate(date) || normalizedTime === null) {
     return NextResponse.json(
-      { success: false, message: "Date and time slot are required" },
+      { success: false, message: "A valid date and time are required" },
       { status: 400 },
     );
   }
+  if (date < new Date().toISOString().slice(0, 10)) {
+    return NextResponse.json({ success: false, message: "Appointments cannot be rescheduled into the past" }, { status: 400 });
+  }
 
-  // Determine if caller is staff (server-revalidated via Supabase app_metadata)
-  let isStaff = identity?.role ? isStaffRole(identity.role) : false;
-  if (!isStaff) {
-    try {
-      await requireStaffRole(request, { allow: STAFF_ROLES, requireTrusted: true });
-      isStaff = true;
-    } catch (e) {
-      if (e instanceof AuthzError) {
-        isStaff = false;
-      } else {
-        return NextResponse.json(
-          { success: false, message: e instanceof Error ? e.message : "Authorization error" },
-          { status: 500 },
-        );
-      }
+  let isStaff = false;
+  try {
+    await requireStaffRole(request, { allow: STAFF_ROLES, requireTrusted: true });
+    isStaff = true;
+  } catch (error) {
+    if (!(error instanceof AuthzError) || ![401, 403].includes(error.status)) {
+      return NextResponse.json(
+        { success: false, message: error instanceof Error ? error.message : "Authorization error" },
+        { status: 500 },
+      );
     }
   }
 
@@ -67,7 +68,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  // Staff can reschedule any appointment; patients can only reschedule their own
   const ownsRecord =
     isStaff ||
     (identity.userId && existing.user_id === identity.userId) ||
@@ -78,6 +78,29 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       { success: false, message: "Forbidden" },
       { status: 403 },
     );
+  }
+
+  if (["CANCELLED", "COMPLETED", "NO_SHOW"].includes(String(existing.status).toUpperCase())) {
+    return NextResponse.json({ success: false, message: "This appointment can no longer be rescheduled" }, { status: 409 });
+  }
+
+  const { data: sameDayAppointments, error: conflictReadError } = await supabase
+    .from("appointments")
+    .select("id, time_slot, doctor_id")
+    .eq("date", date)
+    .in("status", ["PENDING", "CONFIRMED", "RESCHEDULED"])
+    .neq("id", id);
+
+  if (conflictReadError) {
+    return NextResponse.json({ success: false, message: conflictReadError.message }, { status: 500 });
+  }
+
+  const conflict = (sameDayAppointments || []).some((appointment) => {
+    const sameDoctor = Boolean(existing.doctor_id) && appointment.doctor_id === existing.doctor_id;
+    return sameDoctor && normalizeAppointmentTime(appointment.time_slot) === normalizedTime;
+  });
+  if (conflict) {
+    return NextResponse.json({ success: false, message: "The selected doctor already has an appointment at that time" }, { status: 409 });
   }
 
   const { data, error } = await supabase
@@ -99,9 +122,36 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
+  let emailNotification: { sent: boolean; error?: string } = {
+    sent: false,
+    error: data.patient_email ? "EMAIL_DISPATCH_FAILED" : "PATIENT_EMAIL_MISSING",
+  };
+  if (data.patient_email) {
+    try {
+      const result = await sendAppointmentUpdateEmail({
+        supabase,
+        appointmentId: id,
+        kind: "reschedule",
+        to: data.patient_email,
+        patientName: data.patient_name || "Student",
+        serviceName: data.service_name || data.service_id,
+        date: data.date,
+        timeSlot: data.time_slot,
+        doctorName: data.doctor_name || undefined,
+      });
+      emailNotification = { sent: result.sent, error: result.error };
+    } catch (dispatchError) {
+      console.error("[appointment-notification] Reschedule email dispatch failed", {
+        appointmentId: id,
+        error: dispatchError instanceof Error ? dispatchError.name : "UNKNOWN_ERROR",
+      });
+    }
+  }
+
   return NextResponse.json({
     success: true,
     message: "Appointment rescheduled",
+    emailNotification,
     data: { appointment: mapAppointmentRow(data as AppointmentRow) },
   });
 }

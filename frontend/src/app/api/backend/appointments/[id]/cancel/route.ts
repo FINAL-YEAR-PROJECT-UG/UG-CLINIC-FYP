@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server.js";
+import { sendAppointmentUpdateEmail } from "@/lib/appointmentNotifications";
 import { getSessionIdentity, isStaffRole } from "@/lib/sessionIdentity";
 import { AuthzError, requireStaffRole, STAFF_ROLES } from "@/lib/staffAuthz";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
@@ -49,7 +50,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const supabase = getSupabaseAdmin();
   const { data: existing, error: readError } = await supabase
     .from("appointments")
-    .select("id, user_id, patient_email, status")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
 
@@ -73,7 +74,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("appointments")
     .update({
       status: "CANCELLED",
@@ -82,17 +83,48 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         .join(" | "),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !updated) {
     return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 },
+      { success: false, message: error?.message || "Appointment not found" },
+      { status: error ? 500 : 404 },
     );
+  }
+
+  let emailNotification: { sent: boolean; error?: string } = {
+    sent: false,
+    error: existing.patient_email ? "EMAIL_DISPATCH_FAILED" : "PATIENT_EMAIL_MISSING",
+  };
+  if (existing.patient_email) {
+    try {
+      const result = await sendAppointmentUpdateEmail({
+        supabase,
+        appointmentId: id,
+        kind: "cancellation",
+        to: existing.patient_email,
+        patientName: existing.patient_name || "Student",
+        serviceName: existing.service_name || existing.service_id,
+        date: existing.date,
+        timeSlot: existing.time_slot,
+        cancellationReason: [body.cancellationReason, body.cancellationNote]
+          .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+          .join(" — "),
+      });
+      emailNotification = { sent: result.sent, error: result.error };
+    } catch (dispatchError) {
+      console.error("[appointment-notification] Cancellation email dispatch failed", {
+        appointmentId: id,
+        error: dispatchError instanceof Error ? dispatchError.name : "UNKNOWN_ERROR",
+      });
+    }
   }
 
   return NextResponse.json({
     success: true,
     message: "Appointment cancelled",
+    emailNotification,
   });
 }

@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import NextAuth, { type DefaultSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabaseAdmin";
+import { resolveLoginEmail } from "@/lib/loginIdentifier";
 
 declare module "next-auth" {
   interface User {
@@ -64,7 +66,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const email = credentials.email.trim();
+        const identifier = credentials.email.trim();
         const password = credentials.password;
 
         // Vercel app authenticates against Supabase only (no Railway/Prisma login).
@@ -77,6 +79,32 @@ export const authOptions: NextAuthOptions = {
           process.env.SUPABASE_PUBLISHABLE_KEY;
 
         if (supabaseUrl && supabaseKey) {
+          const email = await resolveLoginEmail(identifier, async (studentId) => {
+            if (!isSupabaseConfigured()) {
+              console.error("[NextAuth] Student ID login requires Supabase service-role configuration.");
+              return null;
+            }
+
+            const { data, error } = await getSupabaseAdmin()
+              .from("profiles")
+              .select("email")
+              .eq("student_id", studentId)
+              .eq("role", "STUDENT")
+              .eq("is_active", true)
+              .limit(2);
+
+            if (error) {
+              console.error("[NextAuth] Student ID lookup failed:", error.message);
+              return null;
+            }
+            if (data.length !== 1 || typeof data[0]?.email !== "string") {
+              return null;
+            }
+
+            return data[0].email;
+          });
+          if (!email) return null;
+
           const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false, autoRefreshToken: false },
           });

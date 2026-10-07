@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Mirror to public.profiles (non-fatal if table doesn't exist yet)
     try {
-      await adminClient.from("profiles").upsert(
+      const { error: profileError } = await adminClient.from("profiles").upsert(
         {
           id: createdUser.id,
           email: normalizedEmail,
@@ -121,8 +121,14 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "id" },
       );
-    } catch {
-      // profiles table may not exist yet — non-fatal
+      if (profileError) {
+        console.error("[auth/register] Profile sync failed:", profileError.message);
+      }
+    } catch (error) {
+      console.error(
+        "[auth/register] Profile sync failed:",
+        error instanceof Error ? error.message : error,
+      );
     }
 
     const formattedUser = {

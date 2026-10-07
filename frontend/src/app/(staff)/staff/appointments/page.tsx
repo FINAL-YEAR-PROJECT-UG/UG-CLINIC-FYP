@@ -1,5 +1,6 @@
 "use client";
 
+import axios from "axios";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -431,7 +432,11 @@ export default function StaffAppointmentsPage() {
       // Immediately hide spinner when returning cached data
       if (result.fromCache) setSlotsLoading(false);
     } catch (err) {
-      setError(getErrorMessage(err, "Failed to load booking slots"));
+      const serviceMessage =
+        axios.isAxiosError<{ message?: string }>(err) && err.response?.status === 503
+          ? err.response.data?.message
+          : undefined;
+      setError(serviceMessage || getErrorMessage(err, "Failed to load booking slots"));
     } finally {
       setSlotsLoading(false);
     }
@@ -452,7 +457,9 @@ export default function StaffAppointmentsPage() {
       void fetchAppointments();
       void fetchDashboardSummary();
       void fetchDoctors();
-      void fetchTimeSlots(selectedSlotDate);
+      if (activeTab === "timeslots") {
+        void fetchTimeSlots(selectedSlotDate);
+      }
     }, 0);
 
     return () => clearTimeout(timeoutHandle);
@@ -462,6 +469,7 @@ export default function StaffAppointmentsPage() {
     fetchDashboardSummary,
     fetchDoctors,
     fetchTimeSlots,
+    activeTab,
     selectedSlotDate,
   ]);
 
@@ -489,12 +497,15 @@ export default function StaffAppointmentsPage() {
     invalidateStaffDashboardCache();
     invalidateDoctorsCache();
     invalidateTimeSlotsCache();
-    await Promise.all([
+    const refreshTasks = [
       fetchAppointments(true),
       fetchDashboardSummary(true),
       fetchDoctors(true),
-      fetchTimeSlots(selectedSlotDate, true),
-    ]);
+    ];
+    if (activeTab === "timeslots") {
+      refreshTasks.push(fetchTimeSlots(selectedSlotDate, true));
+    }
+    await Promise.all(refreshTasks);
   };
 
   const [batchUpdating, setBatchUpdating] = useState(false);
@@ -562,11 +573,14 @@ export default function StaffAppointmentsPage() {
 
     try {
       setBusyAction(`cancel-${selectedAppointment.id}`);
-      await staffCancelAppointment(
+      const result = await staffCancelAppointment(
         selectedAppointment.id,
         cancelReason,
         cancelNote,
       );
+      if (!result.emailSent) {
+        setError(`Appointment was cancelled, but the email notification was not sent (${result.emailError || "unknown email error"}).`);
+      }
       invalidateAppointmentsCache();
       closeAppointmentOverlays();
       await fetchAppointments(true);
@@ -585,15 +599,18 @@ export default function StaffAppointmentsPage() {
 
     try {
       setBusyAction(`reschedule-${selectedAppointment.id}`);
-      await rescheduleAppointment(
+      const result = await rescheduleAppointment(
         selectedAppointment.id,
         rescheduleDate,
         rescheduleTime,
       );
+      if (!result.emailSent) {
+        setError(`Appointment was rescheduled, but the email notification was not sent (${result.emailError || "unknown email error"}).`);
+      }
       invalidateAppointmentsCache();
       invalidateTimeSlotsCache(rescheduleDate);
       closeAppointmentOverlays();
-      await Promise.all([fetchAppointments(true), fetchTimeSlots(rescheduleDate, true)]);
+      await fetchAppointments(true);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to reschedule appointment"));
     } finally {
@@ -609,7 +626,10 @@ export default function StaffAppointmentsPage() {
 
     try {
       setBusyAction(`assign-${selectedAppointment.id}`);
-      await assignDoctorToAppointment(selectedAppointment.id, selectedDoctor);
+      const result = await assignDoctorToAppointment(selectedAppointment.id, selectedDoctor);
+      if (!result.emailSent) {
+        setError(`Doctor was assigned, but the email notification was not sent (${result.emailError || "unknown email error"}).`);
+      }
       invalidateAppointmentsCache();
       invalidateDoctorsCache();
       closeAppointmentOverlays();
