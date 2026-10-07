@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { getSafeRedirectUrl } from '@/lib/authUrl';
 import { useAuthStore } from '@/stores/authStore';
+import { evictSessionTokenCache } from '@/lib/api';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import AuthBrand from '@/components/shared/AuthBrand';
 
@@ -73,6 +74,7 @@ function AuthCallbackContent() {
               }
               return;
             }
+            evictSessionTokenCache();
 
             const { data: userData } = await supabase.auth.getUser();
             const verifiedUser = userData?.user;
@@ -116,6 +118,7 @@ function AuthCallbackContent() {
             }
             return;
           }
+          evictSessionTokenCache();
 
           const { data: userData } = await supabase.auth.getUser();
           const verifiedUser = userData?.user;

@@ -263,6 +263,7 @@ export const staffApi = {
     action: string;
     maxBookings?: number;
     sessionFilter?: string;
+    fromTime?: string;
   }): Promise<{ updatedCount: number; message: string; timeSlots: StaffTimeSlot[] }> => {
     const response = await api.patch<{
       success: boolean;
@@ -436,6 +437,5 @@ export const submitPublicResource = async (payload: PublicResourceSubmissionPayl
     scanResult: response.data.data?.scanResult,
   };
 };
-
 
 

@@ -57,7 +57,7 @@ async function getCachedAccessToken(): Promise<string | null> {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       _cachedToken = session?.access_token ?? null;
-      _cachedTokenExpiry = Date.now() + SESSION_CACHE_TTL_MS;
+      _cachedTokenExpiry = _cachedToken ? Date.now() + SESSION_CACHE_TTL_MS : 0;
       return _cachedToken;
     } catch {
       return null;
@@ -67,6 +67,14 @@ async function getCachedAccessToken(): Promise<string | null> {
   })();
 
   return _sessionFetchPromise;
+}
+
+export async function getStaffAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getCachedAccessToken();
+  if (!token) {
+    throw new Error('Your staff session has expired. Please sign in again.');
+  }
+  return { Authorization: `Bearer ${token}` };
 }
 
 // Call this whenever the user logs in/out so the cache is evicted immediately.
@@ -119,4 +127,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

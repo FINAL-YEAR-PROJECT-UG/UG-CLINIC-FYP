@@ -63,6 +63,14 @@ export function getCanonicalAppUrl(requestOrigin?: string): string {
   const isVercelProduction = process.env.VERCEL_ENV === 'production';
   const isNodeProduction = process.env.NODE_ENV === 'production';
 
+  if (
+    requestOrigin &&
+    !isNodeProduction &&
+    /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(requestOrigin)
+  ) {
+    return normalizeUrl(requestOrigin);
+  }
+
   // 1. Explicit canonical production URL
   if (process.env.CANONICAL_APP_URL) {
     return normalizeUrl(process.env.CANONICAL_APP_URL);
@@ -127,4 +135,73 @@ export function getEmailRedirectTo(
 ): string {
   const baseUrl = getCanonicalAppUrl(requestOrigin);
   return `${baseUrl}${path}`;
+}
+
+/**
+ * Builds the callback URL used by EMAIL-BASED AUTH LINKS so they are:
+ *   - ALWAYS exchanged on the SERVER SIDE via `/api/auth/callback`
+ *   - never routed to a client page which needs localStorage PKCE verifier.
+ *
+ * The `next` path tells `/api/auth/callback` where to land the user AFTER
+ * the session cookie is written.
+ *
+ * Pass `type='recovery'` for password-reset / invitation-set-password flows,
+ * since those flows require the user to visit a page that can submit a NEW
+ * password update (i.e. reset password form).
+ *
+ * Pass `type='signup'` for email confirmations — the user is just verifying
+ * their email, so no form is needed (land on /login with confirmed=true).
+ */
+export function getAuthCallbackRedirect(
+  requestOrigin: string | undefined,
+  opts: {
+    /** Post-callback destination. */
+    next?: string;
+    /** Determines whether `next` gets auto-adjusted (recovery → `/reset-password`). */
+    type: 'signup' | 'recovery' | 'invite' | 'magiclink';
+  },
+): string {
+  const base = getCanonicalAppUrl(requestOrigin);
+  const cb = `${base}/api/auth/callback`;
+
+  let dest = opts.next;
+  if (!dest) {
+    switch (opts.type) {
+      case 'signup':
+        dest = '/login?confirmed=true';
+        break;
+      case 'recovery':
+      case 'invite':
+        dest = '/reset-password?from=recovery';
+        break;
+      case 'magiclink':
+        dest = '/dashboard';
+        break;
+      default:
+        dest = '/dashboard';
+    }
+  }
+
+  const u = new URL(cb);
+  u.searchParams.set('next', dest);
+  if (opts.type) u.searchParams.set('flow', opts.type);
+  return u.toString();
+}
+
+/** Sugar for password-reset / forgot-password flow. */
+export function getRecoveryCallbackRedirect(requestOrigin?: string, next?: string) {
+  return getAuthCallbackRedirect(requestOrigin, { type: 'recovery', next });
+}
+
+/** Sugar for signup email-confirmation flow. */
+export function getSignupCallbackRedirect(requestOrigin?: string, next?: string) {
+  return getAuthCallbackRedirect(requestOrigin, { type: 'signup', next });
+}
+
+/** Sugar for staff invite flow. */
+export function getInviteCallbackRedirect(requestOrigin?: string, next?: string) {
+  return getAuthCallbackRedirect(requestOrigin, {
+    type: 'invite',
+    next: next ?? '/staff-portal-access?from=invite',
+  });
 }

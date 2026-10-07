@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 
+register(pathToFileURL(path.resolve('test/setup/alias-loader.mjs')));
 const { GET, POST, OPTIONS } = await import('../src/app/api/backend/appointments/route.ts');
 
 test('OPTIONS /api/backend/appointments returns 204 with Allow headers', async () => {

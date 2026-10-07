@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const pageSize = Math.min(200, Math.max(1, parseInt(searchParams.get("pageSize") || "100", 10)));
   const date = searchParams.get("date");
   const doctorId = searchParams.get("doctorId");
+  const serviceId = searchParams.get("serviceId");
   const status = searchParams.get("status");
 
   const supabase = getSupabaseAdmin();
@@ -39,22 +40,35 @@ export async function GET(request: NextRequest) {
 
   if (date) query = query.eq("date", date);
   if (doctorId) query = query.eq("doctor_id", doctorId);
+  if (serviceId) query = query.eq("service_id", serviceId);
   if (status && status !== "all") query = query.eq("status", status.toUpperCase());
 
   const { data, error, count } = await query;
   if (error) {
-    // Table may not exist yet — return empty list instead of 500
-    if (error.code === '42P01' || error.message?.includes('does not exist')) {
-      return NextResponse.json({
-        success: true,
-        data: { timeSlots: [], total: 0, page, pageSize },
-      });
+    if (error.code === "42P01" || error.code === "PGRST205") {
+      return NextResponse.json(
+        { success: false, message: "Time slots are not configured. Apply the Supabase time-slots migration." },
+        { status: 503 },
+      );
     }
     return NextResponse.json({ success: false, message: error.message, code: error.code }, { status: 500 });
   }
 
   // Map snake_case DB columns → camelCase for the frontend
-  const timeSlots = (data || []).map((row: any) => ({
+  const timeSlots = (data || []).map((row: {
+    id: string;
+    service_id?: string | null;
+    date: string;
+    start_time: string;
+    end_time: string;
+    status: string;
+    is_available?: boolean | null;
+    capacity?: number | null;
+    max_bookings?: number | null;
+    booked_count?: number | null;
+    current_bookings?: number | null;
+    service_name?: string | null;
+  }) => ({
     id: row.id,
     serviceId: row.service_id ?? null,
     date: row.date,

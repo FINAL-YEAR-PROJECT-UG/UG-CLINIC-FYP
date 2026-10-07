@@ -25,6 +25,38 @@ test('GET /api/auth/callback without code redirects to /login', async () => {
   assert.equal(response.headers.get('location'), 'http://localhost:3000/login');
 });
 
+test('GET /api/auth/callback keeps localhost origin in development', async () => {
+  const origNodeEnv = process.env.NODE_ENV;
+  const origCanonical = process.env.CANONICAL_APP_URL;
+
+  try {
+    process.env.NODE_ENV = 'development';
+    process.env.CANONICAL_APP_URL = 'https://ugclinic.ug.edu.gh';
+
+    const req = {
+      nextUrl: {
+        origin: 'http://localhost:3001',
+        searchParams: new URLSearchParams(),
+      },
+    };
+
+    const response = await GET(req);
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get('location'), 'http://localhost:3001/login');
+  } finally {
+    if (origNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = origNodeEnv;
+    }
+    if (origCanonical === undefined) {
+      delete process.env.CANONICAL_APP_URL;
+    } else {
+      process.env.CANONICAL_APP_URL = origCanonical;
+    }
+  }
+});
+
 test('GET /api/auth/callback without Supabase env vars redirects to login with configuration error', async () => {
   const prevSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const prevSupabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

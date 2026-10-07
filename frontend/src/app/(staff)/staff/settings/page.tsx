@@ -1,14 +1,153 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings, User, Bell, Shield, LogOut, Lock, Mail, Smartphone, CheckCircle2 } from '@/components/icons';
 import StaffNav from '@/components/shared/StaffNav';
+import { createClient } from '@/utils/supabase/client';
+import { getRecoveryCallbackRedirect } from '@/lib/authUrl';
 
 export default function StaffSettingsPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const [securityMessage, setSecurityMessage] = useState<string | null>(null);
+  const [securityError, setSecurityError] = useState(false);
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [verifiedTotpFactor, setVerifiedTotpFactor] = useState<{ id: string; friendlyName?: string } | null>(null);
+  const [enrollment, setEnrollment] = useState<{ factorId: string; challengeId: string; qrCode: string; secret: string } | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+
+  const refreshTotpFactor = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) throw error;
+    const factor = data.totp.find((item) => item.status === 'verified');
+    setVerifiedTotpFactor(factor ? { id: factor.id, friendlyName: factor.friendly_name } : null);
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'security' || !isAuthenticated) return;
+    const loadFactors = async () => {
+      try {
+        await refreshTotpFactor();
+      } catch (error: unknown) {
+        setSecurityError(true);
+        setSecurityMessage(error instanceof Error ? error.message : 'Could not load two-factor settings.');
+      }
+    };
+    void loadFactors();
+  }, [activeTab, isAuthenticated]);
+
+  const sendPasswordResetLink = async () => {
+    if (!user?.email) {
+      setSecurityError(true);
+      setSecurityMessage('Your account email is not available.');
+      return;
+    }
+    setSecurityBusy(true);
+    setSecurityError(false);
+    setSecurityMessage(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: getRecoveryCallbackRedirect(window.location.origin),
+      });
+      if (error) throw error;
+      setSecurityMessage(`Password reset link sent to ${user.email}.`);
+    } catch (error) {
+      setSecurityError(true);
+      setSecurityMessage(error instanceof Error ? error.message : 'Could not send a password reset link.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
+
+  const startTotpEnrollment = async () => {
+    setSecurityBusy(true);
+    setSecurityError(false);
+    setSecurityMessage(null);
+    try {
+      const supabase = createClient();
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      for (const factor of factors.all.filter((item) => item.factor_type === 'totp' && item.status === 'unverified')) {
+        const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        if (error) throw error;
+      }
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'UG Clinic Staff Portal',
+      });
+      if (error) throw error;
+      const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: data.id,
+      });
+      if (challengeError) throw challengeError;
+      setEnrollment({
+        factorId: data.id,
+        challengeId: challenge.id,
+        qrCode: data.totp.qr_code,
+        secret: data.totp.secret,
+      });
+      setVerificationCode('');
+      setSecurityMessage('Scan the QR code with an authenticator app, then enter its 6-digit code.');
+    } catch (error) {
+      setSecurityError(true);
+      setSecurityMessage(error instanceof Error ? error.message : 'Could not start two-factor setup.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
+
+  const verifyTotpEnrollment = async () => {
+    if (!enrollment || !/^\d{6}$/.test(verificationCode)) {
+      setSecurityError(true);
+      setSecurityMessage('Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+    setSecurityBusy(true);
+    setSecurityError(false);
+    setSecurityMessage(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: enrollment.factorId,
+        challengeId: enrollment.challengeId,
+        code: verificationCode,
+      });
+      if (error) throw error;
+      setEnrollment(null);
+      setVerificationCode('');
+      await refreshTotpFactor();
+      setSecurityMessage('Two-factor authentication is enabled.');
+    } catch (error) {
+      setSecurityError(true);
+      setSecurityMessage(error instanceof Error ? error.message : 'The verification code was not accepted.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
+
+  const disableTotp = async () => {
+    if (!verifiedTotpFactor || !window.confirm('Disable two-factor authentication for this account?')) return;
+    setSecurityBusy(true);
+    setSecurityError(false);
+    setSecurityMessage(null);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: verifiedTotpFactor.id });
+      if (error) throw error;
+      setVerifiedTotpFactor(null);
+      setSecurityMessage('Two-factor authentication has been disabled.');
+    } catch (error) {
+      setSecurityError(true);
+      setSecurityMessage(error instanceof Error ? error.message : 'Could not disable two-factor authentication.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
 
   if (!isAuthenticated) return null;
   if (user && !['RECEPTIONIST', 'DOCTOR', 'ADMIN'].includes(user.role)) return null;
@@ -148,7 +287,12 @@ export default function StaffSettingsPage() {
                 <div className="bg-white rounded-2xl border border-[#DDE3EE] p-6 shadow-sm">
                   <h2 className="text-base font-extrabold text-[#0B1221] mb-5">Security Settings</h2>
                   <div className="space-y-3">
-                    <button className="w-full flex items-center gap-4 p-4 border-[1.5px] border-[#DDE3EE] rounded-xl hover:border-[#94A3B8] hover:bg-[#F5F7FB] transition-all duration-200 text-left group">
+                    <button
+                      type="button"
+                      onClick={() => void sendPasswordResetLink()}
+                      disabled={securityBusy}
+                      className="w-full flex items-center gap-4 p-4 border-[1.5px] border-[#DDE3EE] rounded-xl hover:border-[#94A3B8] hover:bg-[#F5F7FB] transition-all duration-200 text-left group disabled:opacity-60"
+                    >
                       <div className="w-9 h-9 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
                         <Lock className="w-4 h-4 text-amber-600" />
                       </div>
@@ -156,19 +300,61 @@ export default function StaffSettingsPage() {
                         <p className="font-semibold text-[#0B1221] text-sm">Change Password</p>
                         <p className="text-xs text-[#6B7A8D]">Update your password to keep your account secure</p>
                       </div>
-                      <span className="text-xs font-bold text-[#0369A1] opacity-0 group-hover:opacity-100 transition-opacity">Change →</span>
+                      <span className="text-xs font-bold text-[#0369A1] opacity-0 group-hover:opacity-100 transition-opacity">{securityBusy ? 'Sending…' : 'Email reset link →'}</span>
                     </button>
-                    <button className="w-full flex items-center gap-4 p-4 border-[1.5px] border-[#DDE3EE] rounded-xl hover:border-[#94A3B8] hover:bg-[#F5F7FB] transition-all duration-200 text-left group">
+                    <div className="w-full p-4 border-[1.5px] border-[#DDE3EE] rounded-xl">
                       <div className="w-9 h-9 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-200">
                         <Shield className="w-4 h-4 text-emerald-600" />
                       </div>
-                      <div className="flex-1">
+                      <div className="mt-3">
                         <p className="font-semibold text-[#0B1221] text-sm">Two-Factor Authentication</p>
-                        <p className="text-xs text-[#6B7A8D]">Add an extra layer of security to your account</p>
+                        <p className="text-xs text-[#6B7A8D]">
+                          {verifiedTotpFactor ? 'Authenticator verification is enabled for staff sign-in.' : 'Require an authenticator code during staff sign-in.'}
+                        </p>
                       </div>
-                      <span className="text-xs font-bold text-[#0369A1] opacity-0 group-hover:opacity-100 transition-opacity">Enable →</span>
-                    </button>
+                      {verifiedTotpFactor ? (
+                        <button type="button" onClick={() => void disableTotp()} disabled={securityBusy} className="mt-3 text-xs font-bold text-red-600 hover:underline disabled:opacity-50">
+                          Disable two-factor authentication
+                        </button>
+                      ) : !enrollment ? (
+                        <button type="button" onClick={() => void startTotpEnrollment()} disabled={securityBusy} className="mt-3 text-xs font-bold text-[#0369A1] hover:underline disabled:opacity-50">
+                          {securityBusy ? 'Preparing…' : 'Set up authenticator →'}
+                        </button>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex justify-center rounded-xl bg-white p-3">
+                            <Image src={enrollment.qrCode} alt="Authenticator setup QR code" width={200} height={200} unoptimized />
+                          </div>
+                          <p className="text-xs text-[#6B7A8D]">If you cannot scan the QR code, enter this key in your authenticator app:</p>
+                          <code className="block break-all rounded-lg bg-[#F5F7FB] p-2 text-xs text-[#0B1221]">{enrollment.secret}</code>
+                          <label className="block text-xs font-bold text-[#4B5A6E]">
+                            Verification code
+                            <input
+                              value={verificationCode}
+                              onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              maxLength={6}
+                              className="mt-1.5 w-full rounded-xl border border-[#DDE3EE] px-3 py-2.5 text-sm tracking-[0.3em] text-[#0B1221]"
+                            />
+                          </label>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => void verifyTotpEnrollment()} disabled={securityBusy} className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                              Verify and enable
+                            </button>
+                            <button type="button" onClick={() => setEnrollment(null)} disabled={securityBusy} className="rounded-lg border border-[#DDE3EE] px-4 py-2 text-xs font-bold text-[#4B5A6E] disabled:opacity-50">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {securityMessage && (
+                    <p className={`mt-4 text-xs font-semibold ${securityError ? 'text-red-600' : 'text-emerald-700'}`} role="status">
+                      {securityMessage}
+                    </p>
+                  )}
                 </div>
 
                 {/* Danger Zone */}

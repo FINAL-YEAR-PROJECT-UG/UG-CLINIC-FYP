@@ -47,10 +47,33 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const { slotId } = await context.params;
   const body = await request.json().catch(() => ({}));
 
-  const allowedFields = ["start_time", "end_time", "capacity", "status", "doctor_name", "service_id", "service_name"] as const;
+  const allowedFields = ["start_time", "end_time", "doctor_name", "service_id", "service_name"] as const;
   const updates: Record<string, unknown> = {};
   for (const field of allowedFields) {
     if (field in body) updates[field] = body[field];
+  }
+  if (body.maxBookings !== undefined || body.capacity !== undefined) {
+    const capacity = Number(body.maxBookings ?? body.capacity);
+    if (!Number.isInteger(capacity) || capacity < 0) {
+      return NextResponse.json({ success: false, message: "maxBookings must be a non-negative integer" }, { status: 400 });
+    }
+    updates.capacity = capacity;
+  }
+  if (body.isAvailable !== undefined) {
+    if (typeof body.isAvailable !== "boolean") {
+      return NextResponse.json({ success: false, message: "isAvailable must be a boolean" }, { status: 400 });
+    }
+    updates.status = body.isAvailable ? "AVAILABLE" : "UNAVAILABLE";
+  }
+  if (body.status !== undefined) {
+    const status = String(body.status).toUpperCase();
+    if (!["AVAILABLE", "UNAVAILABLE", "BOOKED"].includes(status)) {
+      return NextResponse.json({ success: false, message: "Invalid time slot status" }, { status: 400 });
+    }
+    updates.status = status;
+  }
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ success: false, message: "No time slot fields were provided" }, { status: 400 });
   }
   updates.updated_at = new Date().toISOString();
 

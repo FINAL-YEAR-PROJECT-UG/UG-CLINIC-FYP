@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ success: true, data: { doctors } });
     }
+
   } catch {
     // profiles table not yet migrated — fall through to auth.admin
   }

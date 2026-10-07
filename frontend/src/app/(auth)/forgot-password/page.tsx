@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { getRecoveryCallbackRedirect } from '@/lib/authUrl';
 import UGLogo from '@/components/shared/UGLogo';
 import { KeyRound, ArrowLeft, Loader2, Mail } from '@/components/icons';
 import Toast from '@/components/shared/Toast';
@@ -29,7 +30,7 @@ export default function ForgotPasswordPage() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getRecoveryCallbackRedirect(window.location.origin),
       });
       if (error) {
         // Don't expose whether the email exists or not for security

@@ -4,6 +4,7 @@ import {
   getSafeRedirectUrl,
   getCanonicalAppUrl,
   getEmailRedirectTo,
+  getRecoveryCallbackRedirect,
 } from '../src/lib/authUrl.ts';
 
 test('getSafeRedirectUrl accepts valid internal paths', () => {
@@ -68,6 +69,30 @@ test('getEmailRedirectTo constructs callback URL with canonical domain', () => {
       'https://ugclinic.ug.edu.gh/api/auth/callback'
     );
   } finally {
+    process.env.CANONICAL_APP_URL = origCanonical;
+  }
+});
+
+test('recovery callback keeps localhost origin and routes to the reset form in development', () => {
+  const origNodeEnv = process.env.NODE_ENV;
+  const origCanonical = process.env.CANONICAL_APP_URL;
+
+  try {
+    process.env.NODE_ENV = 'development';
+    process.env.CANONICAL_APP_URL = 'https://ugclinic.ug.edu.gh';
+
+    const redirect = new URL(getRecoveryCallbackRedirect('http://localhost:3001'));
+
+    assert.equal(redirect.origin, 'http://localhost:3001');
+    assert.equal(redirect.pathname, '/api/auth/callback');
+    assert.equal(redirect.searchParams.get('next'), '/reset-password?from=recovery');
+    assert.equal(redirect.searchParams.get('flow'), 'recovery');
+  } finally {
+    if (origNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = origNodeEnv;
+    }
     process.env.CANONICAL_APP_URL = origCanonical;
   }
 });

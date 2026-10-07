@@ -1,6 +1,7 @@
 import api, { evictSessionTokenCache } from './api';
 import { useAuthStore } from '../stores/authStore';
 import { signOut } from 'next-auth/react';
+import { createClient } from '../utils/supabase/client';
 
 export interface RegisterData {
   email: string;
@@ -69,14 +70,7 @@ export const authApi = {
     return response.data;
   },
 
-  logout: async (_refreshToken?: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post<{ success: boolean; message: string }>('/auth/logout', {}, { withCredentials: true });
-    return response.data;
-  },
-
-  refreshToken: async (
-    _refreshToken?: string
-  ): Promise<{
+  refreshToken: async (): Promise<{
     success: boolean;
     message: string;
   }> => {
@@ -133,11 +127,21 @@ export const registerWithStore = async (data: RegisterData) => {
 
 export const logoutWithStore = async () => {
   try {
-    await authApi.logout();
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Supabase logout failed:', error.message);
+    }
   } catch (error) {
-    console.error('Logout API call failed:', error);
+    console.error('Supabase logout failed:', error);
   }
-  evictSessionTokenCache(); // flush stale token from cache
-  await signOut({ redirect: false });
-  useAuthStore.getState().clearAuth();
+
+  try {
+    await signOut({ redirect: false });
+  } catch (error) {
+    console.error('NextAuth logout failed:', error);
+  } finally {
+    evictSessionTokenCache();
+    useAuthStore.getState().clearAuth();
+  }
 };

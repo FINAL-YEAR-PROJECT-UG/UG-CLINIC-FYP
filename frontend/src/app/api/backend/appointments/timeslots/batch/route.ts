@@ -113,3 +113,133 @@ export async function POST(request: NextRequest) {
     { status: 201 },
   );
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await requireStaffRole(request, { allow: ["ADMIN", "DOCTOR"], requireTrusted: true });
+  } catch (e) {
+    if (e instanceof AuthzError)
+      return NextResponse.json({ success: false, message: e.message }, { status: e.status });
+    return NextResponse.json({ success: false, message: "Authorization check failed" }, { status: 500 });
+  }
+
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ success: false, message: "Database not configured" }, { status: 503 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const date = typeof body.date === "string" ? body.date : "";
+  const action = String(body.action || "").toUpperCase();
+  const sessionFilter = String(body.sessionFilter || "ALL").toUpperCase();
+  const fromTime = typeof body.fromTime === "string" ? body.fromTime.slice(0, 5) : "";
+  const actions = ["OPEN", "CLOSE", "EXPAND", "REDUCE", "RESET", "SYNC_DOCTORS"];
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !actions.includes(action)) {
+    return NextResponse.json({ success: false, message: "A valid date and supported action are required" }, { status: 400 });
+  }
+  if (!["ALL", "MORNING", "AFTERNOON"].includes(sessionFilter)) {
+    return NextResponse.json({ success: false, message: "sessionFilter must be ALL, MORNING, or AFTERNOON" }, { status: 400 });
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { data: slots, error: slotsError } = await supabase
+    .from("time_slots")
+    .select("*")
+    .eq("date", date)
+    .order("start_time", { ascending: true });
+  if (slotsError) {
+    return NextResponse.json({ success: false, message: slotsError.message, code: slotsError.code }, { status: 500 });
+  }
+
+  let selected = slots || [];
+  if (sessionFilter !== "ALL") {
+    selected = selected.filter((slot) => {
+      const hour = Number(String(slot.start_time).slice(0, 2));
+      return sessionFilter === "MORNING" ? hour < 12 : hour >= 12;
+    });
+  }
+  if (fromTime && /^\d{2}:\d{2}$/.test(fromTime)) {
+    selected = selected.filter((slot) => String(slot.start_time).slice(0, 5) >= fromTime);
+  }
+
+  if (selected.length === 0) {
+    return NextResponse.json({
+      success: true,
+      message: "No time slots matched the requested date and filters.",
+      data: { updatedCount: 0, timeSlots: [] },
+    });
+  }
+
+  let availableDoctorCount: number | undefined;
+  if (action === "SYNC_DOCTORS") {
+    const { count, error } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .in("role", ["DOCTOR", "ADMIN"])
+      .eq("is_active", true)
+      .eq("doctor_status", "AVAILABLE");
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message, code: error.code }, { status: 500 });
+    }
+    availableDoctorCount = count ?? 0;
+  }
+
+  const updatedSlots: Record<string, unknown>[] = [];
+  const groups = new Map<string, { ids: string[]; updates: Record<string, unknown> }>();
+  for (const slot of selected) {
+    let updates: Record<string, unknown>;
+    if (action === "CLOSE" || action === "OPEN") {
+      updates = { status: action === "CLOSE" ? "UNAVAILABLE" : "AVAILABLE" };
+    } else {
+      const currentCapacity = Number(slot.capacity ?? 1);
+      const bookedCount = Number(slot.booked_count ?? 0);
+      const requestedCapacity = action === "EXPAND"
+        ? currentCapacity + 1
+        : action === "REDUCE"
+          ? currentCapacity - 1
+          : action === "SYNC_DOCTORS"
+            ? availableDoctorCount!
+            : Number(body.maxBookings ?? 1);
+      const capacity = Math.max(bookedCount, requestedCapacity);
+      if (!Number.isInteger(capacity) || capacity < 0) {
+        return NextResponse.json({ success: false, message: "maxBookings must be a non-negative integer" }, { status: 400 });
+      }
+      updates = { capacity };
+    }
+
+    const key = JSON.stringify(updates);
+    const group = groups.get(key) ?? { ids: [], updates };
+    group.ids.push(String(slot.id));
+    groups.set(key, group);
+  }
+
+  for (const group of groups.values()) {
+    const { data, error } = await supabase
+      .from("time_slots")
+      .update({ ...group.updates, updated_at: new Date().toISOString() })
+      .in("id", group.ids)
+      .select("*");
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message, code: error.code }, { status: 500 });
+    }
+    updatedSlots.push(...(data || []));
+  }
+
+  const timeSlots = updatedSlots.map((row) => ({
+    id: row.id,
+    serviceId: row.service_id ?? null,
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    isAvailable: row.status === "AVAILABLE",
+    maxBookings: row.capacity ?? 1,
+    currentBookings: row.booked_count ?? 0,
+    service: row.service_name ? { id: row.service_id ?? "", name: row.service_name } : undefined,
+  }));
+
+  return NextResponse.json({
+    success: true,
+    message: `Updated ${timeSlots.length} time slot${timeSlots.length === 1 ? "" : "s"}.`,
+    data: { updatedCount: timeSlots.length, timeSlots },
+  });
+}

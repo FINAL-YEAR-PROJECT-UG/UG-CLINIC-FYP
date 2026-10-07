@@ -3,6 +3,7 @@ import { AuthzError, requireAdmin } from "@/lib/staffAuthz";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { renderStaffInvite } from "@/lib/staffInviteEmail";
 import sendEmail from "@/lib/email";
+import { getAuthCallbackRedirect } from "@/lib/authUrl";
 
 export const runtime = "nodejs";
 
@@ -54,7 +55,11 @@ async function trySendInviteEmail(
     });
     await sendEmail(recipientEmail, subject, htmlBody);
     return { sent: true };
-  } catch {
+  } catch (error) {
+    console.error(
+      "[staff invite] Invitation email delivery failed:",
+      error instanceof Error ? error.message : error,
+    );
     return { sent: false };
   }
 }
@@ -98,11 +103,14 @@ export async function POST(request: NextRequest) {
 
   const action = String(body.action || "list").toLowerCase();
   const adminClient = getSupabaseAdmin();
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-    "https://localhost:3001";
+  const recoveryRedirect = getAuthCallbackRedirect(request.nextUrl.origin, {
+    type: "recovery",
+    next: "/reset-password?from=invite",
+  });
+  const inviteRedirect = getAuthCallbackRedirect(request.nextUrl.origin, {
+    type: "invite",
+    next: "/reset-password?from=invite",
+  });
 
   // ─── ACTION: list ──────────────────────────────────────────────────────────
   if (action === "list" || !["invite_or_link", "invite", "create", "assign_role"].includes(action)) {
@@ -249,7 +257,9 @@ export async function POST(request: NextRequest) {
         const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
           type: existing.email_confirmed_at ? "recovery" : "invite",
           email,
-          options: { redirectTo: `${appUrl}/staff-portal-access` },
+          options: {
+            redirectTo: existing.email_confirmed_at ? recoveryRedirect : inviteRedirect,
+          },
         });
         if (!linkError && linkData?.properties?.action_link) {
           actionLink = linkData.properties.action_link;
@@ -267,7 +277,7 @@ export async function POST(request: NextRequest) {
 
       const mode = previousRole !== role ? "role_updated" : "linked";
       const response: Record<string, unknown> = {
-        success: true,
+        success: !needsInvite || emailSent,
         mode,
         message: needsInvite
           ? emailSent
@@ -287,7 +297,7 @@ export async function POST(request: NextRequest) {
         response.actionLink = actionLink;
       }
 
-      return NextResponse.json(response, { status: 200 });
+      return NextResponse.json(response, { status: needsInvite && !emailSent ? 502 : 200 });
     }
 
     // User does NOT exist — create via generateLink (invite flow)
@@ -296,7 +306,7 @@ export async function POST(request: NextRequest) {
       email,
       options: {
         data: userMeta,
-        redirectTo: `${appUrl}/staff-portal-access`,
+        redirectTo: inviteRedirect,
       },
     });
 
@@ -342,7 +352,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response: Record<string, unknown> = {
-      success: true,
+      success: emailSent,
       mode: "invited",
       message: emailSent
         ? `Invitation email sent to ${email} as ${role}`

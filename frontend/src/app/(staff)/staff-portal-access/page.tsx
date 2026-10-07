@@ -8,6 +8,7 @@ import { Loader2, ShieldAlert, Lock, ArrowLeft, KeyRound, CheckCircle2, AlertTri
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { evictSessionTokenCache } from '@/lib/api';
 import UGLogo from '@/components/shared/UGLogo';
 import Image from 'next/image';
 import viceChancellorBg from '@/Assets/Legon UG/vice chancelor.jpg';
@@ -90,6 +91,7 @@ function StaffPortalAccessInner() {
         setError(authError?.message || 'Invalid email or password.');
         return;
       }
+      evictSessionTokenCache();
 
       const user = authData.user;
       const session = authData.session;
@@ -140,7 +142,33 @@ function StaffPortalAccessInner() {
         return;
       }
 
+      const { data: factorData, error: factorError } = await supabase.auth.mfa.listFactors();
+      if (factorError) {
+        setError(`Could not check your two-factor settings: ${factorError.message}`);
+        return;
+      }
+      const verifiedFactor = factorData.totp.find((factor) => factor.status === 'verified');
+      if (verifiedFactor) {
+        const { data: challenge, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: verifiedFactor.id,
+        });
+        if (challengeError) {
+          setError(`Could not send a verification challenge: ${challengeError.message}`);
+          return;
+        }
+        const params = new URLSearchParams({
+          role: 'staff',
+          email: verifiedEmail ?? user.email ?? email,
+          mfa: 'supabase',
+          factorId: verifiedFactor.id,
+          challengeId: challenge.id,
+        });
+        router.replace(`/verify-otp?${params.toString()}`);
+        return;
+      }
+
       // Set auth store with canonical identity shape
+      evictSessionTokenCache();
       setAuth({
         id: user.id,
         email: verifiedEmail ?? user.email ?? email,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { isAdminRole } from '@/lib/utils';
+import { getStaffAuthHeaders } from '@/lib/api';
 import StaffNav from '@/components/shared/StaffNav';
 import {
   ShieldCheck,
@@ -102,6 +103,7 @@ export default function StaffPermissionsPage() {
   const [inviteLast, setInviteLast] = useState('');
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteActionLink, setInviteActionLink] = useState<string | null>(null);
 
   // Role-edit inline
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,7 +127,8 @@ export default function StaffPermissionsPage() {
       if (roleFilter) params.set('role', roleFilter);
       if (activeFilter) params.set('active', activeFilter);
 
-      const res = await fetch(`/api/backend/resources/staff?${params}`);
+      const headers = await getStaffAuthHeaders();
+      const res = await fetch(`/api/backend/resources/staff?${params}`, { headers });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to fetch staff');
       setStaff(json.data.staff ?? []);
@@ -139,7 +142,10 @@ export default function StaffPermissionsPage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    void fetchStaff();
+    const loadStaff = async () => {
+      await fetchStaff();
+    };
+    void loadStaff();
   }, [fetchStaff, isAdmin]);
 
   const handleInvite = async () => {
@@ -149,6 +155,7 @@ export default function StaffPermissionsPage() {
     }
     setInviting(true);
     setInviteError(null);
+    setInviteActionLink(null);
     try {
       const body: InviteBody = {
         action: 'invite_or_link',
@@ -157,14 +164,18 @@ export default function StaffPermissionsPage() {
         firstName: inviteFirst.trim() || undefined,
         lastName: inviteLast.trim() || undefined,
       };
+      const headers = await getStaffAuthHeaders();
       const res = await fetch('/api/staff/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'Invite failed');
-      toast(`✓ Invitation sent to ${inviteEmail}`);
+      const json: { success?: boolean; message?: string; actionLink?: string } = await res.json();
+      if (!res.ok || !json.success) {
+        setInviteActionLink(typeof json.actionLink === 'string' ? json.actionLink : null);
+        throw new Error(json.message || 'Invite failed');
+      }
+      toast(json.message || `Invitation sent to ${inviteEmail}`);
       setInviteOpen(false);
       setInviteEmail('');
       setInviteFirst('');
@@ -181,9 +192,10 @@ export default function StaffPermissionsPage() {
     setSavingRole(true);
     try {
       const body: AssignRoleBody = { action: 'assign_role', userId: memberId, role: editingRole };
+      const headers = await getStaffAuthHeaders();
       const res = await fetch('/api/staff/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
       });
       const json = await res.json();
@@ -200,9 +212,10 @@ export default function StaffPermissionsPage() {
 
   const handleToggleActive = async (member: StaffMember) => {
     try {
+      const headers = await getStaffAuthHeaders();
       const res = await fetch('/api/backend/resources/staff', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({ userId: member.id, is_active: !member.isActive }),
       });
       const json = await res.json();
@@ -510,9 +523,21 @@ export default function StaffPermissionsPage() {
             </div>
 
             {inviteError && (
-              <div className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                {inviteError}
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  {inviteError}
+                </div>
+                {inviteActionLink && (
+                  <a
+                    href={inviteActionLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block font-semibold underline"
+                  >
+                    Open invitation link
+                  </a>
+                )}
               </div>
             )}
 

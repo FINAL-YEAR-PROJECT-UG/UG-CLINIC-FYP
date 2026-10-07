@@ -1,48 +1,56 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import UGLogo from '@/components/shared/UGLogo';
-import { Mail, Loader2, ArrowLeft, ShieldCheck, CheckCircle2 } from '@/components/icons';
+import { Mail, Loader2, ArrowLeft, ShieldCheck } from '@/components/icons';
 import SuccessCheckmark from '@/components/shared/SuccessCheckmark';
-import api from '@/lib/api';
+import api, { evictSessionTokenCache } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
+import { createClient } from '@/utils/supabase/client';
 
 const OTP_LENGTH = 6;
 
-export default function VerifyOtpPage() {
+function subscribeToSessionStorage(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('storage', onStoreChange);
+  return () => window.removeEventListener('storage', onStoreChange);
+}
+
+function useSessionStorageValue(key: string) {
+  return useSyncExternalStore(
+    subscribeToSessionStorage,
+    () => (typeof window === 'undefined' ? '' : window.sessionStorage.getItem(key) || ''),
+    () => '',
+  );
+}
+
+function VerifyOtpContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const [email, setEmail] = useState('');
-  const [roleParam, setRoleParam] = useState('');
+  const emailFromQuery = searchParams?.get('email') || '';
+  const roleParam = searchParams?.get('role') || '';
+  const mfaMode = searchParams?.get('mfa') === 'supabase';
+  const factorId = searchParams?.get('factorId') || '';
+  const initialChallengeId = searchParams?.get('challengeId') || '';
+  const storedEmail = useSessionStorageValue('otpEmail');
+  const storedDevCode = useSessionStorageValue('staffOtpDevCode');
+  const [challengeIdOverride, setChallengeIdOverride] = useState<string | null>(null);
+  const [devCodeHintOverride, setDevCodeHintOverride] = useState<string | null>(null);
+  const email = emailFromQuery || storedEmail || 'your registered account';
+  const challengeId = challengeIdOverride ?? initialChallengeId;
+  const devCodeHint = roleParam === 'staff' ? devCodeHintOverride ?? (storedDevCode || null) : null;
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [devCodeHint, setDevCodeHint] = useState<string | null>(null);
   const [deliveryHint, setDeliveryHint] = useState('');
   const [secondsLeft, setSecondsLeft] = useState(600);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const emailFromQuery = params.get('email');
-    const roleFromQuery = params.get('role');
-    const storedEmail = sessionStorage.getItem('otpEmail');
-    const resolvedEmail = emailFromQuery || storedEmail || '';
-
-    setEmail(resolvedEmail || 'your registered account');
-    setRoleParam(roleFromQuery || '');
-
-    const storedDevCode = sessionStorage.getItem('staffOtpDevCode');
-    if (storedDevCode && roleFromQuery === 'staff') {
-      setDevCodeHint(storedDevCode);
-    }
-  }, []);
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
@@ -78,6 +86,24 @@ export default function VerifyOtpPage() {
   };
 
   const handleResend = async () => {
+    if (mfaMode && factorId) {
+      try {
+        setResending(true);
+        setError('');
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.mfa.challenge({ factorId });
+        if (error) throw error;
+        setChallengeIdOverride(data.id);
+        setDigits(Array(OTP_LENGTH).fill(''));
+        setSecondsLeft(600);
+        setSuccessMsg('A new authenticator challenge is ready.');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not start a new verification challenge.');
+      } finally {
+        setResending(false);
+      }
+      return;
+    }
     if (roleParam !== 'staff' || !email || email === 'your registered account') {
       setError('Cannot resend code without a staff email. Return to sign in.');
       return;
@@ -92,7 +118,7 @@ export default function VerifyOtpPage() {
         const devCode = response.data.data?.devCode;
         if (devCode) {
           sessionStorage.setItem('staffOtpDevCode', devCode);
-          setDevCodeHint(devCode);
+          setDevCodeHintOverride(devCode);
         }
         const masked = response.data.data?.maskedDestination;
         if (masked) {
@@ -125,6 +151,40 @@ export default function VerifyOtpPage() {
       setVerifying(true);
       setError('');
 
+      if (mfaMode) {
+        if (!factorId || !challengeId) {
+          throw new Error('The verification challenge is missing. Sign in again to request a new code.');
+        }
+        const supabase = createClient();
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId,
+          challengeId,
+          code: codeStr,
+        });
+        if (verifyError) throw verifyError;
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData.user) {
+          throw userError || new Error('Could not retrieve your verified staff account.');
+        }
+        const user = userData.user;
+        const role = String(user.app_metadata?.role || user.user_metadata?.role || '').toUpperCase();
+        evictSessionTokenCache();
+        setAuth({
+          id: user.id,
+          email: user.email || email,
+          firstName: String(user.user_metadata?.firstName || 'Staff'),
+          lastName: String(user.user_metadata?.lastName || ''),
+          phone: typeof user.user_metadata?.phone === 'string' ? user.user_metadata.phone : undefined,
+          program: typeof user.user_metadata?.program === 'string' ? user.user_metadata.program : undefined,
+          role,
+          isActive: true,
+        });
+        setSuccessMsg('Two-factor verification successful!');
+        setTimeout(() => router.push('/staff/overview'), 1000);
+        return;
+      }
+
       let response;
       if (roleParam === 'staff') {
         response = await api.post('/staff/verify-2fa', {
@@ -147,6 +207,7 @@ export default function VerifyOtpPage() {
         if (user) {
           // Session cookie is already set by the backend.
           // Populate Zustand store for UI state only.
+          evictSessionTokenCache();
           setAuth(user);
         }
 
@@ -202,7 +263,7 @@ export default function VerifyOtpPage() {
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Verify Security Code</h1>
           <p className="text-xs sm:text-sm text-blue-100/90 mt-1">
-            Enter the 6-digit MFA security code sent to{' '}
+            {mfaMode ? 'Enter the current 6-digit code from your authenticator app for ' : 'Enter the 6-digit MFA security code sent to '}
             <strong className="text-white">{email}</strong>.
           </p>
           {deliveryHint && (
@@ -297,5 +358,21 @@ export default function VerifyOtpPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function VerifyOtpSkeleton() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-8 w-8 rounded-full border-2 border-blue-500/30 border-t-blue-700 animate-spin" />
+    </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={<VerifyOtpSkeleton />}>
+      <VerifyOtpContent />
+    </Suspense>
   );
 }
