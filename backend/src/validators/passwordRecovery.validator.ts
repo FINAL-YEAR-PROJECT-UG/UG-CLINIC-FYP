@@ -61,10 +61,9 @@ export const validateSendOTP = [
     .normalizeEmail(),
   body('studentId')
     .trim()
-    .notEmpty()
-    .withMessage('Student ID is required')
+    .optional()
     .custom((value) => {
-      if (!isValidStudentId(value)) {
+      if (value && !isValidStudentId(value)) {
         throw new Error('Student ID must be exactly 8 digits.');
       }
       return true;
