@@ -85,6 +85,12 @@ clinic images/
 backend/.env.example
 .gitignore
 
+# Large presentation and demo media
+/frontend/src/Assets/FYP-student clinic.pdf
+/issue video.mp4
+/frontend/public/UG video.mp4
+/frontend/src/Assets/Legon UG/UG video.mp4
+
 
 BACKEND_CONTROLLERS_EXPORT.md
 BACKEND_CONTROLLERS_FULL_CODE.md
@@ -92,3 +98,10 @@ BACKEND_CONTROLLERS_FULL_CODE.md
 DEFENSE_DOCUMENT.md
 DEFENSE_DOCUMENT.tex
 DEFENSE_DOCUMENT_UPDATED.md
+
+node_modules/
+dist/
+.next/
+build/
+*.log
+.env*
