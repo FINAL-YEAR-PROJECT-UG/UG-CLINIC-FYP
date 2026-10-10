@@ -1,145 +1,169 @@
-# UG Clinic Frontend
+﻿# UG Clinic Frontend
 
-A modern, responsive web application for the University of Ghana Clinic Management System. Built with Next.js 14, TypeScript, and Tailwind CSS.
+This is the Next.js frontend for the UG-CLINIC-FYP project. It provides the public site, student portal, and staff dashboard for the University of Ghana student clinic system.
+
+## Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Zustand
+- TanStack Query
+- React Hook Form
+- Zod
+- Radix UI
+- Framer Motion
+- Supabase client setup
 
 ## Features
 
 ### Student Portal
-- **Appointment Booking**: Book clinic appointments with real-time availability
-- **Dashboard**: View upcoming appointments, cancel bookings, and manage health records
-- **Health Resources**: Access clinic guides and medical information
-- **Secure Authentication**: Direct API-based login with JWT tokens
+
+- Appointment booking workflow
+- Dashboard for upcoming appointments and management
+- Reschedule / cancellation flows
+- Access to health resources and public information
 
 ### Staff Portal
-- **Role-Based Access**: Separate portals for Admin, Doctors, and Receptionists
-- **Dashboard Analytics**: View appointment trends, doctor availability, and clinic statistics
-- **Appointment Management**: Assign doctors, manage time slots, and handle bookings
-- **Student Records**: View and manage student information (Admin/Receptionist only)
-- **2FA Support**: Two-factor authentication for enhanced security
 
-### Security Features
-- **Session Timeout**: Automatic logout after 10 minutes of inactivity with warning popup
-- **Role-Based Access Control**: Strict permission separation between user roles
-- **JWT Authentication**: Secure token-based authentication with refresh tokens
-- **Route Guards**: Protected routes with middleware-based access control
+- Admin and staff dashboards
+- Queue management and doctor assignment tools
+- KPI and clinic operation insights
+- Student records and resource moderation
+- 2FA access support for staff workflows
 
-## Getting Started
+### Public Pages
 
-### Prerequisites
-- Node.js 18+ installed
-- A Supabase project configured for email/password authentication
+- Landing page, services, contact, health resources, privacy, terms, and accessibility pages
+- Resource submission and support flows
 
-### Installation
+## Project Structure
 
-1. Install dependencies:
+```text
+frontend/
+├── src/
+│   ├── app/                 # App Router pages and route groups
+│   │   ├── (auth)/
+│   │   ├── (dashboard)/
+│   │   ├── (public)/
+│   │   ├── (staff)/
+│   │   ├── api/
+│   │   ├── demo-booking/
+│   │   └── verify-otp/
+│   ├── components/          # Shared and feature components
+│   ├── hooks/               # Custom hooks
+│   ├── lib/                 # API and utility helpers
+│   ├── stores/              # Zustand stores
+│   ├── types/               # Type definitions
+│   └── styles/              # Global styling
+├── public/                  # Static assets
+├── .env.example             # Example frontend environment file
+├── package.json
+├── next.config.js
+├── tsconfig.json
+├── Dockerfile
+├── README.md
+└── test/
+```
+
+## Prerequisites
+
+- Node.js 18+
+- Access to the backend API running locally or deployed
+- Supabase project for auth and related client configuration
+
+## Install and Run
+
+### 1) Install dependencies
+
 ```bash
+cd frontend
 npm install
 ```
 
-2. Set up environment variables:
-Copy `.env.example` to `.env.local` in the `frontend` directory and configure the Supabase values:
+### 2) Create environment file
+
+```bash
+cp .env.example .env.local
+```
+
+Update `.env.local` with your values:
+
 ```env
+NEXTAUTH_URL=http://localhost:3001
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXT_PUBLIC_API_URL=http://localhost:3005/api
+NEXT_PUBLIC_APP_URL=http://localhost:3001
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-supabase-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ```
-Get the service-role key from your Supabase project API settings. It is required for account registration, must remain server-side, and must never use a `NEXT_PUBLIC_` prefix. Restart the Next.js dev server after changing environment variables.
 
-3. Run the development server:
+Note: `SUPABASE_SERVICE_ROLE_KEY` is server-side only and must never be exposed in the browser.
+
+### 3) Run the app
+
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3001](http://localhost:3001) in your browser
+Open the app in the browser at:
 
-## Development Credentials
-
-### Student Login
-- **Email**: `student@st.ug.edu.gh`
-- **Password**: `Password123!`
-
-### Staff Login
-- **Email**: `emmanueloteng.k@gmail.com` (Admin)
-- **Password**: `Password123!`
-
-## Project Structure
-
-```
-frontend/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── (auth)/            # Authentication pages
-│   │   ├── (dashboard)/      # Student dashboard
-│   │   ├── (public)/         # Public pages
-│   │   ├── (staff)/          # Staff portal
-│   │   └── api/              # API routes
-│   ├── components/           # Reusable components
-│   │   ├── shared/          # Shared UI components
-│   │   └── providers/       # Context providers
-│   ├── hooks/               # Custom React hooks
-│   ├── lib/                 # Utility functions and API clients
-│   ├── stores/              # Zustand state management
-│   └── types/               # TypeScript type definitions
-└── public/                  # Static assets
+```text
+http://localhost:3001
 ```
 
-## Key Technologies
-
-- **Next.js 14**: React framework with App Router
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first styling
-- **Zustand**: Lightweight state management
-- **React Hook Form**: Form validation with Zod
-- **Axios**: HTTP client for API calls
-- **Lucide React**: Icon library
-
-## Available Scripts
+## Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+npm run dev            # Start dev server on port 3001
+npm run dev:webpack    # Start using webpack mode
+npm run build          # Production build
+npm run start          # Start production server
+npm run lint           # ESLint
+npm run lint:fix       # Auto-fix lint issues
+npm run type-check     # TypeScript type-check
+npm run test           # Run test suite
+npm run format         # Prettier format all files
+npm run format:check   # Check formatting
 ```
 
-## Recent Updates
+## Demo / Development Accounts
 
-### Security Enhancements
-- Implemented session timeout with inactivity detection (10 minutes warning, 2 minutes logout)
-- Added role-based access control for staff portal features
-- Doctors cannot access admin-only features (student records, automation tools)
+### Student
 
-### Authentication Improvements
-- Migrated from NextAuth to direct API calls for student login
-- Pre-filled development credentials for easier testing
-- Enhanced error handling and user feedback
+- Email: `student@st.ug.edu.gh`
+- Password: `Password123!`
 
-### Navigation Fixes
-- Eliminated navigation flashes on authentication state changes
-- Simplified routing logic for unauthenticated users
-- Fixed student login routing to dashboard instead of booking screen
+### Staff / Admin
 
-### Code Quality
-- Updated `.gitignore` files for cleaner repository
-- Removed unused dependencies and files
-- Improved component organization and reusability
+- Email: `emmanueloteng.k@gmail.com`
+- Password: `Password123!`
 
-## Deployment
+## Local Development Notes
 
-The easiest way to deploy is using [Vercel](https://vercel.com/new):
+- Ensure the backend is running before testing login, booking, and issue-related flows.
+- The frontend normally points to the backend at `http://localhost:3005/api`.
+- If environment values change, restart the Next.js dev server.
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Configure environment variables
-4. Deploy
+## Security Notes
 
-For other platforms, build the project:
+- Do not expose server-side secrets in client code.
+- Keep Supabase service-role credentials on the server only.
+- Authentication and route protections are enforced by both client routing and backend API checks.
+
+## Production Build
+
 ```bash
 npm run build
+npm run start
 ```
 
-The output will be in the `.next` directory.
+## Docker / Deployment
 
-## Support
+The project includes a root Docker Compose configuration that spins up related services for development. For frontend-only deployment, Vercel is a common option, while the backend is often hosted separately with PostgreSQL and Redis configured.
 
-For issues or questions, please contact the development team.
+## License
+
+This project is licensed under the ISC License.
