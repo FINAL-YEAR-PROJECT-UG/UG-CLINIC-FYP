@@ -105,3 +105,10 @@ dist/
 build/
 *.log
 .env*
+__pycache__/
+*.py[cod]
+.venv/
+env/
+*.egg-info/
+.env
+
